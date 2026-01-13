@@ -32,7 +32,7 @@ import { initializeAudio } from './utils/sounds';
 // MAIN CONTENT (inside providers)
 // ============================================
 function AppContent() {
-  const { colors, themeName, setTheme } = useTheme();
+  const { colors, themeName, setTheme, customAccentColor, setCustomAccentColor } = useTheme();
   const { state, dispatch } = useApp();
   const [activeTab, setActiveTab] = useState<TabName>('today');
   const [identitiesModalVisible, setIdentitiesModalVisible] = useState(false);
@@ -241,8 +241,40 @@ function AppContent() {
           onClose={() => setSettingsModalVisible(false)}
           sfxEnabled={state.sfxEnabled}
           onToggleSfx={() => dispatch({ type: 'SET_SFX_ENABLED', payload: !state.sfxEnabled })}
+          notificationsEnabled={state.notificationsEnabled}
+          notificationTime={state.notificationTime}
+          onToggleNotifications={async () => {
+            const newEnabled = !state.notificationsEnabled;
+            dispatch({ type: 'SET_NOTIFICATIONS_ENABLED', payload: newEnabled });
+
+            if (newEnabled) {
+              // Schedule notifications when enabled
+              const { scheduleDailyHabitReminders } = await import('./utils/notifications');
+              await scheduleDailyHabitReminders(
+                state.habits,
+                state.notificationTime.hour,
+                state.notificationTime.minute
+              );
+            } else {
+              // Cancel notifications when disabled
+              const { cancelAllHabitReminders } = await import('./utils/notifications');
+              await cancelAllHabitReminders();
+            }
+          }}
+          onSetNotificationTime={async (hour, minute) => {
+            dispatch({ type: 'SET_NOTIFICATION_TIME', payload: { hour, minute } });
+
+            // Reschedule notifications if enabled
+            if (state.notificationsEnabled) {
+              const { scheduleDailyHabitReminders } = await import('./utils/notifications');
+              await scheduleDailyHabitReminders(state.habits, hour, minute);
+            }
+          }}
           appState={state}
           onImportData={(data) => dispatch({ type: 'LOAD_STATE', payload: data })}
+          currentTheme={themeName}
+          customAccentColor={customAccentColor}
+          onSetCustomAccentColor={setCustomAccentColor}
         />
 
         {/* Hat Closet Modal */}

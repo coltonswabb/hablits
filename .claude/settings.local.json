@@ -5,7 +5,12 @@
       "Bash(npm start)",
       "Bash(cat:*)",
       "Bash(grep:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx eas-cli update:list --branch production)",
+      "Bash(npx eas-cli:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

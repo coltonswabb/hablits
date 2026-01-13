@@ -17,6 +17,8 @@ export { AnimatedNumber } from './AnimatedNumber';
 export { NoteModal } from './NoteModal';
 export { OnboardingModal } from './OnboardingModal';
 export { SettingsModal } from './SettingsModal';
+export { FastingModal } from './FastingModal';
+export { FastingTimerCard } from './FastingTimerCard';
 export { EmptyState } from './EmptyState';
 export { HeatmapCalendar } from './HeatmapCalendar';
 export {

@@ -378,6 +378,33 @@ export function Pet({
       cheek: '#D4A574',
       accent: '#7D9871',
     },
+    tiger: {
+      body: '#FF8C42',
+      bodyLight: '#FFB380',
+      bodyDark: '#1A1410',
+      eye: '#FFE066',
+      eyeShine: '#FFFFFF',
+      cheek: '#FFFFFF',
+      accent: '#D97530',
+    },
+    lion: {
+      body: '#7BB3FF',
+      bodyLight: '#B3D4FF',
+      bodyDark: '#4A90E2',
+      eye: '#1A1A2E',
+      eyeShine: '#FFFFFF',
+      cheek: '#5EB3FF',
+      accent: '#91C7FF',
+    },
+    hawk: {
+      body: '#8B6F47',
+      bodyLight: '#C4A574',
+      bodyDark: '#5D4A2F',
+      eye: '#FFC107',
+      eyeShine: '#FFFFFF',
+      cheek: '#D4A574',
+      accent: '#8B5A99',
+    },
   };
 
   const pal = palettes[species];
@@ -674,6 +701,163 @@ export function Pet({
           </G>
         );
 
+      case 'tiger':
+        return (
+          <G>
+            {/* Shadow */}
+            <Ellipse cx="32" cy="56" rx="15" ry="4" fill="rgba(0,0,0,0.2)" />
+            {/* Body */}
+            <Ellipse cx="32" cy="42" rx="15" ry="17" fill={pal.body} />
+            {/* Tiger stripes on body */}
+            <Path d="M22 35 Q18 38 20 42" stroke={pal.bodyDark} strokeWidth="2" fill="none" strokeLinecap="round" />
+            <Path d="M26 38 Q24 42 26 46" stroke={pal.bodyDark} strokeWidth="2" fill="none" strokeLinecap="round" />
+            <Path d="M38 38 Q40 42 38 46" stroke={pal.bodyDark} strokeWidth="2" fill="none" strokeLinecap="round" />
+            <Path d="M42 35 Q46 38 44 42" stroke={pal.bodyDark} strokeWidth="2" fill="none" strokeLinecap="round" />
+            {/* Belly highlight */}
+            <Ellipse cx="32" cy="48" rx="10" ry="8" fill={pal.cheek} opacity="0.8" />
+            {/* Neck */}
+            <Ellipse cx="32" cy="26" rx="7" ry="9" fill={pal.body} />
+            {/* Head */}
+            <Ellipse cx="32" cy="18" rx="9" ry="9" fill={pal.body} />
+            {/* Stripes on head */}
+            <Path d="M24 16 Q22 18 24 20" stroke={pal.bodyDark} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <Path d="M40 16 Q42 18 40 20" stroke={pal.bodyDark} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <Path d="M28 14 Q28 16 30 16" stroke={pal.bodyDark} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <Path d="M36 14 Q36 16 34 16" stroke={pal.bodyDark} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            {/* Snout */}
+            <Ellipse cx="32" cy="22" rx="4" ry="3.5" fill={pal.cheek} />
+            <Circle cx="32" cy="24" r="1.5" fill={pal.bodyDark} />
+            {/* Ears */}
+            <Ellipse cx="25" cy="12" rx="3" ry="4" fill={pal.body} />
+            <Ellipse cx="39" cy="12" rx="3" ry="4" fill={pal.body} />
+            <Ellipse cx="25" cy="13" rx="1.5" ry="2" fill={pal.bodyDark} />
+            <Ellipse cx="39" cy="13" rx="1.5" ry="2" fill={pal.bodyDark} />
+            {/* Legs */}
+            <Rect x="23" y="52" width="4" height="8" rx="2" fill={pal.body} />
+            <Rect x="37" y="52" width="4" height="8" rx="2" fill={pal.body} />
+            <Path d="M24 54 L25 56" stroke={pal.bodyDark} strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M39 54 L38 56" stroke={pal.bodyDark} strokeWidth="1.5" strokeLinecap="round" />
+            {/* Tail */}
+            <Path d="M46 40 Q52 38 54 42 Q54 46 50 48" fill={pal.body} stroke={pal.body} strokeWidth="3" strokeLinecap="round" />
+            <Path d="M50 38 L52 40 M52 44 L50 46" stroke={pal.bodyDark} strokeWidth="1.5" strokeLinecap="round" />
+          </G>
+        );
+
+      case 'lion':
+        return (
+          <G>
+            {/* Shadow */}
+            <Ellipse cx="32" cy="56" rx="14" ry="3" fill="rgba(0,0,0,0.15)" />
+            {/* Body */}
+            <Ellipse cx="32" cy="42" rx="14" ry="16" fill={pal.body} />
+            {/* Chest highlight */}
+            <Ellipse cx="32" cy="46" rx="9" ry="10" fill={pal.bodyLight} opacity="0.6" />
+            {/* Neck - thicker for mane connection */}
+            <Ellipse cx="32" cy="26" rx="8" ry="9" fill={pal.body} />
+
+            {/* PROMINENT MANE - Large layered design */}
+            {/* Base mane layer - large circle */}
+            <Circle cx="32" cy="18" r="14" fill={pal.bodyDark} opacity="0.9" />
+
+            {/* Mane spikes - bigger and more prominent */}
+            <Circle cx="21" cy="10" r="4" fill={pal.bodyDark} />
+            <Circle cx="26" cy="7" r="3.5" fill={pal.bodyDark} />
+            <Circle cx="32" cy="5" r="4" fill={pal.bodyDark} />
+            <Circle cx="38" cy="7" r="3.5" fill={pal.bodyDark} />
+            <Circle cx="43" cy="10" r="4" fill={pal.bodyDark} />
+            <Circle cx="18" cy="15" r="3.5" fill={pal.bodyDark} />
+            <Circle cx="46" cy="15" r="3.5" fill={pal.bodyDark} />
+            <Circle cx="16" cy="21" r="3" fill={pal.bodyDark} />
+            <Circle cx="48" cy="21" r="3" fill={pal.bodyDark} />
+
+            {/* Secondary mane texture */}
+            <Circle cx="24" cy="12" r="2.5" fill={pal.bodyDark} opacity="0.7" />
+            <Circle cx="32" cy="9" r="2.5" fill={pal.bodyDark} opacity="0.7" />
+            <Circle cx="40" cy="12" r="2.5" fill={pal.bodyDark} opacity="0.7" />
+
+            {/* Head - over the mane */}
+            <Circle cx="32" cy="19" r="9" fill={pal.body} />
+            {/* Face details */}
+            <Ellipse cx="32" cy="21" rx="6" ry="5" fill={pal.bodyLight} opacity="0.7" />
+            {/* Snout */}
+            <Ellipse cx="32" cy="23" rx="4" ry="3.5" fill={pal.bodyLight} />
+            <Circle cx="32" cy="24" r="1.5" fill={pal.bodyDark} />
+            {/* Whisker marks */}
+            <Circle cx="28" cy="22" r="1" fill={pal.bodyDark} opacity="0.4" />
+            <Circle cx="36" cy="22" r="1" fill={pal.bodyDark} opacity="0.4" />
+            {/* Ears - visible through mane */}
+            <Ellipse cx="25" cy="13" rx="3" ry="4" fill={pal.body} />
+            <Ellipse cx="39" cy="13" rx="3" ry="4" fill={pal.body} />
+            <Ellipse cx="25" cy="14" rx="1.5" ry="2" fill={pal.bodyLight} opacity="0.6" />
+            <Ellipse cx="39" cy="14" rx="1.5" ry="2" fill={pal.bodyLight} opacity="0.6" />
+            {/* Legs */}
+            <Rect x="24" y="50" width="4" height="8" rx="2" fill={pal.body} />
+            <Rect x="36" y="50" width="4" height="8" rx="2" fill={pal.body} />
+            {/* Tail with tuft */}
+            <Path d="M45 42 Q50 40 52 44 Q52 48 48 50" fill={pal.body} stroke={pal.body} strokeWidth="2.5" strokeLinecap="round" />
+            <Circle cx="48" cy="50" r="3.5" fill={pal.bodyDark} />
+          </G>
+        );
+
+      case 'hawk':
+        return (
+          <G>
+            {/* Shadow */}
+            <Ellipse cx="32" cy="56" rx="12" ry="3" fill="rgba(0,0,0,0.2)" />
+            {/* Body - compact bird body */}
+            <Ellipse cx="32" cy="40" rx="11" ry="15" fill={pal.body} />
+            {/* Chest/belly - lighter tan feathers */}
+            <Ellipse cx="32" cy="43" rx="8" ry="11" fill={pal.bodyLight} />
+            {/* Chest speckles - hawk pattern */}
+            <Circle cx="30" cy="40" r="1" fill={pal.bodyDark} opacity="0.4" />
+            <Circle cx="34" cy="41" r="1" fill={pal.bodyDark} opacity="0.4" />
+            <Circle cx="32" cy="44" r="1" fill={pal.bodyDark} opacity="0.4" />
+            <Circle cx="29" cy="46" r="1" fill={pal.bodyDark} opacity="0.4" />
+            <Circle cx="35" cy="46" r="1" fill={pal.bodyDark} opacity="0.4" />
+
+            {/* Wings - folded at sides */}
+            <Ellipse cx="22" cy="40" rx="6" ry="13" fill={pal.bodyDark} transform="rotate(-10 22 40)" />
+            <Ellipse cx="42" cy="40" rx="6" ry="13" fill={pal.bodyDark} transform="rotate(10 42 40)" />
+            {/* Wing feather details */}
+            <Path d="M18 36 L16 34 M18 40 L16 40 M18 44 L16 46" stroke={pal.body} strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M46 36 L48 34 M46 40 L48 40 M46 44 L48 46" stroke={pal.body} strokeWidth="1.5" strokeLinecap="round" />
+
+            {/* Neck */}
+            <Ellipse cx="32" cy="27" rx="5" ry="8" fill={pal.body} />
+            {/* White neck band - hawk marking */}
+            <Ellipse cx="32" cy="28" rx="4" ry="3" fill={pal.cheek} opacity="0.8" />
+
+            {/* Head - rounded hawk head */}
+            <Circle cx="32" cy="18" r="8" fill={pal.body} />
+            {/* Crown - darker brown */}
+            <Ellipse cx="32" cy="14" rx="6" ry="5" fill={pal.bodyDark} />
+            {/* Face disk - lighter */}
+            <Ellipse cx="32" cy="19" rx="6" ry="6" fill={pal.bodyLight} opacity="0.6" />
+
+            {/* Beak - sharp hooked hawk beak */}
+            <Path d="M32 21 L35 24 L32 24 Z" fill="#8B7355" />
+            <Path d="M32 24 Q35 25 36 27" stroke="#8B7355" strokeWidth="2" fill="none" strokeLinecap="round" />
+
+            {/* Eye stripe - dark line through eye (hawk feature) */}
+            <Path d="M26 18 Q28 18 30 18" stroke={pal.bodyDark} strokeWidth="2" strokeLinecap="round" />
+            <Path d="M34 18 Q36 18 38 18" stroke={pal.bodyDark} strokeWidth="2" strokeLinecap="round" />
+
+            {/* Legs - strong talons */}
+            <Rect x="28" y="51" width="3" height="6" rx="1.5" fill="#D4AF37" />
+            <Rect x="33" y="51" width="3" height="6" rx="1.5" fill="#D4AF37" />
+            {/* Talons */}
+            <Path d="M28 57 L26 59 M29 57 L29 59 M31 57 L32 59" stroke={pal.bodyDark} strokeWidth="1" strokeLinecap="round" />
+            <Path d="M33 57 L32 59 M34 57 L34 59 M36 57 L37 59" stroke={pal.bodyDark} strokeWidth="1" strokeLinecap="round" />
+
+            {/* Tail feathers - fanned */}
+            <Path d="M30 52 L26 58 L28 54 Z" fill={pal.bodyDark} />
+            <Path d="M32 52 L32 58 L32 54 Z" fill={pal.bodyDark} />
+            <Path d="M34 52 L38 58 L36 54 Z" fill={pal.bodyDark} />
+            {/* Tail bands - hawk pattern */}
+            <Path d="M28 54 L36 54" stroke={pal.body} strokeWidth="1" opacity="0.6" />
+          </G>
+        );
+
       default:
         return <Circle cx="32" cy="36" r="18" fill={pal.body} />;
     }
@@ -681,8 +865,8 @@ export function Pet({
 
   // Render expressive eyes based on mood and species
   const renderEyes = () => {
-    const eyeY = species === 'droplet' ? 32 : species === 'robot' ? 24 : species === 'deer' ? 20 : species === 'fish' ? 36 : species === 'butterfly' ? 28 : species === 'star' ? 32 : 34;
-    const eyeSpacing = species === 'robot' ? 6 : species === 'deer' ? 6 : species === 'fish' ? 10 : 8;
+    const eyeY = species === 'droplet' ? 32 : species === 'robot' ? 24 : species === 'deer' ? 20 : species === 'fish' ? 36 : species === 'butterfly' ? 28 : species === 'star' ? 32 : species === 'tiger' ? 18 : species === 'lion' ? 18 : species === 'hawk' ? 18 : 34;
+    const eyeSpacing = species === 'robot' ? 6 : species === 'deer' ? 6 : species === 'fish' ? 10 : species === 'tiger' ? 6 : species === 'lion' ? 6 : species === 'hawk' ? 5 : 8;
 
     // Robot - digital/LCD eyes
     if (species === 'robot') {
@@ -1106,6 +1290,18 @@ export function Pet({
       case 'carmech':
         hatY = 14; // Top of car
         hatScale = 1.1; // Larger for car
+        break;
+      case 'tiger':
+        hatY = 7; // Above tiger ears
+        hatScale = 1.0;
+        break;
+      case 'lion':
+        hatY = -2; // Above lion's large mane
+        hatScale = 0.85; // Smaller to fit above mane
+        break;
+      case 'hawk':
+        hatY = 6; // Above hawk crown
+        hatScale = 0.9;
         break;
     }
 

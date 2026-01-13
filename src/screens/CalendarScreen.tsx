@@ -23,6 +23,7 @@ import {
   getMonthCells,
   sortByOrder,
   isToday,
+  isFastingHabit,
 } from '../utils';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -134,6 +135,44 @@ export function CalendarScreen() {
   };
 
   const monthNotes = getMonthNotes();
+
+  // Get all completed fasts for the viewing month
+  const getMonthFasts = () => {
+    const monthStart = startOfMonth(viewingMonth);
+    const monthEnd = endOfMonth(viewingMonth);
+    const fastsForMonth: Array<{ date: Date; habitName: string; duration: number }> = [];
+
+    // Look through logs to find completed fasting habits
+    Object.entries(state.logs).forEach(([dateString, habitIds]) => {
+      const date = new Date(dateString + 'T00:00:00');
+      if (date >= monthStart && date <= monthEnd) {
+        habitIds.forEach((habitId) => {
+          const habit = state.habits.find(h => h.id === habitId);
+          if (habit && isFastingHabit(habit.name)) {
+            // Try to find the fast duration for this completion
+            let duration: number | null = null;
+            Object.values(state.activeFasts).forEach((fast) => {
+              if (fast.habitId === habitId) {
+                const targetDate = dateStr(new Date(fast.targetTime));
+                if (targetDate === dateString) {
+                  duration = fast.duration;
+                }
+              }
+            });
+
+            if (duration) {
+              fastsForMonth.push({ date, habitName: habit.name, duration });
+            }
+          }
+        });
+      }
+    });
+
+    // Sort by date descending (newest first)
+    return fastsForMonth.sort((a, b) => b.date.getTime() - a.date.getTime());
+  };
+
+  const monthFasts = getMonthFasts();
 
   // Handle note press
   const handleNotePress = (habitId: string, date: string) => {
@@ -272,41 +311,78 @@ export function CalendarScreen() {
               <Text style={[styles.journalTitle, { color: colors.text }]}>
                 Journal for {viewingMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
               </Text>
-              {monthNotes.length > 0 && (
+              {(monthNotes.length > 0 || monthFasts.length > 0) && (
                 <Text style={[styles.journalCount, { color: colors.muted }]}>
-                  {monthNotes.length} {monthNotes.length === 1 ? 'note' : 'notes'}
+                  {monthNotes.length + monthFasts.length} {monthNotes.length + monthFasts.length === 1 ? 'entry' : 'entries'}
                 </Text>
               )}
             </View>
 
-            {monthNotes.length === 0 ? (
+            {monthNotes.length === 0 && monthFasts.length === 0 ? (
               <View>
                 <Text style={[styles.journalEmpty, { color: colors.muted }]}>
-                  No notes for this month
+                  No notes or fasts for this month
                 </Text>
                 <Text style={[styles.journalHint, { color: colors.muted }]}>
-                  Add notes by completing habits on the Today screen!
+                  Add notes and complete fasts on the Today screen!
                 </Text>
               </View>
             ) : (
-              monthNotes.map((entry, index) => (
-                <View
-                  key={`${dateStr(entry.date)}-${entry.habitName}-${index}`}
-                  style={[styles.journalEntry, { borderBottomColor: colors.divider }]}
-                >
-                  <View style={styles.journalEntryHeader}>
-                    <Text style={[styles.journalDate, { color: colors.muted }]}>
-                      {entry.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+              <>
+                {/* Fasts Section */}
+                {monthFasts.length > 0 && (
+                  <>
+                    <Text style={[styles.journalSectionTitle, { color: colors.text }]}>
+                      ⏱️ Fasts
                     </Text>
-                    <Text style={[styles.journalHabit, { color: colors.accent }]}>
-                      {entry.habitName}
+                    {monthFasts.map((entry, index) => (
+                      <View
+                        key={`fast-${dateStr(entry.date)}-${entry.habitName}-${index}`}
+                        style={[styles.journalEntry, { borderBottomColor: colors.divider }]}
+                      >
+                        <View style={styles.journalEntryHeader}>
+                          <Text style={[styles.journalDate, { color: colors.muted }]}>
+                            {entry.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </Text>
+                          <Text style={[styles.journalHabit, { color: colors.accent }]}>
+                            {entry.habitName}
+                          </Text>
+                        </View>
+                        <Text style={[styles.journalNote, { color: colors.text }]}>
+                          Completed {entry.duration}h fast
+                        </Text>
+                      </View>
+                    ))}
+                  </>
+                )}
+
+                {/* Notes Section */}
+                {monthNotes.length > 0 && (
+                  <>
+                    <Text style={[styles.journalSectionTitle, { color: colors.text }]}>
+                      📝 Notes
                     </Text>
-                  </View>
-                  <Text style={[styles.journalNote, { color: colors.text }]}>
-                    {entry.note}
-                  </Text>
-                </View>
-              ))
+                    {monthNotes.map((entry, index) => (
+                      <View
+                        key={`note-${dateStr(entry.date)}-${entry.habitName}-${index}`}
+                        style={[styles.journalEntry, { borderBottomColor: colors.divider }]}
+                      >
+                        <View style={styles.journalEntryHeader}>
+                          <Text style={[styles.journalDate, { color: colors.muted }]}>
+                            {entry.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </Text>
+                          <Text style={[styles.journalHabit, { color: colors.accent }]}>
+                            {entry.habitName}
+                          </Text>
+                        </View>
+                        <Text style={[styles.journalNote, { color: colors.text }]}>
+                          {entry.note}
+                        </Text>
+                      </View>
+                    ))}
+                  </>
+                )}
+              </>
             )}
           </ScrollView>
         </View>
@@ -335,11 +411,28 @@ export function CalendarScreen() {
                   {completed.map((habit) => {
                     const ds = dateStr(selectedDay);
                     const note = state.notes[ds]?.[habit.id];
+                    const isFasting = isFastingHabit(habit.name);
+
+                    // Check if this habit had an active fast that completed on this day
+                    let fastDuration: number | null = null;
+                    if (isFasting) {
+                      // Look through all completed fasts to find one for this habit on this day
+                      Object.values(state.activeFasts).forEach((fast) => {
+                        if (fast.habitId === habit.id) {
+                          const targetDate = dateStr(new Date(fast.targetTime));
+                          if (targetDate === ds) {
+                            fastDuration = fast.duration;
+                          }
+                        }
+                      });
+                    }
+
                     return (
                       <View key={habit.id} style={styles.habitWithNote}>
                         <TouchableOpacity onPress={() => handleNotePress(habit.id, ds)}>
                           <Text style={[styles.detailsHabit, { color: colors.text }]}>
-                            {habit.name}
+                            {isFasting && '⏱️ '}{habit.name}
+                            {fastDuration && ` (${fastDuration}h fast)`}
                             {note && ' 📝'}
                           </Text>
                         </TouchableOpacity>
@@ -576,6 +669,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     paddingTop: 8,
+  },
+  journalSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 12,
+    marginBottom: 8,
   },
   journalEntry: {
     paddingVertical: 12,

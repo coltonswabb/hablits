@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hablits App Icon Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .instructions {
+            max-width: 600px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .preview-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .preview {
+            text-align: center;
+        }
+        canvas {
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        button {
+            margin-top: 10px;
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #60a5fa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #3b82f6;
+        }
+        .size-label {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐾 Hablits App Icon Generator</h1>
+
+    <div class="instructions">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Click the download buttons below to save each icon size</li>
+            <li>Save the 1024x1024 as <code>icon.png</code></li>
+            <li>Save the 1024x1024 as <code>adaptive-icon.png</code> (same file)</li>
+            <li>Save the 192x192 as <code>favicon.png</code></li>
+            <li>Replace the files in your <code>assets/</code> folder</li>
+            <li>For splash screen, you can use the same 1024x1024 icon as <code>splash-icon.png</code></li>
+        </ol>
+    </div>
+
+    <div class="preview-container">
+        <div class="preview">
+            <canvas id="icon1024" width="1024" height="1024"></canvas>
+            <div class="size-label">1024x1024 (App Store)</div>
+            <button onclick="download('icon1024', 'icon-1024.png')">Download icon.png</button>
+        </div>
+
+        <div class="preview">
+            <canvas id="icon512" width="512" height="512"></canvas>
+            <div class="size-label">512x512 (Preview)</div>
+            <button onclick="download('icon512', 'icon-512.png')">Download 512px</button>
+        </div>
+
+        <div class="preview">
+            <canvas id="icon192" width="192" height="192"></canvas>
+            <div class="size-label">192x192 (Favicon)</div>
+            <button onclick="download('icon192', 'favicon.png')">Download favicon.png</button>
+        </div>
+    </div>
+
+    <script>
+        function drawIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const scale = size / 1024;
+
+            // Helper function to scale coordinates
+            const s = (val) => val * scale;
+
+            // Modern gradient background (vibrant blue-purple)
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Center coordinate system
+            ctx.save();
+            ctx.translate(size / 2, size / 2);
+
+            // Pixel art house pattern from Logo.tsx (8x8 grid)
+            const pattern = [
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 1, 1, 1, 1, 1, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 0, 1, 1, 0, 1, 1],
+                [1, 1, 0, 1, 1, 0, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+            ];
+
+            // Scale up the pixel art (make each pixel large, no gaps)
+            const pixelSize = s(100); // Each pixel is 100 units
+            const totalSize = pixelSize * 8;
+            const startX = -totalSize / 2;
+            const startY = -totalSize / 2;
+
+            // Draw the pixel art house (sharp pixels, no gaps, no rounding)
+            ctx.fillStyle = '#FFFFFF';
+            for (let y = 0; y < pattern.length; y++) {
+                for (let x = 0; x < pattern[y].length; x++) {
+                    if (pattern[y][x] === 1) {
+                        const pixelX = startX + (x * pixelSize);
+                        const pixelY = startY + (y * pixelSize);
+
+                        // Draw sharp square pixels (no rounding, no gaps)
+                        ctx.fillRect(pixelX, pixelY, pixelSize, pixelSize);
+                    }
+                }
+            }
+
+            // Green circle badge with white checkmark (top right of house)
+            const badgeX = s(280);
+            const badgeY = s(-280);
+            const badgeRadius = s(140);
+
+            // Badge shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            ctx.beginPath();
+            ctx.arc(badgeX + s(10), badgeY + s(10), badgeRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Green circle
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // White checkmark inside circle
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = s(35);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(badgeX - s(55), badgeY - s(5));
+            ctx.lineTo(badgeX - s(20), badgeY + s(45));
+            ctx.lineTo(badgeX + s(60), badgeY - s(50));
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function download(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = url;
+            link.click();
+        }
+
+        // Draw all icon sizes
+        drawIcon(document.getElementById('icon1024'));
+        drawIcon(document.getElementById('icon512'));
+        drawIcon(document.getElementById('icon192'));
+    </script>
+</body>
+</html>

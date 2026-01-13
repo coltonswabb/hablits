@@ -18,6 +18,8 @@ interface ThemeContextType {
   themeName: ThemeName;                      // Current theme name
   colors: ThemeColors;                       // Current theme's colors
   setTheme: (theme: ThemeName) => void;      // Function to change theme
+  customAccentColor: string | undefined;     // Custom accent color override
+  setCustomAccentColor: (color: string | undefined) => void; // Set custom accent
 }
 
 // Create the context (starts undefined until Provider wraps the app)
@@ -31,9 +33,24 @@ interface ThemeProviderProps {
 export function ThemeProvider({ children }: ThemeProviderProps) {
   // State to track current theme
   const [themeName, setThemeName] = useState<ThemeName>('light');
+  const [customAccentColor, setCustomAccentColor] = useState<string | undefined>(undefined);
 
   // Get the colors for current theme
-  const colors = themes[themeName];
+  let colors = themes[themeName];
+
+  // Apply custom accent color for light, dark, and superdark themes only
+  if (customAccentColor && (themeName === 'light' || themeName === 'dark' || themeName === 'superdark')) {
+    colors = {
+      ...colors,
+      accent: customAccentColor,
+      accent2: customAccentColor, // Use same color for both accent variants
+      // For superdark theme, also change text and muted colors to match accent
+      ...(themeName === 'superdark' && {
+        text: customAccentColor,
+        muted: customAccentColor + 'aa', // Add some transparency
+      }),
+    };
+  }
 
   // Function to change theme
   const setTheme = (newTheme: ThemeName) => {
@@ -42,7 +59,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   };
 
   return (
-    <ThemeContext.Provider value={{ themeName, colors, setTheme }}>
+    <ThemeContext.Provider value={{ themeName, colors, setTheme, customAccentColor, setCustomAccentColor }}>
       {children}
     </ThemeContext.Provider>
   );

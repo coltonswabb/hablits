@@ -30,8 +30,10 @@ import {
   useConfetti,
   NoteModal,
   EmptyState,
+  FastingModal,
+  FastingTimerCard,
 } from '../components';
-import { getActiveHabits, todayStr } from '../utils';
+import { getActiveHabits, todayStr, isFastingHabit, scheduleFastCompletionNotification } from '../utils';
 import { Habit, PetSpecies, HatType } from '../types';
 
 interface TodayScreenProps {
@@ -52,6 +54,10 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
   // Note modal state
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteHabitId, setNoteHabitId] = useState<string | null>(null);
+
+  // Fasting modal state (secret feature)
+  const [fastingModalVisible, setFastingModalVisible] = useState(false);
+  const [fastingHabitId, setFastingHabitId] = useState<string | null>(null);
 
   // Confetti - full screen for all habits complete
   const fullConfetti = useConfetti();
@@ -320,6 +326,52 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
         payload: { habitId: noteHabitId, date: today },
       });
     }
+  };
+
+  // FASTING FEATURE HANDLERS (Secret Feature)
+  const handleStartFast = (habitId: string, duration: number, startTime: string) => {
+    dispatch({
+      type: 'START_FAST',
+      payload: { habitId, duration, startTime },
+    });
+
+    // Schedule notification
+    const habit = state.habits.find(h => h.id === habitId);
+    if (habit) {
+      const fast = {
+        habitId,
+        startTime,
+        duration,
+        targetTime: new Date(new Date(startTime).getTime() + duration * 60 * 60 * 1000).toISOString(),
+      };
+      scheduleFastCompletionNotification(fast, habit.name);
+    }
+  };
+
+  const handleUpdateFastStartTime = (habitId: string, startTime: string) => {
+    dispatch({
+      type: 'UPDATE_FAST_START_TIME',
+      payload: { habitId, startTime },
+    });
+
+    // Reschedule notification
+    const fast = state.activeFasts[habitId];
+    const habit = state.habits.find(h => h.id === habitId);
+    if (fast && habit) {
+      const updatedFast = {
+        ...fast,
+        startTime,
+        targetTime: new Date(new Date(startTime).getTime() + fast.duration * 60 * 60 * 1000).toISOString(),
+      };
+      scheduleFastCompletionNotification(updatedFast, habit.name);
+    }
+  };
+
+  const handleEndFast = (habitId: string) => {
+    dispatch({
+      type: 'END_FAST',
+      payload: habitId,
+    });
   };
 
 
@@ -650,6 +702,73 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
                 );
               }
 
+              // SECRET FASTING FEATURE - Check if habit is a "Fast" habit
+              if (isFastingHabit(habit.name)) {
+                const activeFast = state.activeFasts[habit.id] || null;
+                const isComplete = state.logs[today]?.includes(habit.id) || false;
+
+                return (
+                  <View key={habit.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {reorderMode && (
+                      <View style={{ gap: 4 }}>
+                        <TouchableOpacity
+                          onPress={() => handleReorderHabit(habit.id, 'up')}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            backgroundColor: colors.card,
+                            borderWidth: 1,
+                            borderColor: colors.divider,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          disabled={index === 0}
+                        >
+                          <Text style={{ color: index === 0 ? colors.muted : colors.text, fontSize: 16 }}>↑</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleReorderHabit(habit.id, 'down')}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            backgroundColor: colors.card,
+                            borderWidth: 1,
+                            borderColor: colors.divider,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          disabled={index === activeHabits.length - 1}
+                        >
+                          <Text style={{ color: index === activeHabits.length - 1 ? colors.muted : colors.text, fontSize: 16 }}>↓</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <FastingTimerCard
+                        habitId={habit.id}
+                        habitName={habit.name}
+                        activeFast={activeFast}
+                        isComplete={isComplete}
+                        onStartFast={() => {
+                          setFastingHabitId(habit.id);
+                          setFastingModalVisible(true);
+                        }}
+                        onEndFast={() => handleEndFast(habit.id)}
+                        onEditStartTime={() => {
+                          setFastingHabitId(habit.id);
+                          setFastingModalVisible(true);
+                        }}
+                        onToggleComplete={() => handleToggle(habit.id)}
+                        onEdit={() => handleEditHabit(habit)}
+                        onDelete={() => handleDeleteHabit(habit.id)}
+                      />
+                    </View>
+                  </View>
+                );
+              }
+
               // Regular habit rendering
               return (
                 <View key={habit.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -767,6 +886,34 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
             : undefined
         }
         onClose={() => setNoteModalVisible(false)}
+      />
+
+      {/* Fasting Modal - Secret Feature */}
+      <FastingModal
+        visible={fastingModalVisible}
+        onClose={() => setFastingModalVisible(false)}
+        onSelectDuration={(hours, startTime) => {
+          if (fastingHabitId) {
+            const existingFast = state.activeFasts[fastingHabitId];
+            if (existingFast) {
+              // Updating existing fast
+              handleUpdateFastStartTime(fastingHabitId, startTime);
+            } else {
+              // Starting new fast
+              handleStartFast(fastingHabitId, hours, startTime);
+            }
+          }
+        }}
+        currentStartTime={
+          fastingHabitId && state.activeFasts[fastingHabitId]
+            ? state.activeFasts[fastingHabitId].startTime
+            : undefined
+        }
+        currentDuration={
+          fastingHabitId && state.activeFasts[fastingHabitId]
+            ? state.activeFasts[fastingHabitId].duration
+            : undefined
+        }
       />
     </View>
   );

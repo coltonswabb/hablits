@@ -38,17 +38,21 @@ export function Header({
   const themeLabels: Record<ThemeName, string> = {
     light: 'Light',
     dark: 'Dark',
+    superdark: 'Super Dark',
     retro: 'Retro',
     chibi: 'Chibi',
     sunshine: 'Sunshine',
     gameboy: 'Game Boy',
-    fzero: 'F-Zero',
+    racer: 'Racer',
     paper: 'Paper',
-    mmbn: 'Mega Man',
+    cyber: 'Cyber',
     ocean: 'Ocean',
     sunset: 'Sunset',
     cosmic: 'Cosmic',
     forest: 'Forest',
+    bengal: 'Bengal',
+    lion: 'Lion',
+    ladyhawke: 'Ladyhawke',
   };
 
   return (

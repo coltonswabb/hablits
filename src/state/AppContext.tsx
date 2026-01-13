@@ -23,6 +23,8 @@ const STORAGE_KEY = 'hablits_state_v1';
 const defaultState: AppState = {
   theme: 'light',
   sfxEnabled: true,
+  notificationsEnabled: false,
+  notificationTime: { hour: 9, minute: 0 }, // 9:00 AM default
   identities: [{ id: 'general', name: 'General', color: '#3ddc97' }],
   currentIdentityFilter: 'all',
   habits: [],
@@ -35,6 +37,7 @@ const defaultState: AppState = {
   hasCompletedOnboarding: false,
   petSpecies: 'blob',
   petHat: 'none',
+  activeFasts: {}, // Secret fasting timer feature
 };
 
 // ============================================
@@ -60,12 +63,17 @@ type Action =
   | { type: 'SET_DAY_PLAN_TIME'; payload: { habitId: string; time: string | null } }
   | { type: 'SET_DAY_PLAN_SCHEDULE'; payload: { habitId: string; schedule: HabitSchedule | null } }
   | { type: 'SET_SFX_ENABLED'; payload: boolean }
+  | { type: 'SET_NOTIFICATIONS_ENABLED'; payload: boolean }
+  | { type: 'SET_NOTIFICATION_TIME'; payload: { hour: number; minute: number } }
   | { type: 'SET_NOTE'; payload: { habitId: string; date: string; note: string } }
   | { type: 'DELETE_NOTE'; payload: { habitId: string; date: string } }
   | { type: 'TOGGLE_ROUTINE_STEP'; payload: { habitId: string; stepId: string; date: string } }
   | { type: 'COMPLETE_ONBOARDING' }
   | { type: 'SET_PET_SPECIES'; payload: PetSpecies }
-  | { type: 'SET_PET_HAT'; payload: HatType };
+  | { type: 'SET_PET_HAT'; payload: HatType }
+  | { type: 'START_FAST'; payload: { habitId: string; duration: number; startTime: string } }
+  | { type: 'UPDATE_FAST_START_TIME'; payload: { habitId: string; startTime: string } }
+  | { type: 'END_FAST'; payload: string };
 
 // ============================================
 // REDUCER
@@ -76,10 +84,11 @@ type Action =
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'LOAD_STATE':
-      // Ensure routineStepLogs exists for backward compatibility
+      // Ensure routineStepLogs and activeFasts exist for backward compatibility
       return {
         ...action.payload,
         routineStepLogs: action.payload.routineStepLogs || {},
+        activeFasts: action.payload.activeFasts || {},
       };
 
     case 'ADD_HABIT': {
@@ -291,6 +300,12 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_SFX_ENABLED':
       return { ...state, sfxEnabled: action.payload };
 
+    case 'SET_NOTIFICATIONS_ENABLED':
+      return { ...state, notificationsEnabled: action.payload };
+
+    case 'SET_NOTIFICATION_TIME':
+      return { ...state, notificationTime: action.payload };
+
     case 'SET_NOTE': {
       const { habitId, date, note } = action.payload;
       const notes = { ...state.notes };
@@ -347,6 +362,49 @@ function appReducer(state: AppState, action: Action): AppState {
 
     case 'SET_PET_HAT':
       return { ...state, petHat: action.payload };
+
+    case 'START_FAST': {
+      const { habitId, duration, startTime } = action.payload;
+      const start = new Date(startTime);
+      const target = new Date(start.getTime() + duration * 60 * 60 * 1000);
+      return {
+        ...state,
+        activeFasts: {
+          ...state.activeFasts,
+          [habitId]: {
+            habitId,
+            startTime,
+            duration,
+            targetTime: target.toISOString(),
+          },
+        },
+      };
+    }
+
+    case 'UPDATE_FAST_START_TIME': {
+      const { habitId, startTime } = action.payload;
+      const existingFast = state.activeFasts[habitId];
+      if (!existingFast) return state;
+
+      const start = new Date(startTime);
+      const target = new Date(start.getTime() + existingFast.duration * 60 * 60 * 1000);
+      return {
+        ...state,
+        activeFasts: {
+          ...state.activeFasts,
+          [habitId]: {
+            ...existingFast,
+            startTime,
+            targetTime: target.toISOString(),
+          },
+        },
+      };
+    }
+
+    case 'END_FAST': {
+      const { [action.payload]: removed, ...remaining } = state.activeFasts;
+      return { ...state, activeFasts: remaining };
+    }
 
     default:
       return state;

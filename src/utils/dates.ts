@@ -9,18 +9,26 @@
 /**
  * Get today's date as a string (YYYY-MM-DD)
  * This format is good for using as object keys
+ * Uses local time zone, not UTC
  */
 export function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
  * Convert any date to a string (YYYY-MM-DD)
+ * Uses local time zone, not UTC
  */
 export function dateStr(date: Date | string): string {
   const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**

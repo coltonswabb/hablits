@@ -47,6 +47,18 @@ export const themes: Record<ThemeName, ThemeColors> = {
     good: '#3fb950',
   },
 
+  superdark: {
+    bg: '#000000',
+    card: '#0a0a0a',
+    text: '#00ff00',
+    muted: '#00aa00',
+    accent: '#00ff00',
+    accent2: '#00cc00',
+    divider: '#1a1a1a',
+    danger: '#ff0000',
+    good: '#00ff00',
+  },
+
   retro: {
     bg: '#f2efe6',
     card: '#f9f5ec',
@@ -95,7 +107,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     good: '#4d7c0f',
   },
 
-  fzero: {
+  racer: {
     bg: '#0A0B1E',
     card: '#12132b',
     text: '#e5e7eb',
@@ -119,7 +131,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     good: '#15803d',
   },
 
-  mmbn: {
+  cyber: {
     bg: '#0b1b2a',
     card: '#0f2436',
     text: '#d9f0ff',
@@ -178,21 +190,61 @@ export const themes: Record<ThemeName, ThemeColors> = {
     danger: '#a84432',
     good: '#6b9e5f',
   },
+
+  bengal: {
+    bg: '#1a1410',
+    card: '#2d2318',
+    text: '#fff5e6',
+    muted: '#c9a982',
+    accent: '#ff8c42',
+    accent2: '#d97530',
+    divider: '#3d3020',
+    danger: '#ff4d4d',
+    good: '#ffa94d',
+  },
+
+  lion: {
+    bg: '#0f1923',
+    card: '#1a2836',
+    text: '#e8f4ff',
+    muted: '#8eabc7',
+    accent: '#4a90e2',
+    accent2: '#7bb3ff',
+    divider: '#243646',
+    danger: '#ff6b6b',
+    good: '#5eb3ff',
+  },
+
+  ladyhawke: {
+    bg: '#0d0a0f',
+    card: '#1a141f',
+    text: '#e6dce8',
+    muted: '#9b8c9f',
+    accent: '#8b5a99',
+    accent2: '#6b4575',
+    divider: '#261c2b',
+    danger: '#9d174d',
+    good: '#a855f7',
+  },
 };
 
 // Confetti colors for each theme
 export const themeConfetti: Record<ThemeName, string[]> = {
   light: ['#60a5fa', '#f472b6', '#f59e0b', '#34d399'],
   dark: ['#58a6ff', '#f778ba', '#56d364', '#ffa657'],
+  superdark: ['#00ff00', '#00cc00', '#00aa00', '#008800'],
   retro: ['#e4000f', '#0f0f0f', '#6e6e6e', '#ffffff'],
   chibi: ['#b0bec5', '#90a4ae', '#00e6e6', '#66ff66'],
   sunshine: ['#1f7aff', '#2fb6ff', '#00d9b8', '#ffd500'],
   gameboy: ['#3A5A40', '#588157', '#CFD8B3', '#222222'],
-  fzero: ['#ff2bd6', '#21d4fd', '#0A0B1E', '#ffffff'],
+  racer: ['#ff2bd6', '#21d4fd', '#0A0B1E', '#ffffff'],
   paper: ['#d97706', '#9a3412', '#F8F4EA', '#111827'],
-  mmbn: ['#00e5ff', '#00ff9a', '#ff4d6d', '#d9f0ff'],
+  cyber: ['#00e5ff', '#00ff9a', '#ff4d6d', '#d9f0ff'],
   ocean: ['#16c0d6', '#ff6b9d', '#4ecdc4', '#e0f4ff'],
   sunset: ['#ff6b9d', '#ffbe0b', '#ffd4a3', '#06ffa5'],
   cosmic: ['#b388ff', '#8e44ad', '#00f5ff', '#e0e0ff'],
   forest: ['#5a7c4f', '#7d9871', '#a3b899', '#6b9e5f'],
+  bengal: ['#ff8c42', '#d97530', '#ffa94d', '#ffb366'],
+  lion: ['#4a90e2', '#7bb3ff', '#5eb3ff', '#91c7ff'],
+  ladyhawke: ['#8b5a99', '#a855f7', '#6b4575', '#b794c3'],
 };

@@ -48,10 +48,21 @@ export interface HabitSchedule {
   recurringDays?: boolean[];    // [Sun, Mon, Tue, Wed, Thu, Fri, Sat] - for 'custom' recurrence
 }
 
+// Active fast timer (secret feature for habits named "Fast")
+export interface ActiveFast {
+  habitId: string;              // Which habit is fasting
+  startTime: string;            // ISO timestamp when fast started
+  duration: number;             // Duration in hours (12, 16, 18, 24, or 36)
+  targetTime: string;           // ISO timestamp when fast should complete
+}
+
 // The complete app state
 export interface AppState {
   theme: ThemeName;
   sfxEnabled: boolean;
+  customAccentColor?: string;          // Custom accent color for light/dark/superdark themes
+  notificationsEnabled: boolean;       // Whether daily habit reminders are enabled
+  notificationTime: { hour: number; minute: number }; // Time for daily reminders (default 9:00 AM)
   identities: Identity[];
   currentIdentityFilter: string; // 'all' or an identity ID
   habits: Habit[];
@@ -64,23 +75,28 @@ export interface AppState {
   hasCompletedOnboarding: boolean;
   petSpecies: PetSpecies;              // Selected pet species
   petHat: HatType;                     // Selected pet hat
+  activeFasts: Record<string, ActiveFast>; // { "habit-id": { startTime, duration, targetTime } } - Secret fasting timers
 }
 
 // Available theme names
 export type ThemeName =
   | 'light'
   | 'dark'
+  | 'superdark'
   | 'retro'
   | 'chibi'
   | 'sunshine'
   | 'gameboy'
-  | 'fzero'
+  | 'racer'
   | 'paper'
-  | 'mmbn'
+  | 'cyber'
   | 'ocean'
   | 'sunset'
   | 'cosmic'
-  | 'forest';
+  | 'forest'
+  | 'bengal'
+  | 'lion'
+  | 'ladyhawke';
 
 // Tab names for navigation
 export type TabName = 'today' | 'week' | 'calendar' | 'dayplan' | 'stats';
@@ -98,7 +114,10 @@ export type PetSpecies =
   | 'fish'
   | 'butterfly'
   | 'star'
-  | 'deer';
+  | 'deer'
+  | 'tiger'
+  | 'lion'
+  | 'hawk';
 
 // Pet mood based on habit completion
 export type PetMood = 'idle' | 'curious' | 'happy' | 'excited' | 'celebrate';
