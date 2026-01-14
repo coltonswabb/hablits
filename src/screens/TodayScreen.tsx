@@ -151,10 +151,14 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
 
     // For routines, auto-complete all steps when checking the routine
     if (habit?.isRoutine && habit.steps && !isDone && !isSkipped && !isFailed) {
+      console.log('Auto-completing routine:', habitId);
       const completedSteps = state.routineStepLogs[today]?.[habitId] || [];
+      console.log('Current completed steps:', completedSteps);
+      console.log('Total steps:', habit.steps.length);
       // Complete any incomplete steps
       habit.steps.forEach((step) => {
         if (!completedSteps.includes(step.id)) {
+          console.log('Completing step:', step.id);
           dispatch({
             type: 'TOGGLE_ROUTINE_STEP',
             payload: { habitId, stepId: step.id, date: today },
@@ -162,6 +166,7 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
         }
       });
       // Mark the routine as complete
+      console.log('Marking routine as complete');
       dispatch({ type: 'TOGGLE_HABIT', payload: { habitId, date: today } });
       // Collapse the routine
       setExpandedRoutines(prev => {
