@@ -481,8 +481,8 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
           {activeHabits.length === 0 ? (
             <EmptyState
               icon="✨"
-              title="No habits for today"
-              message="Add your first habit above to get started!"
+              title="Ready to build better habits?"
+              message="Tap the + button above to add your first habit and start your journey!"
             />
           ) : (
             activeHabits.map((habit, index) => {

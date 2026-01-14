@@ -23,6 +23,7 @@ const STORAGE_KEY = 'hablits_state_v1';
 const defaultState: AppState = {
   theme: 'light',
   sfxEnabled: true,
+  hapticsEnabled: true,
   notificationsEnabled: false,
   notificationTime: { hour: 9, minute: 0 }, // 9:00 AM default
   identities: [{ id: 'general', name: 'General', color: '#3ddc97' }],
@@ -63,6 +64,7 @@ type Action =
   | { type: 'SET_DAY_PLAN_TIME'; payload: { habitId: string; time: string | null } }
   | { type: 'SET_DAY_PLAN_SCHEDULE'; payload: { habitId: string; schedule: HabitSchedule | null } }
   | { type: 'SET_SFX_ENABLED'; payload: boolean }
+  | { type: 'SET_HAPTICS_ENABLED'; payload: boolean }
   | { type: 'SET_NOTIFICATIONS_ENABLED'; payload: boolean }
   | { type: 'SET_NOTIFICATION_TIME'; payload: { hour: number; minute: number } }
   | { type: 'SET_NOTE'; payload: { habitId: string; date: string; note: string } }
@@ -84,11 +86,12 @@ type Action =
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'LOAD_STATE':
-      // Ensure routineStepLogs and activeFasts exist for backward compatibility
+      // Ensure routineStepLogs, activeFasts, and hapticsEnabled exist for backward compatibility
       return {
         ...action.payload,
         routineStepLogs: action.payload.routineStepLogs || {},
         activeFasts: action.payload.activeFasts || {},
+        hapticsEnabled: action.payload.hapticsEnabled !== undefined ? action.payload.hapticsEnabled : true,
       };
 
     case 'ADD_HABIT': {
@@ -299,6 +302,9 @@ function appReducer(state: AppState, action: Action): AppState {
 
     case 'SET_SFX_ENABLED':
       return { ...state, sfxEnabled: action.payload };
+
+    case 'SET_HAPTICS_ENABLED':
+      return { ...state, hapticsEnabled: action.payload };
 
     case 'SET_NOTIFICATIONS_ENABLED':
       return { ...state, notificationsEnabled: action.payload };

@@ -48,9 +48,15 @@ function AppContent() {
   const screenTranslateX = useRef(new Animated.Value(0)).current;
   const screenScale = useRef(new Animated.Value(1)).current;
 
-  // Initialize audio on mount
+  // Initialize audio and haptics on mount
   useEffect(() => {
     initializeAudio();
+
+    // Initialize haptics from state
+    (async () => {
+      const { setHapticsEnabled } = await import('./utils/haptics');
+      setHapticsEnabled(state.hapticsEnabled);
+    })();
   }, []);
 
   // Animate screen transitions
@@ -241,15 +247,33 @@ function AppContent() {
           onClose={() => setSettingsModalVisible(false)}
           sfxEnabled={state.sfxEnabled}
           onToggleSfx={() => dispatch({ type: 'SET_SFX_ENABLED', payload: !state.sfxEnabled })}
+          hapticsEnabled={state.hapticsEnabled}
+          onToggleHaptics={async () => {
+            const { setHapticsEnabled } = await import('./utils/haptics');
+            const newEnabled = !state.hapticsEnabled;
+            dispatch({ type: 'SET_HAPTICS_ENABLED', payload: newEnabled });
+            setHapticsEnabled(newEnabled);
+          }}
           notificationsEnabled={state.notificationsEnabled}
           notificationTime={state.notificationTime}
           onToggleNotifications={async () => {
             const newEnabled = !state.notificationsEnabled;
-            dispatch({ type: 'SET_NOTIFICATIONS_ENABLED', payload: newEnabled });
 
             if (newEnabled) {
-              // Schedule notifications when enabled
-              const { scheduleDailyHabitReminders } = await import('./utils/notifications');
+              // Check permissions first when enabling
+              const { requestNotificationPermissions, scheduleDailyHabitReminders } = await import('./utils/notifications');
+              const hasPermission = await requestNotificationPermissions();
+
+              if (!hasPermission) {
+                Alert.alert(
+                  'Permission Required',
+                  'Please enable notifications in your device settings to receive daily habit reminders.',
+                  [{ text: 'OK' }]
+                );
+                return; // Don't enable if no permission
+              }
+
+              dispatch({ type: 'SET_NOTIFICATIONS_ENABLED', payload: newEnabled });
               await scheduleDailyHabitReminders(
                 state.habits,
                 state.notificationTime.hour,
@@ -257,6 +281,7 @@ function AppContent() {
               );
             } else {
               // Cancel notifications when disabled
+              dispatch({ type: 'SET_NOTIFICATIONS_ENABLED', payload: newEnabled });
               const { cancelAllHabitReminders } = await import('./utils/notifications');
               await cancelAllHabitReminders();
             }

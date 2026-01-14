@@ -60,6 +60,7 @@ export interface ActiveFast {
 export interface AppState {
   theme: ThemeName;
   sfxEnabled: boolean;
+  hapticsEnabled: boolean;             // Whether haptic feedback is enabled
   customAccentColor?: string;          // Custom accent color for light/dark/superdark themes
   notificationsEnabled: boolean;       // Whether daily habit reminders are enabled
   notificationTime: { hour: number; minute: number }; // Time for daily reminders (default 9:00 AM)

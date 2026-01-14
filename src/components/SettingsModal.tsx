@@ -29,6 +29,8 @@ interface SettingsModalProps {
   onClose: () => void;
   sfxEnabled: boolean;
   onToggleSfx: () => void;
+  hapticsEnabled: boolean;
+  onToggleHaptics: () => void;
   notificationsEnabled: boolean;
   notificationTime: { hour: number; minute: number };
   onToggleNotifications: () => void;
@@ -82,6 +84,8 @@ export function SettingsModal({
   onClose,
   sfxEnabled,
   onToggleSfx,
+  hapticsEnabled,
+  onToggleHaptics,
   notificationsEnabled,
   notificationTime,
   onToggleNotifications,
@@ -173,6 +177,15 @@ export function SettingsModal({
           const file = new File(result.assets[0].uri);
           const fileContent = await file.text();
           const data = JSON.parse(fileContent);
+
+          // Validate data structure
+          if (!data || typeof data !== 'object') {
+            throw new Error('Invalid data format');
+          }
+          if (!Array.isArray(data.habits) || !Array.isArray(data.identities)) {
+            throw new Error('Missing required fields');
+          }
+
           onImportData(data);
           Alert.alert('Success', 'Data imported successfully!');
         }
@@ -273,9 +286,9 @@ export function SettingsModal({
               </View>
             )}
 
-            {/* Sound Section */}
+            {/* Sound & Feedback Section */}
             <View style={[styles.section, { borderBottomColor: colors.divider }]}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Sound</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Sound & Feedback</Text>
 
               <TouchableOpacity
                 style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
@@ -284,6 +297,16 @@ export function SettingsModal({
                 <Text style={[styles.settingLabel, { color: colors.text }]}>Sound Effects</Text>
                 <View style={[styles.toggle, { backgroundColor: sfxEnabled ? colors.good : colors.muted }]}>
                   <Text style={styles.toggleText}>{sfxEnabled ? 'ON' : 'OFF'}</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                onPress={onToggleHaptics}
+              >
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic Feedback</Text>
+                <View style={[styles.toggle, { backgroundColor: hapticsEnabled ? colors.good : colors.muted }]}>
+                  <Text style={styles.toggleText}>{hapticsEnabled ? 'ON' : 'OFF'}</Text>
                 </View>
               </TouchableOpacity>
             </View>
