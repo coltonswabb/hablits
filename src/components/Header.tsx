@@ -53,6 +53,7 @@ export function Header({
     bengal: 'Bengal',
     lion: 'Lion',
     ladyhawke: 'Ladyhawke',
+    sakura: 'Sakura',
   };
 
   return (
