@@ -5,7 +5,7 @@
 // Each cell shows completion status for that day.
 // ============================================
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,6 @@ import {
   getWeekDays,
   dateStr,
   sortByOrder,
-  countThisWeek,
   calculateStreak,
 } from '../utils';
 
@@ -29,8 +28,11 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export function WeekScreen() {
   const { colors } = useTheme();
   const { state, dispatch } = useApp();
+  const [weekOffset, setWeekOffset] = useState(0);
 
-  const weekDays = getWeekDays();
+  const currentDate = new Date();
+  currentDate.setDate(currentDate.getDate() + weekOffset * 7);
+  const weekDays = getWeekDays(currentDate);
   const today = dateStr(new Date());
 
   // Filter habits by identity
@@ -69,12 +71,36 @@ export function WeekScreen() {
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Week</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>
-          {weekDays[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-          {' – '}
-          {weekDays[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-        </Text>
+        <View>
+          <Text style={[styles.title, { color: colors.text }]}>Week</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>
+            {weekDays[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {' – '}
+            {weekDays[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+          </Text>
+        </View>
+        <View style={styles.weekNav}>
+          <TouchableOpacity
+            style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
+            onPress={() => setWeekOffset(weekOffset - 1)}
+          >
+            <Text style={[styles.navButtonText, { color: colors.text }]}>←</Text>
+          </TouchableOpacity>
+          {weekOffset !== 0 && (
+            <TouchableOpacity
+              style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
+              onPress={() => setWeekOffset(0)}
+            >
+              <Text style={[styles.navButtonTextSmall, { color: colors.text }]}>Today</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
+            onPress={() => setWeekOffset(weekOffset + 1)}
+          >
+            <Text style={[styles.navButtonText, { color: colors.text }]}>→</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Habits with progress */}
@@ -87,10 +113,14 @@ export function WeekScreen() {
           />
         ) : (
           sortedHabits.map((habit) => {
-            const progress = countThisWeek(state.logs, habit.id);
-            const pct = Math.min(1, progress / habit.weeklyGoal);
+            // Count completions for the displayed week
+            const weekProgress = weekDays.filter(day => {
+              const ds = dateStr(day);
+              return state.logs[ds]?.includes(habit.id);
+            }).length;
+            const pct = Math.min(1, weekProgress / habit.weeklyGoal);
             const streak = calculateStreak(state.logs, habit.id);
-            const goalMet = progress >= habit.weeklyGoal;
+            const goalMet = weekProgress >= habit.weeklyGoal;
             const identityColor = getIdentityColor(habit.identityId);
 
             return (
@@ -116,7 +146,7 @@ export function WeekScreen() {
                   <View style={styles.progressRow}>
                     <ProgressRing progress={pct} size={20} strokeWidth={3} />
                     <Text style={[styles.progressText, { color: colors.muted }]}>
-                      {progress}/{habit.weeklyGoal} this week
+                      {weekProgress}/{habit.weeklyGoal} {weekOffset === 0 ? 'this week' : 'that week'}
                     </Text>
                     {goalMet && (
                       <View style={[styles.goalBadge, { backgroundColor: colors.good + '22', borderColor: colors.good }]}>
@@ -156,6 +186,8 @@ export function WeekScreen() {
                       textColor = '#fff';
                     }
 
+                    const isFuture = day > new Date();
+
                     return (
                       <View key={index} style={styles.dayColumn}>
                         <Text style={[styles.dayLabel, { color: colors.muted }]}>
@@ -168,10 +200,12 @@ export function WeekScreen() {
                               backgroundColor: cellBg,
                               borderColor: cellBorder,
                               borderWidth: isToday ? 2 : 1,
+                              opacity: isFuture ? 0.3 : 1,
                             },
                             isToday && { borderColor: colors.accent },
                           ]}
-                          onPress={() => handleToggle(habit.id, day)}
+                          onPress={() => !isFuture && handleToggle(habit.id, day)}
+                          disabled={isFuture}
                         >
                           <Text style={[styles.dayCellText, { color: textColor }]}>
                             {cellText}
@@ -200,7 +234,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'center',
     padding: 16,
     paddingBottom: 8,
   },
@@ -210,6 +244,24 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
+  },
+  weekNav: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  navButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  navButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  navButtonTextSmall: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,

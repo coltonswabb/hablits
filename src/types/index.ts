@@ -96,7 +96,8 @@ export type ThemeName =
   | 'forest'
   | 'bengal'
   | 'lion'
-  | 'ladyhawke';
+  | 'ladyhawke'
+  | 'sakura';
 
 // Tab names for navigation
 export type TabName = 'today' | 'week' | 'calendar' | 'dayplan' | 'stats';
@@ -117,7 +118,8 @@ export type PetSpecies =
   | 'deer'
   | 'tiger'
   | 'lion'
-  | 'hawk';
+  | 'hawk'
+  | 'dragon';
 
 // Pet mood based on habit completion
 export type PetMood = 'idle' | 'curious' | 'happy' | 'excited' | 'celebrate';

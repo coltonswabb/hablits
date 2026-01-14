@@ -226,6 +226,18 @@ export const themes: Record<ThemeName, ThemeColors> = {
     danger: '#9d174d',
     good: '#a855f7',
   },
+
+  sakura: {
+    bg: '#fff5f7',
+    card: '#ffe8ed',
+    text: '#4a2831',
+    muted: '#b08691',
+    accent: '#ffb7c5',
+    accent2: '#ffc9d9',
+    divider: '#ffd4de',
+    danger: '#e63946',
+    good: '#06ffa5',
+  },
 };
 
 // Confetti colors for each theme
@@ -247,4 +259,5 @@ export const themeConfetti: Record<ThemeName, string[]> = {
   bengal: ['#ff8c42', '#d97530', '#ffa94d', '#ffb366'],
   lion: ['#4a90e2', '#7bb3ff', '#5eb3ff', '#91c7ff'],
   ladyhawke: ['#8b5a99', '#a855f7', '#6b4575', '#b794c3'],
+  sakura: ['#ffb7c5', '#ffc9d9', '#ff8fa3', '#ffd4de'],
 };

@@ -405,6 +405,15 @@ export function Pet({
       cheek: '#D4A574',
       accent: '#8B5A99',
     },
+    dragon: {
+      body: '#48C9A5',
+      bodyLight: '#7FE3C9',
+      bodyDark: '#2A9D7F',
+      eye: '#2D2D2D',
+      eyeShine: '#FFFFFF',
+      cheek: '#FFD700',
+      accent: '#FFD700',
+    },
   };
 
   const pal = palettes[species];
@@ -799,6 +808,96 @@ export function Pet({
           </G>
         );
 
+      case 'dragon':
+        return (
+          <G>
+            {/* Shadow */}
+            <Ellipse cx="32" cy="56" rx="14" ry="3" fill="rgba(0,0,0,0.15)" />
+            {/* Tail - serpentine curve */}
+            <Path
+              d="M14 48 Q10 44 12 40 Q14 36 16 34 Q18 32 20 32"
+              fill="none"
+              stroke={pal.body}
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            <Path
+              d="M14 48 Q10 44 12 40 Q14 36 16 34"
+              fill="none"
+              stroke={pal.bodyLight}
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            {/* Tail tip spikes */}
+            <Path d="M10 46 L12 42 L14 46 Z" fill={pal.accent} />
+            <Path d="M8 42 L10 38 L12 42 Z" fill={pal.accent} />
+
+            {/* Body - serpentine lower body */}
+            <Ellipse cx="28" cy="42" rx="10" ry="14" fill={pal.body} />
+            <Ellipse cx="28" cy="44" rx="8" ry="10" fill={pal.bodyLight} opacity="0.6" />
+
+            {/* Chest/neck */}
+            <Ellipse cx="32" cy="28" rx="8" ry="12" fill={pal.body} />
+            <Ellipse cx="32" cy="30" rx="6" ry="8" fill={pal.bodyLight} opacity="0.6" />
+
+            {/* Head - dragon head with snout */}
+            <Ellipse cx="32" cy="18" rx="9" ry="10" fill={pal.body} />
+            <Ellipse cx="32" cy="19" rx="7" ry="8" fill={pal.bodyLight} opacity="0.5" />
+
+            {/* Snout */}
+            <Ellipse cx="32" cy="24" rx="5" ry="4" fill={pal.body} />
+            <Ellipse cx="32" cy="24" rx="3.5" ry="3" fill={pal.bodyLight} opacity="0.7" />
+
+            {/* Nostrils */}
+            <Circle cx="30" cy="25" r="1" fill={pal.bodyDark} />
+            <Circle cx="34" cy="25" r="1" fill={pal.bodyDark} />
+
+            {/* Horns - curved back */}
+            <Path d="M26 12 Q24 8 25 4" fill="none" stroke={pal.accent} strokeWidth="3" strokeLinecap="round" />
+            <Path d="M38 12 Q40 8 39 4" fill="none" stroke={pal.accent} strokeWidth="3" strokeLinecap="round" />
+            <Circle cx="25" cy="4" r="2" fill={pal.accent} />
+            <Circle cx="39" cy="4" r="2" fill={pal.accent} />
+
+            {/* Whiskers - thin curved lines */}
+            <Path d="M26 22 Q20 20 18 22" fill="none" stroke={pal.accent} strokeWidth="1" />
+            <Path d="M38 22 Q44 20 46 22" fill="none" stroke={pal.accent} strokeWidth="1" />
+
+            {/* Wings - small dragon wings */}
+            <Path
+              d="M24 32 Q18 28 16 32 Q18 36 22 36 Q24 34 24 32 Z"
+              fill={pal.bodyDark}
+              opacity="0.8"
+            />
+            <Path
+              d="M40 32 Q46 28 48 32 Q46 36 42 36 Q40 34 40 32 Z"
+              fill={pal.bodyDark}
+              opacity="0.8"
+            />
+            {/* Wing membrane details */}
+            <Path d="M20 32 Q18 30 20 28" fill="none" stroke={pal.body} strokeWidth="1" opacity="0.5" />
+            <Path d="M44 32 Q46 30 44 28" fill="none" stroke={pal.body} strokeWidth="1" opacity="0.5" />
+
+            {/* Spine ridges - small spikes down back */}
+            <Path d="M32 14 L33 12 L34 14 Z" fill={pal.accent} />
+            <Path d="M32 20 L33 18 L34 20 Z" fill={pal.accent} />
+            <Path d="M31 26 L32 24 L33 26 Z" fill={pal.accent} />
+            <Path d="M30 32 L31 30 L32 32 Z" fill={pal.accent} />
+            <Path d="M29 38 L30 36 L31 38 Z" fill={pal.accent} />
+
+            {/* Belly scales pattern */}
+            <Circle cx="30" cy="34" r="1.5" fill={pal.accent} opacity="0.3" />
+            <Circle cx="26" cy="38" r="1.5" fill={pal.accent} opacity="0.3" />
+            <Circle cx="30" cy="42" r="1.5" fill={pal.accent} opacity="0.3" />
+
+            {/* Front legs */}
+            <Rect x="24" y="50" width="3" height="7" rx="1.5" fill={pal.body} />
+            <Rect x="37" y="50" width="3" height="7" rx="1.5" fill={pal.body} />
+            {/* Claws */}
+            <Path d="M24 57 L22 59 M25 57 L25 59 M27 57 L28 59" stroke={pal.accent} strokeWidth="1" strokeLinecap="round" />
+            <Path d="M37 57 L36 59 M38 57 L38 59 M40 57 L41 59" stroke={pal.accent} strokeWidth="1" strokeLinecap="round" />
+          </G>
+        );
+
       case 'hawk':
         return (
           <G>
@@ -865,8 +964,8 @@ export function Pet({
 
   // Render expressive eyes based on mood and species
   const renderEyes = () => {
-    const eyeY = species === 'droplet' ? 32 : species === 'robot' ? 24 : species === 'deer' ? 20 : species === 'fish' ? 36 : species === 'butterfly' ? 28 : species === 'star' ? 32 : species === 'tiger' ? 18 : species === 'lion' ? 18 : species === 'hawk' ? 18 : 34;
-    const eyeSpacing = species === 'robot' ? 6 : species === 'deer' ? 6 : species === 'fish' ? 10 : species === 'tiger' ? 6 : species === 'lion' ? 6 : species === 'hawk' ? 5 : 8;
+    const eyeY = species === 'droplet' ? 32 : species === 'robot' ? 24 : species === 'deer' ? 20 : species === 'fish' ? 36 : species === 'butterfly' ? 28 : species === 'star' ? 32 : species === 'tiger' ? 18 : species === 'lion' ? 18 : species === 'hawk' ? 18 : species === 'dragon' ? 19 : 34;
+    const eyeSpacing = species === 'robot' ? 6 : species === 'deer' ? 6 : species === 'fish' ? 10 : species === 'tiger' ? 6 : species === 'lion' ? 6 : species === 'hawk' ? 5 : species === 'dragon' ? 6 : 8;
 
     // Robot - digital/LCD eyes
     if (species === 'robot') {
@@ -1292,8 +1391,8 @@ export function Pet({
         hatScale = 1.1; // Larger for car
         break;
       case 'tiger':
-        hatY = 7; // Above tiger ears
-        hatScale = 1.0;
+        hatY = 5; // Above tiger ears
+        hatScale = 0.95;
         break;
       case 'lion':
         hatY = -2; // Above lion's large mane
@@ -1302,6 +1401,10 @@ export function Pet({
       case 'hawk':
         hatY = 6; // Above hawk crown
         hatScale = 0.9;
+        break;
+      case 'dragon':
+        hatY = 0; // Above dragon horns
+        hatScale = 0.85;
         break;
     }
 

@@ -52,21 +52,21 @@ export function HabitCard({
 }: HabitCardProps) {
   const { colors } = useTheme();
 
-  // Animation values - initialize FIRST
+  // Calculate states first to know initial animation values
+  const isComplete = logs[today]?.includes(habit.id) || false;
+  const isSkipped = marks[today]?.skip?.includes(habit.id) || false;
+  const isFailed = marks[today]?.fail?.includes(habit.id) || false;
+
+  // Animation values - initialize with correct starting values
   const checkboxScale = useRef(new Animated.Value(1)).current;
   const checkboxRotate = useRef(new Animated.Value(0)).current;
-  const checkmarkScale = useRef(new Animated.Value(0)).current;
+  const checkmarkScale = useRef(new Animated.Value(isComplete ? 1 : 0)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslateY = useRef(new Animated.Value(20)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
   const progressWidth = useRef(new Animated.Value(0)).current;
   const flameScale = useRef(new Animated.Value(1)).current;
   const flameOpacity = useRef(new Animated.Value(1)).current;
-
-  // Calculate states
-  const isComplete = logs[today]?.includes(habit.id) || false;
-  const isSkipped = marks[today]?.skip?.includes(habit.id) || false;
-  const isFailed = marks[today]?.fail?.includes(habit.id) || false;
 
   const streak = calculateStreak(logs, habit.id);
   const thisWeek = countThisWeek(logs, habit.id);
