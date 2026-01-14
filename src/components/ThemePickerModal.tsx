@@ -44,6 +44,7 @@ const themeLabels: Record<ThemeName, string> = {
   bengal: 'Bengal',
   lion: 'Lion',
   ladyhawke: 'Ladyhawke',
+  sakura: 'Sakura',
 };
 
 export function ThemePickerModal({

@@ -29,7 +29,7 @@ interface HatClosetModalProps {
   onClose: () => void;
 }
 
-const ALL_SPECIES: PetSpecies[] = ['blob', 'pixel', 'paper', 'robot', 'droplet', 'slime', 'carmech', 'navi', 'fish', 'butterfly', 'star', 'deer', 'tiger', 'lion', 'hawk'];
+const ALL_SPECIES: PetSpecies[] = ['blob', 'pixel', 'paper', 'robot', 'droplet', 'slime', 'carmech', 'navi', 'fish', 'butterfly', 'star', 'deer', 'tiger', 'lion', 'hawk', 'dragon'];
 const ALL_HATS: HatType[] = ['none', 'cap', 'beanie', 'party', 'tophat', 'wizard', 'crown', 'halo', 'laurel', 'sombrero', 'viking', 'astronaut'];
 
 const HAT_UNLOCK_REQUIREMENTS: Record<HatType, number> = {
