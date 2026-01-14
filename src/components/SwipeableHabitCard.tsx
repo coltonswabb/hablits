@@ -238,6 +238,8 @@ export function SwipeableHabitCard({
             onPress={onPress}
             onNotePress={onNotePress}
             hasNote={hasNote}
+            isComplete={isComplete}
+            isSkipped={isSkipped}
           />
         </Animated.View>
       </PanGestureHandler>

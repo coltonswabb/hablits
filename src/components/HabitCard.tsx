@@ -36,6 +36,8 @@ interface HabitCardProps {
   onPress: () => void;
   onNotePress?: () => void;
   hasNote?: boolean;
+  isComplete?: boolean;
+  isSkipped?: boolean;
 }
 
 export function HabitCard({
@@ -49,12 +51,15 @@ export function HabitCard({
   onPress,
   onNotePress,
   hasNote = false,
+  isComplete: isCompleteProp,
+  isSkipped: isSkippedProp,
 }: HabitCardProps) {
   const { colors } = useTheme();
 
   // Calculate states first to know initial animation values
-  const isComplete = logs[today]?.includes(habit.id) || false;
-  const isSkipped = marks[today]?.skip?.includes(habit.id) || false;
+  // Use prop if provided (for routines), otherwise calculate from logs
+  const isComplete = isCompleteProp !== undefined ? isCompleteProp : (logs[today]?.includes(habit.id) || false);
+  const isSkipped = isSkippedProp !== undefined ? isSkippedProp : (marks[today]?.skip?.includes(habit.id) || false);
   const isFailed = marks[today]?.fail?.includes(habit.id) || false;
 
   // Animation values - initialize with correct starting values
