@@ -12,6 +12,7 @@
       "backgroundColor": "#667eea"
     },
     "description": "Build better habits with your virtual pet companion. Track daily habits, create routines, and watch your pet grow as you stay consistent.",
+    "privacy": "https://coltonswabb.github.io/hablits/",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hablits.app",

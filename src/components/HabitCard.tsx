@@ -283,7 +283,14 @@ export function HabitCard({
       />
 
       {/* Checkbox */}
-      <TouchableOpacity onPress={handleToggle} activeOpacity={0.7}>
+      <TouchableOpacity
+        onPress={handleToggle}
+        activeOpacity={0.7}
+        accessibilityLabel={`${habit.name} checkbox`}
+        accessibilityHint={isComplete ? 'Tap to mark incomplete' : 'Tap to mark complete'}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isComplete }}
+      >
         <Animated.View
           style={[
             styles.checkbox,
@@ -325,6 +332,9 @@ export function HabitCard({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={0.9}
+        accessibilityLabel={`${habit.name}, ${thisWeek} of ${habit.weeklyGoal} this week, ${streak} day streak`}
+        accessibilityHint="Double tap to view details"
+        accessibilityRole="button"
       >
         <View style={styles.nameRow}>
           <Text style={[styles.name, { color: colors.text }]}>{habit.name}</Text>
@@ -431,9 +441,9 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 12,
   },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',

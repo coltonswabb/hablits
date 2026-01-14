@@ -40,6 +40,9 @@ export function TabBar({ activeTab, onChangeTab }: TabBarProps) {
               },
             ]}
             onPress={() => onChangeTab(tab.key)}
+            accessibilityLabel={`${tab.label} tab`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
           >
             <Text
               style={[
@@ -70,12 +73,13 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 4,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   tabText: {
     fontSize: 12,
