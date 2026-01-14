@@ -141,13 +141,16 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
 
   // Handle toggle (cycles: none → done → skip → fail → none)
   const handleToggle = (habitId: string) => {
+    console.log('=== handleToggle called ===', habitId);
     // Track which habit was toggled for confetti positioning
     setLastToggledHabitId(habitId);
 
     const habit = state.habits.find(h => h.id === habitId);
+    console.log('Habit found:', habit?.name, 'isRoutine:', habit?.isRoutine, 'hasSteps:', !!habit?.steps);
     const isDone = state.logs[today]?.includes(habitId) || false;
     const isSkipped = state.marks[today]?.skip?.includes(habitId) || false;
     const isFailed = state.marks[today]?.fail?.includes(habitId) || false;
+    console.log('Status - isDone:', isDone, 'isSkipped:', isSkipped, 'isFailed:', isFailed);
 
     // For routines, auto-complete all steps when checking the routine
     if (habit?.isRoutine && habit.steps && !isDone && !isSkipped && !isFailed) {
