@@ -149,8 +149,20 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
     const isSkipped = state.marks[today]?.skip?.includes(habitId) || false;
     const isFailed = state.marks[today]?.fail?.includes(habitId) || false;
 
+    console.log('[ROUTINE CHECK]', {
+      habitName: habit?.name,
+      isRoutine: habit?.isRoutine,
+      hasSteps: !!habit?.steps,
+      stepCount: habit?.steps?.length,
+      isDone,
+      isSkipped,
+      isFailed,
+      willAutoComplete: habit?.isRoutine && habit.steps && habit.steps.length > 0 && !isDone && !isSkipped && !isFailed
+    });
+
     // For routines, auto-complete all steps when checking the routine from unchecked state
     if (habit?.isRoutine && habit.steps && habit.steps.length > 0 && !isDone && !isSkipped && !isFailed) {
+      console.log('[ROUTINE] Auto-completing steps...');
       const completedSteps = state.routineStepLogs[today]?.[habitId] || [];
       // Complete any incomplete steps
       habit.steps.forEach((step) => {
