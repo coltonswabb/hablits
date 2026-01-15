@@ -36,6 +36,7 @@ const defaultState: AppState = {
   notes: {},
   routineStepLogs: {},
   hasCompletedOnboarding: false,
+  hasSeenSwipeHint: false,
   petSpecies: 'blob',
   petHat: 'none',
   activeFasts: {}, // Secret fasting timer feature
@@ -71,6 +72,7 @@ type Action =
   | { type: 'DELETE_NOTE'; payload: { habitId: string; date: string } }
   | { type: 'TOGGLE_ROUTINE_STEP'; payload: { habitId: string; stepId: string; date: string } }
   | { type: 'COMPLETE_ONBOARDING' }
+  | { type: 'DISMISS_SWIPE_HINT' }
   | { type: 'SET_PET_SPECIES'; payload: PetSpecies }
   | { type: 'SET_PET_HAT'; payload: HatType }
   | { type: 'START_FAST'; payload: { habitId: string; duration: number; startTime: string } }
@@ -102,6 +104,7 @@ function appReducer(state: AppState, action: Action): AppState {
         routineStepLogs: action.payload.routineStepLogs || {},
         activeFasts: action.payload.activeFasts || {},
         hapticsEnabled: action.payload.hapticsEnabled !== undefined ? action.payload.hapticsEnabled : true,
+        hasSeenSwipeHint: action.payload.hasSeenSwipeHint !== undefined ? action.payload.hasSeenSwipeHint : false,
       };
 
     case 'ADD_HABIT': {
@@ -372,6 +375,9 @@ function appReducer(state: AppState, action: Action): AppState {
 
     case 'COMPLETE_ONBOARDING':
       return { ...state, hasCompletedOnboarding: true };
+
+    case 'DISMISS_SWIPE_HINT':
+      return { ...state, hasSeenSwipeHint: true };
 
     case 'SET_PET_SPECIES':
       return { ...state, petSpecies: action.payload };

@@ -74,6 +74,7 @@ export interface AppState {
   notes: Record<string, Record<string, string>>; // { "2024-01-15": { "habit-id": "note text" } }
   routineStepLogs: Record<string, Record<string, string[]>>; // { "2024-01-15": { "habit-id": ["step-id-1", "step-id-2"] } }
   hasCompletedOnboarding: boolean;
+  hasSeenSwipeHint: boolean;           // Whether user has seen the swipe gesture hint
   petSpecies: PetSpecies;              // Selected pet species
   petHat: HatType;                     // Selected pet hat
   activeFasts: Record<string, ActiveFast>; // { "habit-id": { startTime, duration, targetTime } } - Secret fasting timers

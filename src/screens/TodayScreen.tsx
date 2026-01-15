@@ -28,6 +28,7 @@ import {
   getMoodFromProgress,
   Confetti,
   useConfetti,
+  SwipeHint,
   NoteModal,
   EmptyState,
   FastingModal,
@@ -915,6 +916,11 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
             : undefined
         }
       />
+
+      {/* Swipe hint for first-time users */}
+      {!state.hasSeenSwipeHint && activeHabits.length > 0 && (
+        <SwipeHint onDismiss={() => dispatch({ type: 'DISMISS_SWIPE_HINT' })} />
+      )}
     </View>
   );
 }

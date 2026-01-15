@@ -82,12 +82,15 @@ export function countThisWeek(
 
 /**
  * Calculate current streak for a habit (consecutive days completed)
+ * Includes "streak freeze" - allows ONE miss before breaking streak
  */
 export function calculateStreak(
   logs: Record<string, string[]>,
   habitId: string
 ): number {
   let streak = 0;
+  let missedDays = 0;
+  const MAX_MISSED_DAYS = 1; // Streak freeze: allow 1 miss
 
   for (let i = 0; i < 365; i++) {
     const d = new Date();
@@ -98,7 +101,11 @@ export function calculateStreak(
     if (dayLogs.includes(habitId)) {
       streak++;
     } else {
-      break;
+      missedDays++;
+      // Break streak if we've missed too many days in a row
+      if (missedDays > MAX_MISSED_DAYS) {
+        break;
+      }
     }
   }
 
