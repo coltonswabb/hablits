@@ -335,7 +335,6 @@ function appReducer(state: AppState, action: Action): AppState {
 
     case 'TOGGLE_ROUTINE_STEP': {
       const { habitId, stepId, date } = action.payload;
-      console.log('TOGGLE_ROUTINE_STEP reducer:', { habitId, stepId, date });
       const routineStepLogs = { ...state.routineStepLogs };
 
       if (!routineStepLogs[date]) {
@@ -343,7 +342,6 @@ function appReducer(state: AppState, action: Action): AppState {
       }
 
       const habitSteps = routineStepLogs[date][habitId] || [];
-      console.log('Current habit steps before toggle:', habitSteps);
 
       if (habitSteps.includes(stepId)) {
         // Remove if already completed
@@ -351,14 +349,12 @@ function appReducer(state: AppState, action: Action): AppState {
           ...routineStepLogs[date],
           [habitId]: habitSteps.filter((id) => id !== stepId),
         };
-        console.log('Removed step, new steps:', routineStepLogs[date][habitId]);
       } else {
         // Add if not completed
         routineStepLogs[date] = {
           ...routineStepLogs[date],
           [habitId]: [...habitSteps, stepId],
         };
-        console.log('Added step, new steps:', routineStepLogs[date][habitId]);
       }
 
       return { ...state, routineStepLogs };

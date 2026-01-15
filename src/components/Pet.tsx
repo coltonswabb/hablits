@@ -1232,8 +1232,8 @@ export function Pet({
   const renderMouth = () => {
     const mouthY = species === 'droplet' ? 42 : species === 'robot' ? 0 : species === 'deer' ? 26 : species === 'fish' ? 40 : species === 'butterfly' ? 32 : species === 'star' ? 40 : 44;
 
-    // Skip mouth for these species
-    if (species === 'robot' || species === 'navi' || species === 'carmech' || species === 'fish' || species === 'butterfly' || species === 'star') return null;
+    // Skip mouth for these species (they have mouths built into renderBody)
+    if (species === 'robot' || species === 'navi' || species === 'carmech' || species === 'fish' || species === 'butterfly' || species === 'star' || species === 'tiger' || species === 'lion' || species === 'hawk' || species === 'dragon') return null;
 
     // Deer - gentle smile
     if (species === 'deer') {

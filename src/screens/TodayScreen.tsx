@@ -141,27 +141,20 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
 
   // Handle toggle (cycles: none → done → skip → fail → none)
   const handleToggle = (habitId: string) => {
-    console.log('=== handleToggle called ===', habitId);
     // Track which habit was toggled for confetti positioning
     setLastToggledHabitId(habitId);
 
     const habit = state.habits.find(h => h.id === habitId);
-    console.log('Habit found:', habit?.name, 'isRoutine:', habit?.isRoutine, 'hasSteps:', !!habit?.steps);
     const isDone = state.logs[today]?.includes(habitId) || false;
     const isSkipped = state.marks[today]?.skip?.includes(habitId) || false;
     const isFailed = state.marks[today]?.fail?.includes(habitId) || false;
-    console.log('Status - isDone:', isDone, 'isSkipped:', isSkipped, 'isFailed:', isFailed);
 
-    // For routines, auto-complete all steps when checking the routine
-    if (habit?.isRoutine && habit.steps && !isDone && !isSkipped && !isFailed) {
-      console.log('Auto-completing routine:', habitId);
+    // For routines, auto-complete all steps when checking the routine from unchecked state
+    if (habit?.isRoutine && habit.steps && habit.steps.length > 0 && !isDone && !isSkipped && !isFailed) {
       const completedSteps = state.routineStepLogs[today]?.[habitId] || [];
-      console.log('Current completed steps:', completedSteps);
-      console.log('Total steps:', habit.steps.length);
       // Complete any incomplete steps
       habit.steps.forEach((step) => {
         if (!completedSteps.includes(step.id)) {
-          console.log('Completing step:', step.id);
           dispatch({
             type: 'TOGGLE_ROUTINE_STEP',
             payload: { habitId, stepId: step.id, date: today },
@@ -169,7 +162,6 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
         }
       });
       // Mark the routine as complete
-      console.log('Marking routine as complete');
       dispatch({ type: 'TOGGLE_HABIT', payload: { habitId, date: today } });
       // Collapse the routine
       setExpandedRoutines(prev => {

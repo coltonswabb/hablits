@@ -144,7 +144,6 @@ export function HabitCard({
 
   // Bounce checkbox on toggle
   const handleToggle = () => {
-    console.log('>>> HabitCard handleToggle called for:', habit.name);
     // Determine next state to provide appropriate feedback
     // Cycle: empty → complete → skip → fail → empty
     let nextState: 'complete' | 'skip' | 'fail' | 'empty';
@@ -214,7 +213,6 @@ export function HabitCard({
       }).start();
     }
 
-    console.log('>>> HabitCard calling onToggle prop');
     onToggle();
   };
 
