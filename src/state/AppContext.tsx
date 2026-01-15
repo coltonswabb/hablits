@@ -87,8 +87,18 @@ function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'LOAD_STATE':
       // Ensure routineStepLogs, activeFasts, and hapticsEnabled exist for backward compatibility
+      // Also migrate old routines to ensure isRoutine flag is properly set
+      const migratedHabits = action.payload.habits?.map(habit => {
+        // If habit has steps array but isRoutine is not explicitly true, fix it
+        if (habit.steps && Array.isArray(habit.steps) && habit.steps.length > 0 && !habit.isRoutine) {
+          return { ...habit, isRoutine: true };
+        }
+        return habit;
+      }) || [];
+
       return {
         ...action.payload,
+        habits: migratedHabits,
         routineStepLogs: action.payload.routineStepLogs || {},
         activeFasts: action.payload.activeFasts || {},
         hapticsEnabled: action.payload.hapticsEnabled !== undefined ? action.payload.hapticsEnabled : true,
