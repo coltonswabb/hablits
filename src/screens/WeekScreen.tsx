@@ -43,13 +43,28 @@ export function WeekScreen() {
 
   const sortedHabits = sortByOrder(habits);
 
-  // Toggle a habit for a specific day
+  // Toggle a habit for a specific day (cycles: none → done → skip → fail → none)
   const handleToggle = (habitId: string, date: Date) => {
     const ds = dateStr(date);
-    dispatch({
-      type: 'TOGGLE_HABIT',
-      payload: { habitId, date: ds },
-    });
+    const isDone = state.logs[ds]?.includes(habitId) || false;
+    const isSkipped = state.marks[ds]?.skip?.includes(habitId) || false;
+    const isFailed = state.marks[ds]?.fail?.includes(habitId) || false;
+
+    if (!isDone && !isSkipped && !isFailed) {
+      // None → Done
+      dispatch({ type: 'TOGGLE_HABIT', payload: { habitId, date: ds } });
+    } else if (isDone) {
+      // Done → Skip
+      dispatch({ type: 'TOGGLE_HABIT', payload: { habitId, date: ds } });
+      dispatch({ type: 'SKIP_HABIT', payload: { habitId, date: ds } });
+    } else if (isSkipped) {
+      // Skip → Fail
+      dispatch({ type: 'SKIP_HABIT', payload: { habitId, date: ds } });
+      dispatch({ type: 'FAIL_HABIT', payload: { habitId, date: ds } });
+    } else if (isFailed) {
+      // Fail → None
+      dispatch({ type: 'FAIL_HABIT', payload: { habitId, date: ds } });
+    }
   };
 
   // Get identity color for a habit

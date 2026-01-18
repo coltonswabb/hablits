@@ -22,7 +22,7 @@ import { getActiveHabits, getDayCompletionPercent, calculateStreak } from '../ut
 import { EmptyState, HeatmapCalendar } from '../components';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CHART_WIDTH = SCREEN_WIDTH - 32;
+const CHART_WIDTH = SCREEN_WIDTH - 48; // Extra padding to prevent overflow
 const CHART_HEIGHT = 200;
 
 type TimeRange = '7d' | '30d' | '90d';
@@ -466,7 +466,9 @@ function IdentityBreakdownChart({ data, total, colors }: { data: any[]; total: n
 
   const barHeight = 32;
   const chartHeight = data.length * (barHeight + 12) + 20;
-  const maxWidth = CHART_WIDTH - 140;
+  const labelWidth = 80; // Fixed width for identity labels
+  const countWidth = 40; // Fixed width for count
+  const maxWidth = CHART_WIDTH - labelWidth - countWidth - 10; // Bar area
 
   return (
     <Svg width={CHART_WIDTH} height={chartHeight}>
@@ -474,12 +476,13 @@ function IdentityBreakdownChart({ data, total, colors }: { data: any[]; total: n
         const percent = d.count / total;
         const barWidth = percent * maxWidth;
         const y = 10 + i * (barHeight + 12);
+        const barX = labelWidth;
 
         return (
           <React.Fragment key={d.name}>
             {/* Bar background */}
             <Rect
-              x={100}
+              x={barX}
               y={y}
               width={maxWidth}
               height={barHeight}
@@ -488,30 +491,31 @@ function IdentityBreakdownChart({ data, total, colors }: { data: any[]; total: n
             />
             {/* Bar fill */}
             <Rect
-              x={100}
+              x={barX}
               y={y}
               width={barWidth}
               height={barHeight}
               fill={d.color}
               rx={4}
             />
-            {/* Label */}
+            {/* Label - truncate if needed */}
             <SvgText
-              x={10}
+              x={5}
               y={y + barHeight / 2 + 4}
-              fontSize={12}
+              fontSize={11}
               fill={colors.text}
               fontWeight="600"
             >
-              {d.name}
+              {d.name.length > 10 ? d.name.substring(0, 9) + '…' : d.name}
             </SvgText>
             {/* Count */}
             <SvgText
-              x={CHART_WIDTH - 10}
+              x={CHART_WIDTH - 5}
               y={y + barHeight / 2 + 4}
               fontSize={12}
               fill={colors.muted}
               textAnchor="end"
+              fontWeight="600"
             >
               {d.count}
             </SvgText>

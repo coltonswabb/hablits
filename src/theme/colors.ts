@@ -19,6 +19,8 @@ export interface ThemeColors {
   divider: string;    // Borders and dividers
   danger: string;     // Delete buttons, errors
   good: string;       // Success, completed states
+    textOnAccent: '#ffffff',
+  textOnAccent: string; // Text color to use on accent-colored backgrounds
 }
 
 // All theme definitions
@@ -33,6 +35,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#e5e7eb',
     danger: '#dc2626',
     good: '#16a34a',
+    textOnAccent: '#ffffff',
   },
 
   dark: {
@@ -45,6 +48,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#21262d',
     danger: '#f85149',
     good: '#3fb950',
+    textOnAccent: '#ffffff',
   },
 
   superdark: {
@@ -57,6 +61,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#1a1a1a',
     danger: '#ff0000',
     good: '#00ff00',
+    textOnAccent: '#ffffff',
   },
 
   retro: {
@@ -69,6 +74,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#e3dbcc',
     danger: '#9b111e',
     good: '#2e8b57',
+    textOnAccent: '#ffffff',
   },
 
   chibi: {
@@ -81,6 +87,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#e6eef6',
     danger: '#ef4444',
     good: '#10b981',
+    textOnAccent: '#ffffff',
   },
 
   sunshine: {
@@ -93,6 +100,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#e2e8f0',
     danger: '#ef4444',
     good: '#22c55e',
+    textOnAccent: '#ffffff',
   },
 
   gameboy: {
@@ -105,6 +113,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#c3cbaa',
     danger: '#9b111e',
     good: '#4d7c0f',
+    textOnAccent: '#ffffff',
   },
 
   racer: {
@@ -117,6 +126,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#1f2140',
     danger: '#ff5a5f',
     good: '#22c55e',
+    textOnAccent: '#ffffff',
   },
 
   paper: {
@@ -129,6 +139,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#e5e7eb',
     danger: '#b91c1c',
     good: '#15803d',
+    textOnAccent: '#ffffff',
   },
 
   cyber: {
@@ -141,6 +152,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#17324a',
     danger: '#ff4d6d',
     good: '#2bf39c',
+    textOnAccent: '#ffffff',
   },
 
   ocean: {
@@ -153,6 +165,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#1a3a5a',
     danger: '#ff6b6b',
     good: '#4ecdc4',
+    textOnAccent: '#ffffff',
   },
 
   sunset: {
@@ -165,6 +178,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#3e2a5f',
     danger: '#ff006e',
     good: '#06ffa5',
+    textOnAccent: '#ffffff',
   },
 
   cosmic: {
@@ -177,6 +191,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#2d1b5e',
     danger: '#ff0080',
     good: '#00f5ff',
+    textOnAccent: '#ffffff',
   },
 
   forest: {
@@ -189,6 +204,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#d4e0cf',
     danger: '#a84432',
     good: '#6b9e5f',
+    textOnAccent: '#ffffff',
   },
 
   bengal: {
@@ -201,6 +217,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#3d3020',
     danger: '#ff4d4d',
     good: '#ffa94d',
+    textOnAccent: '#ffffff',
   },
 
   lion: {
@@ -213,6 +230,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#243646',
     danger: '#ff6b6b',
     good: '#5eb3ff',
+    textOnAccent: '#ffffff',
   },
 
   ladyhawke: {
@@ -225,6 +243,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#261c2b',
     danger: '#9d174d',
     good: '#a855f7',
+    textOnAccent: '#ffffff',
   },
 
   sakura: {
@@ -237,6 +256,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#ffd4de',
     danger: '#e63946',
     good: '#06ffa5',
+    textOnAccent: '#ffffff',
   },
 };
 
