@@ -26,6 +26,7 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { PetSnapshot } from './PetSnapshot';
 export { EvolutionModal } from './EvolutionModal';
 export { PetLetterCard } from './PetLetterCard';
+export { ShareCard } from './ShareCard';
 export {
   FadeIn,
   SlideIn,

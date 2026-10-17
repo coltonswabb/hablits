@@ -12,6 +12,7 @@ import { Pet } from './Pet';
 import { PetSpecies, HatType } from '../types';
 import { STAGE_NAMES, STAGE_THRESHOLDS, PetStage } from '../utils/evolution';
 import { petSubject } from '../utils/petName';
+import { ShareCard, canShare } from './ShareCard';
 
 interface Props {
   visible: boolean;
@@ -71,9 +72,19 @@ export function EvolutionModal({ visible, species, hat, stage, petName, onClose 
           <Text style={[styles.title, { color: colors.text }]}>{who} is now a {STAGE_NAMES[stage]}</Text>
           <Text style={[styles.sub, { color: colors.muted }]}>{threshold}-day streak reached</Text>
           <Text style={[styles.body, { color: colors.text }]}>{blurb(stage, who)}</Text>
-          <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={onClose}>
-            <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Keep going</Text>
-          </Pressable>
+          <View style={styles.buttons}>
+            {canShare && (
+              <ShareCard
+                content={{ eyebrow: 'EVOLUTION', headline: `${who} is now a ${STAGE_NAMES[stage]}`, stat: `${threshold}-day streak`, mood: 'celebrate' }}
+                species={species}
+                hat={hat}
+                stage={stage}
+              />
+            )}
+            <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={onClose}>
+              <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Keep going</Text>
+            </Pressable>
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -89,6 +100,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
   sub: { fontSize: 14, marginTop: 4, marginBottom: 14 },
   body: { fontSize: 16, lineHeight: 23, textAlign: 'center', marginBottom: 22 },
+  buttons: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   button: { paddingVertical: 13, paddingHorizontal: 32, borderRadius: 999 },
   buttonText: { fontSize: 16, fontWeight: '700' },
 });

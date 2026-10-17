@@ -11,6 +11,8 @@ import { useTheme } from '../theme';
 import { Pet } from './Pet';
 import { PetSpecies, HatType } from '../types';
 import { PetLetter } from '../utils/petLetter';
+import { ShareCard, canShare } from './ShareCard';
+import { petDisplayName } from '../utils/petName';
 
 interface Props {
   letter: PetLetter;
@@ -18,10 +20,13 @@ interface Props {
   hat: HatType;
   stage: number;
   petName?: string;
+  /** Completion rate for the week the letter is about (0..1) */
+  weekPct?: number;
+  weekStat?: string;
   onDismiss: () => void;
 }
 
-export function PetLetterCard({ letter, species, hat, stage, petName, onDismiss }: Props) {
+export function PetLetterCard({ letter, species, hat, stage, petName, weekPct = 0, weekStat = '', onDismiss }: Props) {
   const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
@@ -48,14 +53,29 @@ export function PetLetterCard({ letter, species, hat, stage, petName, onDismiss 
         </Text>
       ))}
       <Text style={[styles.signoff, { color: colors.muted }]}>{letter.signoff}</Text>
-      <Pressable
-        onPress={onDismiss}
-        style={({ pressed }) => [styles.button, { borderColor: colors.divider, opacity: pressed ? 0.6 : 1 }]}
-        accessibilityRole="button"
-        accessibilityLabel="Dismiss the weekly note"
-      >
-        <Text style={[styles.buttonText, { color: colors.muted }]}>{petName?.trim() ? `Thanks, ${petName.trim()}` : 'Thanks, little one'}</Text>
-      </Pressable>
+      <View style={styles.buttons}>
+        <Pressable
+          onPress={onDismiss}
+          style={({ pressed }) => [styles.button, { borderColor: colors.divider, opacity: pressed ? 0.6 : 1 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss the weekly note"
+        >
+          <Text style={[styles.buttonText, { color: colors.muted }]}>{petName?.trim() ? `Thanks, ${petName.trim()}` : 'Thanks, little one'}</Text>
+        </Pressable>
+        {canShare && weekPct >= 0.85 && (
+          <ShareCard
+            content={{
+              eyebrow: weekPct >= 1 ? 'PERFECT WEEK' : 'GREAT WEEK',
+              headline: weekPct >= 1 ? `${petDisplayName(petName, 'My pet')} saw every single one` : `${Math.round(weekPct * 100)}% of the week, done`,
+              stat: weekStat,
+              mood: 'celebrate',
+            }}
+            species={species}
+            hat={hat}
+            stage={stage}
+          />
+        )}
+      </View>
     </Animated.View>
   );
 }
@@ -67,6 +87,7 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 18, fontWeight: '700' },
   body: { fontSize: 15, lineHeight: 22 },
   signoff: { fontSize: 14, fontStyle: 'italic', marginTop: 2 },
-  button: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, marginTop: 4 },
+  buttons: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 4 },
+  button: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
   buttonText: { fontSize: 13, fontWeight: '600' },
 });

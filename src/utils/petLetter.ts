@@ -117,6 +117,8 @@ export function isLetterSeason(today: Date = new Date()): boolean {
 
 export type PetLetter = {
   weekStart: string;
+  pct: number;
+  stat: string;
   greeting: string;
   paragraphs: string[];
   signoff: string;
@@ -225,7 +227,15 @@ export function composeLetter(recap: WeeklyRecap, stage: PetStage, petName?: str
   };
   const signoff = pick(signoffs[stage], seed, 5);
 
-  return { weekStart: recap.weekStart, greeting, paragraphs, signoff, mood };
+  return {
+    weekStart: recap.weekStart,
+    pct: recap.pct,
+    stat: `${recap.completed} of ${recap.scheduled} habits · ${recap.perfectDays} perfect day${recap.perfectDays === 1 ? '' : 's'}`,
+    greeting,
+    paragraphs,
+    signoff,
+    mood,
+  };
 }
 
 /** Convenience for the UI: the letter to show right now, or null. */
