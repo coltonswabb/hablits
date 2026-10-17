@@ -56,8 +56,8 @@ old binary can't run.
 - To compile-check the widget without a device:
   `node node_modules/expo-widgets/scripts/build-layout-registry.mjs "$PWD" ios /tmp/registry.json`
 
-Not yet: tapping a habit *in* the widget. Widget-side state can't reach the
-app when it's closed, so v1 is read-only and taps open the app.
+Not yet: tapping a habit *in* the widget — see `docs/INTERACTIVE_WIDGET.md`
+for why and for the outbox design.
 
 ## Persistence
 
@@ -105,6 +105,19 @@ app when it's closed, so v1 is read-only and taps open the app.
 - Themes are contrast-tested (`src/__tests__/colors.test.ts`). Text on an
   accent/good/danger surface must use `colors.textOnAccent` or `textOn(bg)`,
   never a literal white.
+
+## Routine runner, sharing, archive
+
+- `RoutineRunnerModal`: "▶ Start routine" in an expanded routine. Steps are
+  ticked through `TOGGLE_ROUTINE_STEP`, so auto-complete behaves like the
+  checklist.
+- `ShareCard`: off-screen 360×450 card captured at 3x via
+  react-native-view-shot → share sheet. Used on the evolution reveal and on
+  ≥85% weeks in the letter.
+- Archive: `Habit.archivedAt`. `isHabitActiveOn` is the single gate; lists use
+  `liveHabits()`. Settings → Archived Habits to restore / delete forever.
+- Fasting Live Activity: `src/widgets/FastLiveActivity.tsx` +
+  `utils/fastActivity.ts`, synced from `activeFasts`.
 
 ## Known gaps
 
