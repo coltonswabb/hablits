@@ -69,3 +69,12 @@ describe('migrateState', () => {
     expect(migrateState({ habits: [] }, defaults).hasCompletedOnboarding).toBe(false);
   });
 });
+
+describe('migrateState hardening', () => {
+  it('drops null habit entries and never lets null override a default', () => {
+    const out = migrateState({ schemaVersion: 3, habits: [null, { id: 'h', name: 'x' }], logs: null, identities: [] } as any, defaults);
+    expect(out.habits).toHaveLength(1);
+    expect(out.logs).toEqual({});
+    expect(out.identities.length).toBeGreaterThan(0);
+  });
+});

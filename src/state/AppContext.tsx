@@ -437,48 +437,60 @@ export function AppProvider({ children }: AppProviderProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const lastSavedRef = useRef<string | null>(null);
 
-  // Load saved state on mount
+  // Load saved state on mount.
+  // isLoaded means the read SUCCEEDED (value or null). If the read itself
+  // fails we retry with backoff and, failing that, stay read-only — never
+  // write defaults over data we couldn't read.
   useEffect(() => {
     let cancelled = false;
     async function loadState() {
-      try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (saved && !cancelled) {
-          const parsed = JSON.parse(saved);
-          const migrated = migrateState(parsed, defaultState);
-          lastSavedRef.current = saved;
-          dispatch({ type: 'LOAD_STATE', payload: migrated });
-        }
-      } catch (error) {
-        // A corrupt blob is far rarer than the old race; keep the raw text aside
-        // so it can be recovered rather than silently overwritten.
-        console.error('Failed to load state:', error);
+      const delays = [0, 250, 1000, 3000];
+      for (let attempt = 0; attempt < delays.length && !cancelled; attempt++) {
+        if (delays[attempt]) await new Promise((r) => setTimeout(r, delays[attempt]));
+        let raw: string | null;
         try {
-          const raw = await AsyncStorage.getItem(STORAGE_KEY);
-          if (raw) await AsyncStorage.setItem(`${STORAGE_KEY}_corrupt_${Date.now()}`, raw);
-        } catch {}
-      } finally {
-        if (!cancelled) setIsLoaded(true);
+          raw = await AsyncStorage.getItem(STORAGE_KEY);
+        } catch (error) {
+          console.error(`Failed to read state (attempt ${attempt + 1}):`, error);
+          continue;
+        }
+        if (cancelled) return;
+        if (raw) {
+          try {
+            const migrated = migrateState(JSON.parse(raw), defaultState);
+            lastSavedRef.current = raw;
+            dispatch({ type: 'LOAD_STATE', payload: migrated });
+          } catch (error) {
+            // Corrupt blob: keep the raw text aside so it can be recovered.
+            console.error('Failed to parse state:', error);
+            try {
+              await AsyncStorage.setItem(`${STORAGE_KEY}_corrupt_${Date.now()}`, raw);
+            } catch {}
+          }
+        }
+        setIsLoaded(true);
+        return;
       }
+      console.error('Giving up reading state; running read-only this session.');
     }
     loadState();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Save state whenever it changes — but only after the initial load.
+  // Save state whenever it changes — but only after a successful load.
+  // lastSavedRef records the last write we *scheduled* (set before the
+  // await), so an A→B→A flip inside one write's latency still writes A.
   useEffect(() => {
     if (!isLoaded) return;
     const serialized = JSON.stringify({ ...state, schemaVersion: SCHEMA_VERSION });
-    if (serialized === lastSavedRef.current) return; // nothing changed on disk
-    async function saveState() {
-      try {
-        await AsyncStorage.setItem(STORAGE_KEY, serialized);
-        lastSavedRef.current = serialized;
-      } catch (error) {
-        console.error('Failed to save state:', error);
-      }
-    }
-    saveState();
+    if (serialized === lastSavedRef.current) return;
+    lastSavedRef.current = serialized;
+    AsyncStorage.setItem(STORAGE_KEY, serialized).catch((error) => {
+      console.error('Failed to save state:', error);
+      if (lastSavedRef.current === serialized) lastSavedRef.current = null; // retry on next change
+    });
   }, [state, isLoaded]);
 
   return (

@@ -30,6 +30,8 @@ interface PetProps {
   svgRef?: React.Ref<Svg>;
   /** Evolution stage 0-3 (see utils/evolution). Adds aura/sparkles that never go away. */
   stage?: number;
+  /** Render a still frame: no loops, no blink. Used when rasterizing for the widget. */
+  isStatic?: boolean;
 }
 
 export function Pet({
@@ -39,12 +41,13 @@ export function Pet({
   size = 64,
   svgRef,
   stage = 0,
+  isStatic = false,
   completionsToday = 0,
   streak = 0,
   onPress
 }: PetProps) {
   const { colors } = useTheme();
-  const reduceMotion = useReduceMotion();
+  const reduceMotion = useReduceMotion() || isStatic;
 
   // Animation values
   const bobY = useRef(new Animated.Value(0)).current;
@@ -105,6 +108,7 @@ export function Pet({
 
   // Occasional blink animation
   useEffect(() => {
+    if (isStatic) return;
     const triggerBlink = () => {
       Animated.sequence([
         Animated.timing(blinkOpacity, {

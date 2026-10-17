@@ -18,6 +18,12 @@ import { isReduceMotion } from './motion';
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+// When a completion finishes the whole day, the all-done fanfare replaces
+// the single chime. The card fires completionFeedback() before the screen
+// learns the day is done, so the chime is delayed slightly and the fanfare
+// can cancel it.
+let suppressChime = false;
+
 export type CompletionKind = 'complete' | 'skip' | 'fail' | 'clear';
 
 /** Immediate feedback for a single habit state change (haptic + sound). */
@@ -25,7 +31,11 @@ export async function completionFeedback(kind: CompletionKind): Promise<void> {
   switch (kind) {
     case 'complete':
       mediumTap();
-      await wait(40);
+      await wait(90);
+      if (suppressChime) {
+        suppressChime = false;
+        return;
+      }
       playSound('complete');
       return;
     case 'skip':
@@ -53,6 +63,8 @@ export async function miniCelebration(onConfetti: () => void): Promise<void> {
 
 /** The whole day is done. */
 export async function allDoneCelebration(onConfetti: () => void): Promise<void> {
+  suppressChime = true;
+  setTimeout(() => (suppressChime = false), 300); // don't leak into a later tap
   successTap();
   await wait(60);
   playCelebrationSequence();

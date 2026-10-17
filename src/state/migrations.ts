@@ -24,7 +24,7 @@ const migrations: Array<(s: AnyState) => AnyState> = [
   // 0 -> 1: the backfills that used to live inline in LOAD_STATE / loadState
   (s) => {
     const habits = Array.isArray(s.habits)
-      ? s.habits.map((habit: any) => {
+      ? s.habits.filter((h: any) => h && typeof h === 'object').map((habit: any) => {
           // A habit with steps is a routine even if the flag was never set
           if (Array.isArray(habit.steps) && habit.steps.length > 0 && !habit.isRoutine) {
             return { ...habit, isRoutine: true };
@@ -90,5 +90,16 @@ export function migrateState(parsed: unknown, defaults: AppState): AppState {
   // Strip the version marker — it's a storage concern, not app state —
   // and backfill anything still missing with defaults.
   const { schemaVersion: _ignored, ...rest } = s;
-  return { ...defaults, ...rest } as AppState;
+  // Per-key backfill: an explicit null (hand-edited backup) must not override a default
+  const out: AnyState = { ...defaults };
+  for (const [k, v] of Object.entries(rest)) {
+    if (v !== null && v !== undefined) out[k] = v;
+  }
+  // Record-typed fields must be objects or the reducer will throw on Object.entries
+  for (const k of ['logs', 'marks', 'notes', 'dayPlanSchedules', 'routineStepLogs', 'activeFasts'] as const) {
+    if (typeof out[k] !== 'object' || Array.isArray(out[k])) out[k] = {};
+  }
+  out.habits = Array.isArray(out.habits) ? out.habits.filter((h: any) => h && typeof h === 'object' && typeof h.id === 'string') : [];
+  if (!Array.isArray(out.identities) || out.identities.length === 0) out.identities = defaults.identities;
+  return out as AppState;
 }

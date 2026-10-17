@@ -65,10 +65,13 @@ function AppContent() {
     })();
   }, []);
 
-  // Keep the sound and haptics gates in sync with Settings
+  // Keep the sound and haptics gates in sync with Settings (and with the loaded state)
   useEffect(() => {
     setSoundsEnabled(state.sfxEnabled);
   }, [state.sfxEnabled]);
+  useEffect(() => {
+    import('./utils/haptics').then((m) => m.setHapticsEnabled(state.hapticsEnabled));
+  }, [state.hapticsEnabled]);
 
   // ---- Reminders ----
   // Per-habit reminders from Day Plan times + a general reminder for the rest.
@@ -94,6 +97,10 @@ function AppContent() {
   // ---- Pet evolution ----
   const bestStreak = useMemo(() => bestStreakEver(state.habits, state.logs), [state.habits, state.logs]);
   const petStage = stageForStreak(bestStreak);
+  // A new species / hat / stage invalidates both widget snapshots
+  useEffect(() => {
+    setPetImages({});
+  }, [state.petSpecies, state.petHat, petStage]);
   const [evolutionVisible, setEvolutionVisible] = useState(false);
   useEffect(() => {
     if (isLoaded && petStage > state.petStageSeen) {
@@ -296,7 +303,7 @@ function AppContent() {
 
         {/* Onboarding Modal */}
         <OnboardingModal
-          visible={!state.hasCompletedOnboarding}
+          visible={isLoaded && !state.hasCompletedOnboarding}
           onComplete={() => dispatch({ type: 'COMPLETE_ONBOARDING' })}
         />
 

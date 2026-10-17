@@ -228,7 +228,19 @@ export function planHabitReminders(state: AppState): ReminderPlan {
  * current set. Safe to call often — the planner is cheap and the OS calls
  * are batched.
  */
-export async function syncHabitReminders(state: AppState): Promise<void> {
+let syncChain: Promise<void> = Promise.resolve();
+let syncGeneration = 0;
+
+export function syncHabitReminders(state: AppState): Promise<void> {
+  const generation = ++syncGeneration;
+  // Serialize: a later call never interleaves with an earlier cancel/schedule.
+  syncChain = syncChain.then(() => doSyncHabitReminders(state, generation)).catch(() => {});
+  return syncChain;
+}
+
+async function doSyncHabitReminders(state: AppState, generation: number): Promise<void> {
+  // A newer sync is queued behind us — skip straight to it.
+  if (generation !== syncGeneration) return;
   try {
     await cancelAllHabitReminders();
     if (!state.notificationsEnabled) return;
@@ -240,6 +252,8 @@ export async function syncHabitReminders(state: AppState): Promise<void> {
     await Promise.all(
       triggers.map((t) =>
         Notifications.scheduleNotificationAsync({
+          // Deterministic ids: re-scheduling overwrites instead of duplicating
+          identifier: t.habitId ? `habit-${t.habitId}-${t.weekday ?? 'daily'}` : 'habit-general',
           content: {
             title: t.title,
             body: t.body,
