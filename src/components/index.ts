@@ -25,6 +25,7 @@ export { HeatmapCalendar } from './HeatmapCalendar';
 export { ErrorBoundary } from './ErrorBoundary';
 export { PetSnapshot } from './PetSnapshot';
 export { EvolutionModal } from './EvolutionModal';
+export { PetLetterCard } from './PetLetterCard';
 export {
   FadeIn,
   SlideIn,

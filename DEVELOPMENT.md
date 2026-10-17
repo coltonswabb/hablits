@@ -67,6 +67,18 @@ app when it's closed, so v1 is read-only and taps open the app.
   `SCHEMA_VERSION` in `src/state/migrations.ts` and add a step.
 - Theme + accent colour persist separately under `hablits_theme_v1`.
 
+## Pet evolution & the Sunday letter
+
+- `src/utils/evolution.ts`: stage 0–3 from the best streak ANY habit has
+  ever had (7 / 30 / 100). Never regresses. `Pet` takes `stage` and draws
+  sparkles / aura; `EvolutionModal` fires once per new stage
+  (`petStageSeen`, schema v2).
+- `src/utils/petLetter.ts`: Monday & Tuesday, Today shows a short note from
+  the pet about last Mon–Sun (`PetLetterCard`). Copy is tiered by completion
+  rate, picks one or two specific observations, and is deterministic per
+  week. Dismissal is stored as `lastLetterDismissed`. To change the voice,
+  edit the string arrays in `composeLetter` — nothing else needs touching.
+
 ## Accessibility & motion
 
 - `useReduceMotion()` / `isReduceMotion()` in `src/utils/motion.ts` mirror the

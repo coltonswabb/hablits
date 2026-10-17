@@ -5,7 +5,7 @@
 // Now with: edit modal, delete, skip/fail, pet, confetti
 // ============================================
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,9 @@ import {
 import { useTheme, themeConfetti } from '../theme';
 import { textOn } from '../theme/colors';
 import { allDoneCelebration, miniCelebration } from '../utils/celebrate';
+import { currentLetter } from '../utils/petLetter';
+import { PetStage } from '../utils/evolution';
+import { PetLetterCard } from '../components/PetLetterCard';
 import { useApp } from '../state';
 import {
   HabitCard,
@@ -113,6 +116,9 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
     });
     setQuickAdd('');
   };
+
+  // Weekly note from the pet (Mon/Tue, about last week)
+  const letter = useMemo(() => currentLetter(state, petStage as PetStage), [state.logs, state.habits, state.lastLetterDismissed, petStage]);
 
   // Track previous completion count to detect new completions
   const [prevCompletedCount, setPrevCompletedCount] = useState(completedCount);
@@ -437,6 +443,16 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         </View>
 
         {/* Quick add and Reorder button */}
+        {letter && (
+          <PetLetterCard
+            letter={letter}
+            species={petSpecies}
+            hat={petHat}
+            stage={petStage}
+            onDismiss={() => dispatch({ type: 'DISMISS_LETTER', payload: letter.weekStart })}
+          />
+        )}
+
         <View style={styles.quickAddRow}>
           {!reorderMode ? (
             <>
