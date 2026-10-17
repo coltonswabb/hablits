@@ -18,12 +18,16 @@ import {
 import { PetSpecies, HatType } from '../types';
 import { useTheme } from '../theme';
 import { Pet, getUnlockedHats } from './Pet';
+import { STAGE_NAMES, daysToNextStage } from '../utils/evolution';
 
 interface HatClosetModalProps {
   visible: boolean;
   currentSpecies: PetSpecies;
   currentHat: HatType;
   totalCompletions: number;
+  /** Evolution stage 0-3 and the best streak that earned it */
+  petStage?: number;
+  bestStreak?: number;
   onSelectSpecies: (species: PetSpecies) => void;
   onSelectHat: (hat: HatType) => void;
   onClose: () => void;
@@ -68,6 +72,8 @@ export function HatClosetModal({
   currentSpecies,
   currentHat,
   totalCompletions,
+  petStage = 0,
+  bestStreak = 0,
   onSelectSpecies,
   onSelectHat,
   onClose,
@@ -176,9 +182,18 @@ export function HatClosetModal({
           
           {/* Current Pet Preview */}
           <View style={[styles.preview, { backgroundColor: colors.bg, borderColor: colors.divider }]}>
-            <Pet species={currentSpecies} mood="happy" hat={currentHat} size={80} />
+            <Pet species={currentSpecies} mood="happy" hat={currentHat} size={80} stage={petStage} />
+            <Text style={[styles.previewLabel, { color: colors.text, fontWeight: '700' }]}>
+              {STAGE_NAMES[petStage]}
+            </Text>
             <Text style={[styles.previewLabel, { color: colors.muted }]}>
-              {totalCompletions} total completions
+              {(() => {
+                const next = daysToNextStage(bestStreak);
+                return next
+                  ? `${next.needed} more streak day${next.needed === 1 ? '' : 's'} to ${STAGE_NAMES[next.nextStage]}`
+                  : 'Max stage reached';
+              })()}
+              {'  ·  '}{totalCompletions} completions
             </Text>
           </View>
 

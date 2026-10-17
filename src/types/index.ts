@@ -78,6 +78,7 @@ export interface AppState {
   petSpecies: PetSpecies;              // Selected pet species
   petHat: HatType;                     // Selected pet hat
   activeFasts: Record<string, ActiveFast>; // { "habit-id": { startTime, duration, targetTime } } - Secret fasting timers
+  petStageSeen: number;                // Highest evolution stage the user has been congratulated for
 }
 
 // Available theme names

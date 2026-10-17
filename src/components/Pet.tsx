@@ -27,6 +27,8 @@ interface PetProps {
   onPress?: () => void;
   /** Ref to the root <Svg>; lets PetSnapshot rasterize the pet for the widget */
   svgRef?: React.Ref<Svg>;
+  /** Evolution stage 0-3 (see utils/evolution). Adds aura/sparkles that never go away. */
+  stage?: number;
 }
 
 export function Pet({
@@ -35,6 +37,7 @@ export function Pet({
   hat,
   size = 64,
   svgRef,
+  stage = 0,
   completionsToday = 0,
   streak = 0,
   onPress
@@ -1341,6 +1344,44 @@ export function Pet({
   };
 
   // Render sparkles for 5+ completions
+  // ---- Evolution decorations (permanent, by stage) ----
+  const renderAura = () => {
+    if (stage < 2) return null;
+    const auraColor = stage >= 3 ? '#FFD700' : colors.accent;
+    return (
+      <G>
+        <Circle cx="32" cy="34" r="30" fill={auraColor} opacity={stage >= 3 ? 0.16 : 0.12} />
+        <Circle cx="32" cy="34" r="30" fill="none" stroke={auraColor} strokeWidth="1.5" opacity={stage >= 3 ? 0.55 : 0.35} />
+        {stage >= 3 && <Circle cx="32" cy="34" r="26" fill="none" stroke={auraColor} strokeWidth="0.75" opacity={0.35} strokeDasharray="3 3" />}
+      </G>
+    );
+  };
+
+  const renderStageSparkles = () => {
+    if (stage < 1) return null;
+    const star = (x: number, y: number, r: number, fill: string, op = 1) => (
+      <Path
+        key={`${x}-${y}`}
+        d={`M${x} ${y - r} L${x + r * 0.35} ${y - r * 0.35} L${x + r} ${y} L${x + r * 0.35} ${y + r * 0.35} L${x} ${y + r} L${x - r * 0.35} ${y + r * 0.35} L${x - r} ${y} L${x - r * 0.35} ${y - r * 0.35} Z`}
+        fill={fill}
+        opacity={op}
+      />
+    );
+    const gold = '#FFD700';
+    const soft = '#FFF3B0';
+    return (
+      <G>
+        {star(8, 14, 2.6, gold)}
+        {star(57, 20, 2, soft, 0.9)}
+        {stage >= 2 && star(6, 44, 1.8, soft, 0.9)}
+        {stage >= 2 && star(58, 48, 2.4, gold)}
+        {stage >= 3 && star(32, 4, 3, gold)}
+        {stage >= 3 && star(14, 58, 1.6, soft, 0.8)}
+        {stage >= 3 && star(50, 58, 1.6, soft, 0.8)}
+      </G>
+    );
+  };
+
   const renderSparkles = () => {
     if (completionsToday < 5) return null;
 
@@ -1601,6 +1642,7 @@ export function Pet({
       }}
     >
       <Svg ref={svgRef} width={size} height={size} viewBox="0 0 64 64">
+        {renderAura()}
         {renderBody()}
         <AnimatedG opacity={blinkOpacity}>
           {renderEyes()}
@@ -1609,6 +1651,7 @@ export function Pet({
         {renderCheeks()}
         {renderHat()}
         {renderSparkles()}
+        {renderStageSparkles()}
       </Svg>
     </Animated.View>
   );

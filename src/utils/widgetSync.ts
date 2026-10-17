@@ -17,6 +17,7 @@ import { AppState, PetMood } from '../types';
 import { ThemeColors } from '../theme/colors';
 import { calculateStreak, getActiveHabits, getDayCompletionPercent } from './habits';
 import { dateStr, getWeekDays } from './dates';
+import { getPetStage, STAGE_NAMES } from './evolution';
 import type { TodayWidgetProps, WidgetHabit, WidgetDay } from '../widgets/TodayWidget';
 
 const MOOD_WORDS: Record<PetMood, string> = {
@@ -75,6 +76,7 @@ export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Dat
     total,
     bestStreak,
     mood: MOOD_WORDS[moodFor(pct)],
+    stageName: STAGE_NAMES[getPetStage(state.habits, state.logs, date)],
     habits: habits.slice(0, MAX_HABITS),
     week: buildWeek(state, date),
     petImage: petImage ?? '',

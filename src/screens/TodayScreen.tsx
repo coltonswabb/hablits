@@ -39,10 +39,11 @@ import { Habit, PetSpecies, HatType } from '../types';
 interface TodayScreenProps {
   petSpecies: PetSpecies;
   petHat: HatType;
+  petStage?: number;
   onOpenHatCloset: () => void;
 }
 
-export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreenProps) {
+export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset }: TodayScreenProps) {
   const { colors, themeName } = useTheme();
   const { state, dispatch } = useApp();
   const [quickAdd, setQuickAdd] = useState('');
@@ -416,6 +417,7 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
                 hat={petHat}
                 size={48}
                 completionsToday={completedCount}
+                stage={petStage}
               />
             </TouchableOpacity>
             <View style={[styles.datePill, { borderColor: colors.divider }]}>

@@ -8,7 +8,7 @@
 // 4. Renders the active screen
 // ============================================
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -17,7 +17,7 @@ import { ThemeProvider, useTheme } from './theme';
 import { AppProvider, useApp } from './state';
 
 // Components
-import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary, PetSnapshot, getMoodFromProgress } from './components';
+import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary, PetSnapshot, EvolutionModal, getMoodFromProgress } from './components';
 
 // Screens
 import { TodayScreen, WeekScreen, CalendarScreen, DayPlanScreen, StatsScreen } from './screens';
@@ -29,6 +29,7 @@ import { TabName, Identity } from './types';
 import { initializeAudio } from './utils/sounds';
 import { syncWidget } from './utils/widgetSync';
 import { getDayCompletionPercent } from './utils/habits';
+import { bestStreakEver, stageForStreak } from './utils/evolution';
 
 // ============================================
 // MAIN CONTENT (inside providers)
@@ -69,6 +70,18 @@ function AppContent() {
   const onIdlePetCaptured = useCallback((uri: string) => setPetImages((p) => (p.idle === uri ? p : { ...p, idle: uri })), []);
   const todayPct = getDayCompletionPercent(state.habits, state.logs, new Date(), 'all');
   const petMood = getMoodFromProgress(todayPct);
+
+  // ---- Pet evolution ----
+  const bestStreak = useMemo(() => bestStreakEver(state.habits, state.logs), [state.habits, state.logs]);
+  const petStage = stageForStreak(bestStreak);
+  const [evolutionVisible, setEvolutionVisible] = useState(false);
+  useEffect(() => {
+    if (isLoaded && petStage > state.petStageSeen) {
+      // Let the day's confetti settle before the big reveal
+      const t = setTimeout(() => setEvolutionVisible(true), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [isLoaded, petStage, state.petStageSeen]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -124,6 +137,7 @@ function AppContent() {
       case 'today':
         return (
           <TodayScreen
+            petStage={petStage}
             petSpecies={state.petSpecies}
             petHat={state.petHat}
             onOpenHatCloset={() => setHatClosetVisible(true)}
@@ -140,6 +154,7 @@ function AppContent() {
       default:
         return (
           <TodayScreen
+            petStage={petStage}
             petSpecies={state.petSpecies}
             petHat={state.petHat}
             onOpenHatCloset={() => setHatClosetVisible(true)}
@@ -324,16 +339,29 @@ function AppContent() {
           currentSpecies={state.petSpecies}
           currentHat={state.petHat}
           totalCompletions={totalCompletions}
+          petStage={petStage}
+          bestStreak={bestStreak}
           onSelectSpecies={(species) => dispatch({ type: 'SET_PET_SPECIES', payload: species })}
           onSelectHat={(hat) => dispatch({ type: 'SET_PET_HAT', payload: hat })}
           onClose={() => setHatClosetVisible(false)}
         />
 
         {/* Off-screen pet renders for the home screen widget */}
-        <PetSnapshot species={state.petSpecies} hat={state.petHat} mood={petMood} onCaptured={onPetCaptured} />
+        <PetSnapshot species={state.petSpecies} hat={state.petHat} mood={petMood} stage={petStage} onCaptured={onPetCaptured} />
         {petMood !== 'idle' && (
-          <PetSnapshot species={state.petSpecies} hat={state.petHat} mood="idle" onCaptured={onIdlePetCaptured} />
+          <PetSnapshot species={state.petSpecies} hat={state.petHat} mood="idle" stage={petStage} onCaptured={onIdlePetCaptured} />
         )}
+
+        <EvolutionModal
+          visible={evolutionVisible}
+          species={state.petSpecies}
+          hat={state.petHat}
+          stage={petStage}
+          onClose={() => {
+            setEvolutionVisible(false);
+            dispatch({ type: 'SET_PET_STAGE_SEEN', payload: petStage });
+          }}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

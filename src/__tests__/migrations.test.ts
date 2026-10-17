@@ -21,6 +21,7 @@ const defaults: AppState = {
   petSpecies: 'blob',
   petHat: 'none',
   activeFasts: {},
+  petStageSeen: 0,
 };
 
 describe('migrateState', () => {

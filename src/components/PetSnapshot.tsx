@@ -19,6 +19,7 @@ interface Props {
   species: PetSpecies;
   hat: HatType;
   mood: PetMood;
+  stage?: number;
   /** Called with a file:// URI once the PNG for this combination exists */
   onCaptured: (uri: string) => void;
 }
@@ -28,7 +29,7 @@ const PNG_SIZE = 288;
 
 const written = new Set<string>();
 
-export function PetSnapshot({ species, hat, mood, onCaptured }: Props) {
+export function PetSnapshot({ species, hat, mood, stage = 0, onCaptured }: Props) {
   const svgRef = useRef<Svg>(null);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function PetSnapshot({ species, hat, mood, onCaptured }: Props) {
         if (!widgetsDirectory) return; // no app group configured
 
         const FileSystem = await import('expo-file-system/legacy');
-        const uri = `${widgetsDirectory}pet-${species}-${hat}-${mood}.png`;
+        const uri = `${widgetsDirectory}pet-${species}-${hat}-${mood}-s${stage}.png`;
 
         if (!written.has(uri)) {
           const info = await FileSystem.getInfoAsync(uri);
@@ -69,14 +70,14 @@ export function PetSnapshot({ species, hat, mood, onCaptured }: Props) {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [species, hat, mood, onCaptured]);
+  }, [species, hat, mood, stage, onCaptured]);
 
   if (Platform.OS !== 'ios') return null;
 
   // Parked off-screen: still laid out and drawable, never visible or tappable.
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: -1000, top: -1000, opacity: 0 }}>
-      <Pet species={species} mood={mood} hat={hat} size={96} svgRef={svgRef} />
+      <Pet species={species} mood={mood} hat={hat} size={96} svgRef={svgRef} stage={stage} />
     </View>
   );
 }

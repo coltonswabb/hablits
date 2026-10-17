@@ -41,6 +41,7 @@ const defaultState: AppState = {
   petSpecies: 'blob',
   petHat: 'none',
   activeFasts: {}, // Secret fasting timer feature
+  petStageSeen: 0,
 };
 
 // ============================================
@@ -76,6 +77,7 @@ type Action =
   | { type: 'DISMISS_SWIPE_HINT' }
   | { type: 'SET_PET_SPECIES'; payload: PetSpecies }
   | { type: 'SET_PET_HAT'; payload: HatType }
+  | { type: 'SET_PET_STAGE_SEEN'; payload: number }
   | { type: 'START_FAST'; payload: { habitId: string; duration: number; startTime: string } }
   | { type: 'UPDATE_FAST_START_TIME'; payload: { habitId: string; startTime: string } }
   | { type: 'END_FAST'; payload: string };
@@ -366,6 +368,9 @@ function appReducer(state: AppState, action: Action): AppState {
 
     case 'SET_PET_SPECIES':
       return { ...state, petSpecies: action.payload };
+
+    case 'SET_PET_STAGE_SEEN':
+      return { ...state, petStageSeen: Math.max(state.petStageSeen, action.payload) };
 
     case 'SET_PET_HAT':
       return { ...state, petHat: action.payload };

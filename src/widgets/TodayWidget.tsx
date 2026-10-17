@@ -52,6 +52,8 @@ export type TodayWidgetProps = {
   bestStreak: number;
   /** Pet mood word, e.g. "thrilled" — mirrors getMoodFromProgress */
   mood: string;
+  /** Evolution stage name, e.g. "Veteran" */
+  stageName: string;
   /** Today's habits, undone first, capped by the sender */
   habits: WidgetHabit[];
   /** Mon..Sun of the current week for the mini heatmap */
@@ -90,7 +92,7 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
       : allDone
         ? `Your pet is ${props.mood}`
         : props.bestStreak > 0
-          ? `${props.bestStreak}-day streak`
+          ? `${props.stageName} · ${props.bestStreak}-day streak`
           : `Your pet is ${props.mood}`;
 
   const ringColor = allDone ? props.good : props.accent;
@@ -310,6 +312,7 @@ const initialProps: TodayWidgetProps = {
   total: 0,
   bestStreak: 0,
   mood: 'curious',
+  stageName: 'Hatchling',
   habits: [],
   week: [],
   petImage: '',

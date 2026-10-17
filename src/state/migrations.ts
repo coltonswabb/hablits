@@ -9,11 +9,12 @@
 // Version history:
 //   0 — anything saved before versioning existed (1.0 App Store build)
 //   1 — adds schemaVersion; folds in all the ad-hoc 1.0 backfills
+//   2 — adds petStageSeen (pet evolution)
 // ============================================
 
 import { AppState } from '../types';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 type AnyState = Record<string, any>;
 
@@ -49,6 +50,9 @@ const migrations: Array<(s: AnyState) => AnyState> = [
       petHat: s.petHat || 'none',
     };
   },
+  // 1 -> 2: pet evolution. Existing users start at 0 so they get congratulated
+  // once for whatever stage their history has already earned.
+  (s) => ({ ...s, petStageSeen: typeof s.petStageSeen === 'number' ? s.petStageSeen : 0 }),
 ];
 
 /**

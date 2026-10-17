@@ -24,6 +24,7 @@ export { SwipeHint } from './SwipeHint';
 export { HeatmapCalendar } from './HeatmapCalendar';
 export { ErrorBoundary } from './ErrorBoundary';
 export { PetSnapshot } from './PetSnapshot';
+export { EvolutionModal } from './EvolutionModal';
 export {
   FadeIn,
   SlideIn,
