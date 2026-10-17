@@ -5,12 +5,7 @@
     "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#667eea"
-    },
+    "userInterfaceStyle": "automatic",
     "description": "Build better habits with your virtual pet companion. Track daily habits, create routines, and watch your pet grow as you stay consistent.",
     "privacy": "https://coltonswabb.github.io/hablits/",
     "ios": {
@@ -49,6 +44,19 @@
       "url": "https://u.expo.dev/23115a03-2663-4d4b-a53f-86cdb5907761"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#6c6fe0",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#15121f"
+          }
+        }
+      ],
       [
         "expo-notifications",
         {

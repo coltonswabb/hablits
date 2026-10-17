@@ -13,6 +13,7 @@ import { TouchableOpacity, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, Circle, Rect, Ellipse, G } from 'react-native-svg';
 import { PetSpecies, PetMood, HatType } from '../types';
 import { useTheme } from '../theme';
+import { useReduceMotion } from '../utils/motion';
 
 // Create animated SVG components
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -43,6 +44,7 @@ export function Pet({
   onPress
 }: PetProps) {
   const { colors } = useTheme();
+  const reduceMotion = useReduceMotion();
 
   // Animation values
   const bobY = useRef(new Animated.Value(0)).current;
@@ -57,6 +59,7 @@ export function Pet({
 
   // Idle animation - gentle bob
   useEffect(() => {
+    if (reduceMotion) { bobY.setValue(0); return; }
     const bobAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(bobY, {
@@ -75,10 +78,11 @@ export function Pet({
     );
     bobAnimation.start();
     return () => bobAnimation.stop();
-  }, []);
+  }, [reduceMotion]);
 
   // Breathing animation
   useEffect(() => {
+    if (reduceMotion) { breatheScale.setValue(1); return; }
     const breatheAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(breatheScale, {
@@ -97,7 +101,7 @@ export function Pet({
     );
     breatheAnimation.start();
     return () => breatheAnimation.stop();
-  }, []);
+  }, [reduceMotion]);
 
   // Occasional blink animation
   useEffect(() => {
@@ -128,6 +132,7 @@ export function Pet({
 
   // Occasional head tilt animation
   useEffect(() => {
+    if (reduceMotion) return;
     const triggerHeadTilt = () => {
       Animated.sequence([
         Animated.timing(headTilt, {
@@ -154,14 +159,14 @@ export function Pet({
     }, 5000 + Math.random() * 5000);
 
     return () => clearInterval(tiltInterval);
-  }, []);
+  }, [reduceMotion]);
 
   // Celebration animation for milestone streaks
   useEffect(() => {
     const milestones = [7, 14, 30, 50, 100, 365];
     const isMilestone = milestones.includes(streak);
 
-    if (isMilestone) {
+    if (isMilestone && !reduceMotion) {
       // Big celebratory jump and scale
       Animated.sequence([
         Animated.parallel([
@@ -198,6 +203,11 @@ export function Pet({
 
   // Reactive animations based on completions
   useEffect(() => {
+    if (reduceMotion) {
+      bounceY.setValue(0);
+      wiggleRotate.setValue(0);
+      return;
+    }
     if (completionsToday >= 5) {
       // Excited bouncing
       const excitedAnimation = Animated.loop(
@@ -264,7 +274,7 @@ export function Pet({
       bounceY.setValue(0);
       wiggleRotate.setValue(0);
     }
-  }, [completionsToday]);
+  }, [completionsToday, reduceMotion]);
 
   // Color palettes - richer pixel art colors
   const palettes: Record<PetSpecies, { 

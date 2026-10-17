@@ -28,6 +28,7 @@ import { TabName, Identity } from './types';
 // Utils
 import { initializeAudio } from './utils/sounds';
 import { syncWidget } from './utils/widgetSync';
+import { useReduceMotion } from './utils/motion';
 import { getDayCompletionPercent } from './utils/habits';
 import { bestStreakEver, stageForStreak } from './utils/evolution';
 
@@ -88,8 +89,16 @@ function AppContent() {
     syncWidget(state, colors, petImages);
   }, [isLoaded, state.habits, state.logs, colors, petImages]);
 
-  // Animate screen transitions
+  // Animate screen transitions (a plain cross-fade when Reduce Motion is on)
+  const reduceMotion = useReduceMotion();
   useEffect(() => {
+    if (reduceMotion) {
+      screenTranslateX.setValue(0);
+      screenScale.setValue(1);
+      screenOpacity.setValue(0.4);
+      Animated.timing(screenOpacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+      return;
+    }
     // Slide and fade out, then slide and fade in
     Animated.sequence([
       Animated.parallel([

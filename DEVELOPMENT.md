@@ -67,6 +67,16 @@ app when it's closed, so v1 is read-only and taps open the app.
   `SCHEMA_VERSION` in `src/state/migrations.ts` and add a step.
 - Theme + accent colour persist separately under `hablits_theme_v1`.
 
+## Accessibility & motion
+
+- `useReduceMotion()` / `isReduceMotion()` in `src/utils/motion.ts` mirror the
+  OS Reduce Motion setting. Pet idle loops, reactive bounces, milestone jumps,
+  screen slide transitions and confetti all stand down when it's on. Blinking
+  stays. Gate any new continuous animation the same way.
+- Themes are contrast-tested (`src/__tests__/colors.test.ts`). Text on an
+  accent/good/danger surface must use `colors.textOnAccent` or `textOn(bg)`,
+  never a literal white.
+
 ## Known gaps
 
 - Sound effects are only implemented on web (`src/utils/sounds.ts`). On iOS the

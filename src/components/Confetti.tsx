@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Dimensions, Animated } from 'react-native';
+import { isReduceMotion } from '../utils/motion';
 import { playCelebrationSequence } from '../utils/sounds';
 import { celebrationTaps } from '../utils/haptics';
 
@@ -174,6 +175,7 @@ export function useConfetti() {
   const [origin, setOrigin] = useState<{ x?: number; y?: number }>({});
 
   const trigger = useCallback((x?: number, y?: number) => {
+    if (isReduceMotion()) return; // Reduce Motion: no particle bursts
     setKey((k) => k + 1);
     setOrigin({ x, y });
     setIsActive(true);
