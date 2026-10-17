@@ -26,7 +26,7 @@ import { TodayScreen, WeekScreen, CalendarScreen, DayPlanScreen, StatsScreen } f
 import { TabName, Identity } from './types';
 
 // Utils
-import { initializeAudio } from './utils/sounds';
+import { initializeAudio, setSoundsEnabled } from './utils/sounds';
 import { syncWidget } from './utils/widgetSync';
 import { useReduceMotion } from './utils/motion';
 import { getDayCompletionPercent } from './utils/habits';
@@ -55,6 +55,7 @@ function AppContent() {
   // Initialize audio and haptics on mount
   useEffect(() => {
     initializeAudio();
+    setSoundsEnabled(state.sfxEnabled);
 
     // Initialize haptics from state
     (async () => {
@@ -62,6 +63,11 @@ function AppContent() {
       setHapticsEnabled(state.hapticsEnabled);
     })();
   }, []);
+
+  // Keep the sound and haptics gates in sync with Settings
+  useEffect(() => {
+    setSoundsEnabled(state.sfxEnabled);
+  }, [state.sfxEnabled]);
 
   // ---- Home screen widget ----
   // The pet is rasterized off-screen (PetSnapshot) so WidgetKit can show it;
