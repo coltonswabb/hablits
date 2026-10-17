@@ -71,7 +71,7 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
   const [expandedRoutines, setExpandedRoutines] = useState<Set<string>>(new Set());
 
   // Refs for habit card positions (for confetti origin)
-  const habitRefs = useRef<Record<string, View | null>>({});
+  const habitRefs = useRef<Record<string, React.ComponentRef<typeof View> | null>>({});
   const [lastToggledHabitId, setLastToggledHabitId] = useState<string | null>(null);
 
   const today = todayStr();
@@ -125,7 +125,7 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
       } else {
         // Mini confetti for individual habit completion - measure card position
         if (lastToggledHabitId && habitRefs.current[lastToggledHabitId]) {
-          habitRefs.current[lastToggledHabitId]?.measureInWindow((x, y, width, height) => {
+          habitRefs.current[lastToggledHabitId]?.measureInWindow((x: number, y: number, width: number, height: number) => {
             // Trigger confetti from the left side (where checkbox is) and vertical center of the card
             const confettiX = x + 40;
             const confettiY = y + height / 2;

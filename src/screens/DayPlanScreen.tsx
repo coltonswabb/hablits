@@ -43,7 +43,7 @@ export function DayPlanScreen() {
   const [recurringDays, setRecurringDays] = useState<boolean[]>([true, true, true, true, true, true, true]); // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
 
   // Ref for ScrollView
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   // Quick schedule modal state
   const [quickScheduleVisible, setQuickScheduleVisible] = useState(false);
@@ -52,8 +52,8 @@ export function DayPlanScreen() {
   const [selectedMinute, setSelectedMinute] = useState(0);
   const [selectedDuration, setSelectedDuration] = useState(30);
 
-  const timeScrollRef = useRef<ScrollView>(null);
-  const durationScrollRef = useRef<ScrollView>(null);
+  const timeScrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const durationScrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   // Update current time every minute
   useEffect(() => {

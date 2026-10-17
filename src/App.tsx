@@ -27,13 +27,14 @@ import { TabName, Identity } from './types';
 
 // Utils
 import { initializeAudio } from './utils/sounds';
+import { syncWidget } from './utils/widgetSync';
 
 // ============================================
 // MAIN CONTENT (inside providers)
 // ============================================
 function AppContent() {
   const { colors, themeName, setTheme, customAccentColor, setCustomAccentColor } = useTheme();
-  const { state, dispatch } = useApp();
+  const { state, dispatch, isLoaded } = useApp();
   const [activeTab, setActiveTab] = useState<TabName>('today');
   const [identitiesModalVisible, setIdentitiesModalVisible] = useState(false);
   const [identityFilterModalVisible, setIdentityFilterModalVisible] = useState(false);
@@ -58,6 +59,12 @@ function AppContent() {
       setHapticsEnabled(state.hapticsEnabled);
     })();
   }, []);
+
+  // Keep the home screen widget in step with today's progress and the theme
+  useEffect(() => {
+    if (!isLoaded) return;
+    syncWidget(state, colors);
+  }, [isLoaded, state.habits, state.logs, colors]);
 
   // Animate screen transitions
   useEffect(() => {

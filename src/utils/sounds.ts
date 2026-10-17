@@ -1,11 +1,13 @@
 // ============================================
 // SOUND EFFECTS UTILITY
 // ============================================
-// Provides simple sound effects using expo-av
-// Uses programmatic tones (no audio files needed)
+// Provides simple sound effects.
+// NOTE: on native, nothing is played yet — only the web build has tones.
+// Real sound files (see the old prototype's sfx/*.wav) are a roadmap item;
+// expo-audio is already set up here so that's a drop-in when we do it.
 // ============================================
 
-import { Audio } from 'expo-av';
+import { setAudioModeAsync } from 'expo-audio';
 import { Platform } from 'react-native';
 
 // Cache for sound objects
@@ -14,9 +16,10 @@ let soundsEnabled = true;
 // Initialize audio mode (required for iOS)
 export const initializeAudio = async () => {
   try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
+    if (Platform.OS === 'web') return;
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
     });
   } catch (error) {
     console.warn('Failed to initialize audio:', error);

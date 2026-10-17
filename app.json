@@ -2,7 +2,7 @@
   "expo": {
     "name": "Hablits",
     "slug": "hablits",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hablits.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This app does not track you.",
         "ITSAppUsesNonExemptEncryption": false
@@ -55,7 +55,32 @@
           "icon": "./assets/icon.png",
           "color": "#667eea"
         }
+      ],
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.hablits.app",
+          "widgets": [
+            {
+              "name": "HablitsToday",
+              "displayName": "Today",
+              "description": "Today's habits, your progress ring, and your streak \u2014 at a glance.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "systemLarge",
+                  "accessoryCircular",
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ],
+                "initialLayout": "./src/widgets/TodayWidget.tsx"
+              }
+            }
+          ]
+        }
       ]
-    ]
+    ],
+    "scheme": "hablits"
   }
 }
