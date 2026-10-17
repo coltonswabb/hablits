@@ -58,18 +58,45 @@ export function shouldBackup(state: AppState, lastBackupAt: string | undefined, 
   return !Number.isFinite(last) || now.getTime() - last >= MIN_INTERVAL_MS;
 }
 
+function sizeOf(s: { habits: unknown[]; logs?: Record<string, unknown> }): number {
+  return (s.habits?.length ?? 0) + Object.keys(s.logs || {}).length;
+}
+
 /** Does this cloud backup contain more than the local state? (fresh-install restore check) */
 export function cloudHasMore(local: AppState, cloud: BackupEnvelope): boolean {
-  const localCount = local.habits.length + Object.keys(local.logs).length;
-  const cloudCount = cloud.data.habits.length + Object.keys(cloud.data.logs || {}).length;
-  return localCount === 0 && cloudCount > 0;
+  return sizeOf(local) === 0 && sizeOf(cloud.data) > 0;
+}
+
+/**
+ * Write guard for the two-device case. Overwrite the cloud copy only if
+ *  - there is none, or
+ *  - we wrote it (its exportedAt is not newer than our last backup), or
+ *  - ours is at least as big (habits + logged days).
+ * A rarely-opened second device with a small stale state therefore never
+ * stomps the primary's backup.
+ */
+export function mayOverwriteCloud(local: AppState, cloud: BackupEnvelope | null, lastLocalBackupAt: string | undefined): boolean {
+  if (!cloud) return true;
+  const cloudAt = Date.parse(cloud.exportedAt);
+  const oursAt = lastLocalBackupAt ? Date.parse(lastLocalBackupAt) : NaN;
+  if (Number.isFinite(cloudAt) && Number.isFinite(oursAt) && cloudAt <= oursAt + 1000) return true; // our own write
+  return sizeOf(local) >= sizeOf(cloud.data);
 }
 
 // ---- side-effecting API ----
 
-export async function backupToICloud(state: AppState, appVersion?: string): Promise<{ ok: boolean; at?: string; reason?: string }> {
+export async function backupToICloud(
+  state: AppState,
+  appVersion?: string,
+  options: { force?: boolean } = {}
+): Promise<{ ok: boolean; at?: string; reason?: 'unavailable' | 'cloud-newer' | string }> {
   try {
     if (!(await isICloudAvailable())) return { ok: false, reason: 'unavailable' };
+    if (!options.force) {
+      // Never overwrite a newer, larger backup from another device
+      const cloud = parseEnvelope(await readICloudFile(BACKUP_FILE, 3000));
+      if (!mayOverwriteCloud(state, cloud, state.lastCloudBackupAt)) return { ok: false, reason: 'cloud-newer' };
+    }
     const env = makeEnvelope(state, new Date(), appVersion);
     await writeICloudFile(BACKUP_FILE, JSON.stringify(env));
     return { ok: true, at: env.exportedAt };
@@ -79,10 +106,10 @@ export async function backupToICloud(state: AppState, appVersion?: string): Prom
   }
 }
 
-export async function readICloudBackup(): Promise<BackupEnvelope | null> {
+export async function readICloudBackup(timeoutMs = 8000): Promise<BackupEnvelope | null> {
   try {
     if (!(await isICloudAvailable())) return null;
-    return parseEnvelope(await readICloudFile(BACKUP_FILE));
+    return parseEnvelope(await readICloudFile(BACKUP_FILE, timeoutMs));
   } catch (error) {
     console.warn('iCloud read failed:', error);
     return null;

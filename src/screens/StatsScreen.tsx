@@ -110,8 +110,8 @@ export function StatsScreen() {
   const avgPerDay = daysData.length > 0
     ? daysData.reduce((sum, d) => sum + d.count, 0) / daysData.length
     : 0;
-  const bestStreak = state.habits.length > 0
-    ? Math.max(...state.habits.map(h => {
+  const bestStreak = liveHabits(state.habits).length > 0
+    ? Math.max(...liveHabits(state.habits).map(h => {
         let streak = 0;
         for (let i = 0; i < 365; i++) {
           const d = new Date();
@@ -277,7 +277,7 @@ export function StatsScreen() {
           <Text style={[styles.chartTitle, { color: colors.text }]}>Activity Heatmap</Text>
           <HeatmapCalendar
             logs={state.logs}
-            habits={state.habits}
+            habits={liveHabits(state.habits)}
             daysToShow={timeRange === '7d' ? 49 : timeRange === '30d' ? 84 : 126}
           />
         </View>

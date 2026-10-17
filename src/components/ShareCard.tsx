@@ -1,10 +1,10 @@
 // ============================================
 // SHARE CARD
 // ============================================
-// A 1080×1350 (4:5, Instagram-friendly) card with the pet, a headline and
-// a stat line in the current theme. Rendered off-screen at 1/3 scale and
-// captured at 3x with react-native-view-shot, then handed to the share
-// sheet. Nothing leaves the device unless the user picks a destination.
+// A 4:5 (Instagram-friendly) card with the pet, a headline and a stat line
+// in the current theme. Laid out at 360×450pt off-screen and captured at
+// device scale (1080×1350px on a 3x phone) with react-native-view-shot,
+// then handed to the share sheet. Nothing leaves the device unless the user picks a destination.
 // ============================================
 
 import React, { useRef } from 'react';
@@ -48,7 +48,9 @@ export function ShareCard({ content, species, hat, stage, children, onShared }: 
     setBusy(true);
     lightTap();
     try {
-      const uri = await captureRef(cardRef as any, { format: 'png', quality: 1, result: 'tmpfile', width: W * 3, height: H * 3 });
+      // No width/height: view-shot treats those as points and would upscale.
+      // A 360×450pt view at device scale is 1080×1350px on a 3x phone.
+      const uri = await captureRef(cardRef as any, { format: 'png', quality: 1, result: 'tmpfile' });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: content.headline, UTI: 'public.png' });
         onShared?.();

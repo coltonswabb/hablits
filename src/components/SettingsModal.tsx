@@ -41,6 +41,8 @@ interface SettingsModalProps {
   onRestoreHabit?: (habitId: string) => void;
   lastCloudBackupAt?: string;
   onBackupNow?: () => Promise<boolean>;
+  /** Resolves false when no backup was found */
+  onRestoreFromCloud?: () => Promise<boolean>;
   onDeleteHabit?: (habitId: string) => void;
   onImportData: (data: AppState) => void;
   currentTheme: string;
@@ -114,6 +116,7 @@ export function SettingsModal({
   onRestoreHabit,
   lastCloudBackupAt,
   onBackupNow,
+  onRestoreFromCloud,
   onDeleteHabit,
   onImportData,
   currentTheme,
@@ -123,6 +126,7 @@ export function SettingsModal({
   const { colors } = useTheme();
   const [isExporting, setIsExporting] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
   // Hue slider state (0-360)
@@ -442,6 +446,25 @@ export function SettingsModal({
                       : lastCloudBackupAt
                         ? `Automatic · last backup ${new Date(lastCloudBackupAt).toLocaleString()} · tap to back up now`
                         : 'Automatic daily backup · tap to back up now'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                  onPress={async () => {
+                    if (!onRestoreFromCloud || isRestoring) return;
+                    setIsRestoring(true);
+                    const found = await onRestoreFromCloud();
+                    setIsRestoring(false);
+                    if (!found) Alert.alert('No iCloud backup found', 'Make sure this device is signed into the same iCloud account and iCloud Drive is on for Hablits, then try again in a minute.');
+                  }}
+                  disabled={isRestoring}
+                >
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Restore from iCloud…</Text>
+                  <Text style={[styles.settingDescription, { color: colors.muted }]}>
+                    {isRestoring ? 'Looking for a backup…' : 'Replace this device\'s data with your iCloud backup'}
                   </Text>
                 </TouchableOpacity>
               )}

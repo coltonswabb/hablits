@@ -74,9 +74,14 @@ for why and for the outbox design.
   autolinks anything under `modules/`.
 - `src/utils/cloudBackup.ts`: envelope format, `shouldBackup` (at most every
   6h, only when there's data), `cloudHasMore` (fresh-install check).
-- App: on first load with empty local data, reads the cloud and offers a
-  restore before onboarding; afterwards snapshots quietly ~daily.
-  Settings → Data shows status and a tap-to-back-up-now.
+- App: on first load with empty local data, waits (≤9s) for iCloud to deliver
+  the backup and offers a restore before onboarding; re-checks each launch
+  while the device stays empty. Afterwards snapshots quietly ~daily.
+  `mayOverwriteCloud` refuses to stomp a newer, larger backup from another
+  device (Settings offers an explicit Overwrite). Settings → Data has
+  status, Back up now, and Restore from iCloud….
+- The Swift side waits for `.icloud` placeholders to download and wraps all
+  I/O in NSFileCoordinator.
 - **Apple side (one time):** in the Developer portal, enable the iCloud
   capability on `com.hablits.app` with "iCloud Documents" and create the
   container `iCloud.com.hablits.app`. With EAS-managed credentials, the

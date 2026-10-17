@@ -9,7 +9,7 @@
 // ============================================
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert, Platform } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert, Platform, AppState as RNAppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Providers
@@ -77,8 +77,35 @@ function AppContent() {
   }, [state.hapticsEnabled]);
 
   // ---- iCloud backup ----
-  // 1) Fresh install: if local is empty and iCloud has a backup, offer to restore
-  //    before onboarding appears.
+  // Shared restore prompt (fresh install + Settings → Restore from iCloud…)
+  const offerRestore = useCallback(
+    (cloud: NonNullable<Awaited<ReturnType<typeof readICloudBackup>>>, onDecided?: () => void) => {
+      const when = cloud.exportedAt ? new Date(cloud.exportedAt).toLocaleString() : 'an earlier date';
+      const n = cloud.data.habits.length;
+      Alert.alert(
+        'Restore from iCloud?',
+        `Found a Hablits backup from ${when} with ${n} habit${n === 1 ? '' : 's'}. Restoring replaces what's on this device.`,
+        [
+          { text: 'Not now', style: 'cancel', onPress: () => onDecided?.() },
+          {
+            text: 'Restore',
+            onPress: () => {
+              dispatch({ type: 'LOAD_STATE', payload: migrateState({ ...cloud.data, schemaVersion: cloud.schemaVersion }, state) });
+              dispatch({ type: 'SET_CLOUD_BACKUP_AT', payload: cloud.exportedAt || new Date().toISOString() });
+              onDecided?.();
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    },
+    [state]
+  );
+
+  // 1) Fresh install: if local is empty and iCloud has a backup, offer to
+  //    restore before onboarding appears. Bounded by a timeout so a slow
+  //    first iCloud handshake can't leave the screen blank; re-checked on
+  //    every launch while the device stays empty.
   const [restoreChecked, setRestoreChecked] = useState(Platform.OS !== 'ios');
   useEffect(() => {
     if (!isLoaded || restoreChecked) return;
@@ -87,26 +114,12 @@ function AppContent() {
       try {
         const localEmpty = state.habits.length === 0 && Object.keys(state.logs).length === 0;
         if (!localEmpty) return;
-        const cloud = await readICloudBackup();
+        const cloud = await Promise.race([
+          readICloudBackup(8000),
+          new Promise<null>((r) => setTimeout(() => r(null), 9000)),
+        ]);
         if (cancelled || !cloud || !cloudHasMore(state, cloud)) return;
-        const when = cloud.exportedAt ? new Date(cloud.exportedAt).toLocaleString() : 'an earlier date';
-        await new Promise<void>((resolve) =>
-          Alert.alert(
-            'Restore from iCloud?',
-            `Found a Hablits backup from ${when} with ${cloud.data.habits.length} habit${cloud.data.habits.length === 1 ? '' : 's'}. Restore it to this device?`,
-            [
-              { text: 'Start fresh', style: 'cancel', onPress: () => resolve() },
-              {
-                text: 'Restore',
-                onPress: () => {
-                  dispatch({ type: 'LOAD_STATE', payload: migrateState(cloud.data, state) });
-                  resolve();
-                },
-              },
-            ],
-            { cancelable: false }
-          )
-        );
+        await new Promise<void>((resolve) => offerRestore(cloud, resolve));
       } finally {
         if (!cancelled) setRestoreChecked(true);
       }
@@ -117,6 +130,8 @@ function AppContent() {
   }, [isLoaded, restoreChecked]);
 
   // 2) Ongoing: a quiet daily snapshot whenever there's something to protect.
+  //    backupToICloud() refuses to overwrite a newer, larger backup from
+  //    another device (two-phone case).
   useEffect(() => {
     if (!isLoaded || !restoreChecked || Platform.OS !== 'ios') return;
     if (!shouldBackup(state, state.lastCloudBackupAt)) return;
@@ -128,10 +143,16 @@ function AppContent() {
   }, [isLoaded, restoreChecked, state.habits, state.logs, state.lastCloudBackupAt]);
 
   // ---- Fasting Live Activity ----
+  // Also re-sync on foreground: the system may have ended the activity.
+  const [foregroundTick, setForegroundTick] = useState(0);
+  useEffect(() => {
+    const sub = RNAppState.addEventListener('change', (s) => s === 'active' && setForegroundTick((t) => t + 1));
+    return () => sub.remove();
+  }, []);
   useEffect(() => {
     if (!isLoaded) return;
     syncFastActivities(state, colors);
-  }, [isLoaded, state.activeFasts, colors]);
+  }, [isLoaded, state.activeFasts, colors, foregroundTick]);
 
   // ---- Reminders ----
   // Per-habit reminders from Day Plan times + a general reminder for the rest.
@@ -412,7 +433,33 @@ function AppContent() {
           onBackupNow={async () => {
             const res = await backupToICloud(state, Constants.expoConfig?.version ?? undefined);
             if (res.ok && res.at) dispatch({ type: 'SET_CLOUD_BACKUP_AT', payload: res.at });
+            if (res.reason === 'cloud-newer') {
+              return await new Promise<boolean>((resolve) =>
+                Alert.alert(
+                  'iCloud has a bigger backup',
+                  'Another device wrote a newer backup with more data than this one. Overwrite it with this device\'s data?',
+                  [
+                    { text: 'Keep iCloud copy', style: 'cancel', onPress: () => resolve(true) },
+                    {
+                      text: 'Overwrite',
+                      style: 'destructive',
+                      onPress: async () => {
+                        const forced = await backupToICloud(state, Constants.expoConfig?.version ?? undefined, { force: true });
+                        if (forced.ok && forced.at) dispatch({ type: 'SET_CLOUD_BACKUP_AT', payload: forced.at });
+                        resolve(forced.ok);
+                      },
+                    },
+                  ]
+                )
+              );
+            }
             return res.ok;
+          }}
+          onRestoreFromCloud={async () => {
+            const cloud = await readICloudBackup(8000);
+            if (!cloud) return false;
+            offerRestore(cloud);
+            return true;
           }}
           onRestoreHabit={(id) => dispatch({ type: 'RESTORE_HABIT', payload: id })}
           onDeleteHabit={(id) => dispatch({ type: 'DELETE_HABIT', payload: id })}

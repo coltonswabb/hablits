@@ -11,7 +11,7 @@ import { AppState } from '../types';
 import { ThemeColors } from '../theme/colors';
 import type { FastActivityProps } from '../widgets/FastLiveActivity';
 
-type Tracked = { key: string; end: () => Promise<void>; update: (p: FastActivityProps) => Promise<void> };
+type Tracked = { key: string; id: string; end: () => Promise<void>; update: (p: FastActivityProps) => Promise<void> };
 const tracked = new Map<string, Tracked>(); // habitId -> activity
 let bootstrapped = false;
 
@@ -51,6 +51,13 @@ export async function syncFastActivities(state: AppState, colors: ThemeColors): 
 
     const activeIds = new Set(Object.keys(state.activeFasts));
 
+    // iOS ends a Live Activity ~8h after it starts (fasts run 12–36h). Anything
+    // we track that the system no longer lists must be restarted.
+    const live = new Set(Fast.getInstances().map((i) => i.getId()));
+    for (const [habitId, t] of [...tracked.entries()]) {
+      if (!live.has(t.id)) tracked.delete(habitId);
+    }
+
     // End activities whose fast is gone
     for (const [habitId, t] of [...tracked.entries()]) {
       if (!activeIds.has(habitId)) {
@@ -76,6 +83,7 @@ export async function syncFastActivities(state: AppState, colors: ThemeColors): 
       const activity = Fast.start(props, 'hablits://today', new Date(props.targetMs + 60 * 60 * 1000));
       tracked.set(habitId, {
         key,
+        id: activity.getId(),
         end: () => activity.end('default', props),
         update: (p) => activity.update(p),
       });

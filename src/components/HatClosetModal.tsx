@@ -194,9 +194,11 @@ export function HatClosetModal({
             <TextInput
               style={[styles.nameInput, { color: colors.text, borderBottomColor: colors.divider }]}
               value={nameDraft}
-              onChangeText={(t) => setNameDraft(t.slice(0, MAX_PET_NAME))}
-              onBlur={() => onRenamePet?.(nameDraft)}
-              onSubmitEditing={() => onRenamePet?.(nameDraft)}
+              onChangeText={(t) => {
+                const next = t.slice(0, MAX_PET_NAME);
+                setNameDraft(next);
+                onRenamePet?.(next); // reducer trims; committing live means closing can't lose it
+              }}
               placeholder="Name your pet"
               placeholderTextColor={colors.muted}
               maxLength={MAX_PET_NAME}

@@ -8,7 +8,7 @@
 // ============================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, Animated, AppState } from 'react-native';
 import { useTheme } from '../theme';
 import { Habit, RoutineStep, PetSpecies, HatType } from '../types';
 import { Pet } from './Pet';
@@ -40,21 +40,48 @@ export function RoutineRunnerModal({ visible, habit, completedStepIds, onToggleS
   const doneCount = total - remaining.length;
 
   // ---- timer ----
+  // Wall-clock based so locking the phone doesn't lose time (JS timers
+  // suspend in the background; we recompute from timestamps on each tick).
   const [elapsed, setElapsed] = useState(0);
   const [paused, setPaused] = useState(false);
   const [timeUp, setTimeUp] = useState(false);
+  const startedAt = useRef(Date.now());
+  const pausedTotal = useRef(0);
+  const pausedAt = useRef<number | null>(null);
   const currentId = current?.id ?? null;
 
+  const recompute = () => {
+    const pausedNow = pausedAt.current ? Date.now() - pausedAt.current : 0;
+    setElapsed(Math.max(0, Math.floor((Date.now() - startedAt.current - pausedTotal.current - pausedNow) / 1000)));
+  };
+
   useEffect(() => {
+    startedAt.current = Date.now();
+    pausedTotal.current = 0;
+    pausedAt.current = null;
     setElapsed(0);
     setTimeUp(false);
     setPaused(false);
   }, [currentId, visible]);
 
   useEffect(() => {
+    if (paused) {
+      pausedAt.current = Date.now();
+    } else if (pausedAt.current) {
+      pausedTotal.current += Date.now() - pausedAt.current;
+      pausedAt.current = null;
+    }
+  }, [paused]);
+
+  useEffect(() => {
     if (!visible || !current || paused) return;
-    const id = setInterval(() => setElapsed((e) => e + 1), 1000);
-    return () => clearInterval(id);
+    recompute();
+    const id = setInterval(recompute, 1000);
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && recompute());
+    return () => {
+      clearInterval(id);
+      sub.remove();
+    };
   }, [visible, currentId, paused]);
 
   const targetSeconds = current?.duration ? current.duration * 60 : null;

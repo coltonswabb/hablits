@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 type Native = {
   isAvailable(): Promise<boolean>;
   writeFile(name: string, contents: string): Promise<string>;
-  readFile(name: string): Promise<string | null>;
+  readFile(name: string, timeoutMs: number): Promise<string | null>;
   modifiedAt(name: string): Promise<string | null>;
 };
 
@@ -26,9 +26,10 @@ export function writeICloudFile(name: string, contents: string): Promise<string>
   return native.writeFile(name, contents);
 }
 
-export function readICloudFile(name: string): Promise<string | null> {
+/** Waits up to `timeoutMs` for iCloud to deliver the file on a new device. */
+export function readICloudFile(name: string, timeoutMs = 8000): Promise<string | null> {
   if (!native) return Promise.resolve(null);
-  return native.readFile(name);
+  return native.readFile(name, timeoutMs);
 }
 
 export function iCloudFileModifiedAt(name: string): Promise<string | null> {

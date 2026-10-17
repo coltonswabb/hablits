@@ -55,3 +55,22 @@ describe('cloudHasMore', () => {
     expect(cloudHasMore(state(), makeEnvelope(state()))).toBe(false);
   });
 });
+
+describe('mayOverwriteCloud (two-device guard)', () => {
+  const { mayOverwriteCloud } = require('../utils/cloudBackup');
+  const big = makeEnvelope(state({ habits: [habit, { ...habit, id: 'b' }], logs: { '2026-05-01': ['a'], '2026-05-02': ['a'] } }), new Date('2026-06-01T10:00:00Z'));
+  it('allows when there is no cloud copy', () => {
+    expect(mayOverwriteCloud(state({ habits: [habit] }), null, undefined)).toBe(true);
+  });
+  it('allows overwriting our own earlier write', () => {
+    expect(mayOverwriteCloud(state({ habits: [habit] }), big, '2026-06-01T10:00:00Z')).toBe(true);
+  });
+  it('refuses when another device wrote a newer, larger backup', () => {
+    expect(mayOverwriteCloud(state({ habits: [habit] }), big, '2026-05-30T10:00:00Z')).toBe(false);
+    expect(mayOverwriteCloud(state({ habits: [habit] }), big, undefined)).toBe(false);
+  });
+  it('allows when ours is at least as big', () => {
+    const mine = state({ habits: [habit, { ...habit, id: 'b' }, { ...habit, id: 'c' }], logs: { '2026-05-01': ['a'] } });
+    expect(mayOverwriteCloud(mine, big, undefined)).toBe(true);
+  });
+});

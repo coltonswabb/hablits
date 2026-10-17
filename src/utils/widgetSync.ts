@@ -68,7 +68,7 @@ export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Dat
   const done = habits.filter((h) => h.done).length;
   const pct = total > 0 ? done / total : 0;
 
-  const bestStreak = state.habits.reduce((best, h) => Math.max(best, calculateStreak(state.logs, h.id, h, date)), 0);
+  const bestStreak = state.habits.filter((h) => !h.archivedAt).reduce((best, h) => Math.max(best, calculateStreak(state.logs, h.id, h, date)), 0);
 
   return {
     date: ds,

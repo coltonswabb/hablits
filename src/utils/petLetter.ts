@@ -92,7 +92,7 @@ export function buildWeeklyRecap(state: AppState, today: Date = new Date()): Wee
   const worst = sorted[sorted.length - 1];
   const strugglingHabit = worst && habits.length > 1 && worst.done / worst.scheduled < 0.5 && worst !== topHabit ? worst : null;
 
-  const longestStreakNow = state.habits.reduce((b, h) => Math.max(b, calculateStreak(state.logs, h.id, h, today)), 0);
+  const longestStreakNow = state.habits.filter((h) => !h.archivedAt).reduce((b, h) => Math.max(b, calculateStreak(state.logs, h.id, h, today)), 0);
 
   return {
     weekStart: dateStr(lastMonday),

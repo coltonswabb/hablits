@@ -43,9 +43,13 @@ const FastLiveActivity = (props: FastActivityProps) => {
   return {
     banner: (
       <HStack spacing={14} modifiers={[padding({ all: 14 })]}>
-        <Gauge value={pct} min={0} max={1} modifiers={[gaugeStyle('circularCapacity'), tint(props.accent), frame({ width: 52, height: 52 })]}>
-          <Image systemName="fork.knife" size={16} color={props.accent} />
-        </Gauge>
+        <Gauge
+          value={pct}
+          min={0}
+          max={1}
+          modifiers={[gaugeStyle('circularCapacity'), tint(props.accent), frame({ width: 52, height: 52 })]}
+          currentValueLabel={<Image systemName="fork.knife" size={16} color={props.accent} />}
+        />
         <VStack alignment="leading" spacing={2}>
           <Text modifiers={[font({ size: 13, weight: 'semibold' }), foregroundStyle(props.muted), lineLimit(1)]}>{`${props.durationHours}h fast · ${title}`}</Text>
           {timer(30, props.text)}
@@ -55,12 +59,18 @@ const FastLiveActivity = (props: FastActivityProps) => {
       </HStack>
     ),
     compactLeading: <Image systemName="fork.knife" size={14} color={props.accent} />,
-    compactTrailing: timer(14, props.text),
+    compactTrailing: (
+      <Text timerInterval={range} countsDown={true} modifiers={[font({ size: 14, weight: 'bold', design: 'rounded' }), monospacedDigit(), foregroundStyle(props.text), lineLimit(1), frame({ maxWidth: 64 })]} />
+    ),
     minimal: <Image systemName="fork.knife" size={12} color={props.accent} />,
     expandedLeading: (
-      <Gauge value={pct} min={0} max={1} modifiers={[gaugeStyle('circularCapacity'), tint(props.accent), frame({ width: 44, height: 44 })]}>
-        <Image systemName="fork.knife" size={14} color={props.accent} />
-      </Gauge>
+      <Gauge
+        value={pct}
+        min={0}
+        max={1}
+        modifiers={[gaugeStyle('circularCapacity'), tint(props.accent), frame({ width: 44, height: 44 })]}
+        currentValueLabel={<Image systemName="fork.knife" size={14} color={props.accent} />}
+      />
     ),
     expandedCenter: (
       <VStack alignment="leading" spacing={2}>

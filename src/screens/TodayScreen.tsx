@@ -120,7 +120,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
   };
 
   // Weekly note from the pet (Mon/Tue, about last week)
-  const letter = useMemo(() => currentLetter(state, petStage as PetStage), [state.logs, state.habits, state.lastLetterDismissed, petStage]);
+  const letter = useMemo(() => currentLetter(state, petStage as PetStage), [state.logs, state.habits, state.lastLetterDismissed, state.petName, petStage]);
 
   // Track previous completion count to detect new completions
   const [prevCompletedCount, setPrevCompletedCount] = useState(completedCount);

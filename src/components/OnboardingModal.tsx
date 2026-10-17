@@ -106,6 +106,7 @@ export function OnboardingModal({ visible, species, hat, onComplete }: Onboardin
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Slide indicator */}
           <View style={styles.indicators}>

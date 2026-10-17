@@ -147,7 +147,7 @@ function appReducer(state: AppState, action: Action): AppState {
         habits: state.habits.map((h) => {
           if (h.id !== action.payload) return h;
           const { archivedAt: _a, ...rest } = h;
-          return { ...rest, order: state.habits.length + 1 };
+          return { ...rest, order: Math.max(0, ...state.habits.map((x) => x.order || 0)) + 1 };
         }),
       };
     }

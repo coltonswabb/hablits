@@ -1,8 +1,13 @@
 // Minimal iCloud Documents access for Hablits backups.
 //
 // Why a local module: expo-file-system can't reach the ubiquity container.
-// This exposes exactly four things — is iCloud available, write a string,
-// read a string, and the file's modification date — on a background queue.
+// Four functions — isAvailable, writeFile, readFile, modifiedAt — on a
+// background queue, with NSFileCoordinator around every touch of the
+// container (required for iCloud Documents; avoids NSFileVersion conflicts).
+//
+// readFile WAITS for iCloud to download the file: on a fresh device the item
+// is a ".name.icloud" placeholder (or metadata hasn't synced yet). We poll
+// for up to `timeoutMs`, triggering the download, before giving up with nil.
 //
 // Requires the iCloud capability with "iCloud Documents" and a container
 // named iCloud.<bundleIdentifier> (configured via app.json entitlements).
@@ -16,57 +21,82 @@ public class ICloudBackupModule: Module {
   public func definition() -> ModuleDefinition {
     Name("ICloudBackup")
 
-    // true when the user is signed into iCloud and the container is reachable
     AsyncFunction("isAvailable") { (promise: Promise) in
       queue.async {
         promise.resolve(self.documentsURL() != nil)
       }
     }
 
-    // Writes atomically; creates the Documents directory if needed.
     AsyncFunction("writeFile") { (name: String, contents: String, promise: Promise) in
       queue.async {
         guard let dir = self.documentsURL() else {
           promise.reject("E_ICLOUD_UNAVAILABLE", "iCloud is not available")
           return
         }
-        do {
-          try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-          let url = dir.appendingPathComponent(name)
-          try contents.write(to: url, atomically: true, encoding: .utf8)
+        let url = dir.appendingPathComponent(name)
+        var coordError: NSError?
+        var writeError: Error?
+        NSFileCoordinator().coordinate(writingItemAt: url, options: .forReplacing, error: &coordError) { target in
+          do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try contents.write(to: target, atomically: true, encoding: .utf8)
+          } catch {
+            writeError = error
+          }
+        }
+        if let e = coordError ?? (writeError as NSError?) {
+          promise.reject("E_WRITE", e.localizedDescription)
+        } else {
           promise.resolve(url.absoluteString)
-        } catch {
-          promise.reject("E_WRITE", error.localizedDescription)
         }
       }
     }
 
-    // Returns the file's contents, or null if it doesn't exist (yet — iCloud
-    // may still be downloading it; we kick off a download request).
-    AsyncFunction("readFile") { (name: String, promise: Promise) in
+    // Resolves the file's contents, or nil if it doesn't exist (after waiting
+    // up to timeoutMs for iCloud to deliver it).
+    AsyncFunction("readFile") { (name: String, timeoutMs: Double, promise: Promise) in
       queue.async {
         guard let dir = self.documentsURL() else {
           promise.reject("E_ICLOUD_UNAVAILABLE", "iCloud is not available")
           return
         }
         let url = dir.appendingPathComponent(name)
+        let placeholder = dir.appendingPathComponent(".\(name).icloud")
         let fm = FileManager.default
-        if !fm.fileExists(atPath: url.path) {
-          // Ask iCloud to fetch it if it exists on another device
-          try? fm.startDownloadingUbiquitousItem(at: url)
-          promise.resolve(nil)
-          return
-        }
-        do {
-          let text = try String(contentsOf: url, encoding: .utf8)
-          promise.resolve(text)
-        } catch {
-          promise.reject("E_READ", error.localizedDescription)
-        }
+        let deadline = Date().addingTimeInterval(max(0, timeoutMs) / 1000)
+
+        repeat {
+          if fm.fileExists(atPath: url.path) {
+            // Make sure it's fully downloaded, not just present
+            let status = (try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]))?.ubiquitousItemDownloadingStatus
+            if status == nil || status == .current || status == .downloaded {
+              var coordError: NSError?
+              var text: String?
+              var readError: Error?
+              NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordError) { target in
+                do { text = try String(contentsOf: target, encoding: .utf8) } catch { readError = error }
+              }
+              if let e = coordError ?? (readError as NSError?) {
+                promise.reject("E_READ", e.localizedDescription)
+              } else {
+                promise.resolve(text)
+              }
+              return
+            }
+          }
+          if fm.fileExists(atPath: placeholder.path) || fm.fileExists(atPath: url.path) {
+            try? fm.startDownloadingUbiquitousItem(at: url)
+          }
+          if Date() >= deadline { break }
+          Thread.sleep(forTimeInterval: 0.4)
+        } while true
+
+        promise.resolve(nil)
       }
     }
 
-    // ISO-8601 modification date of the file, or null
+    // ISO-8601 content modification date, or nil. Works for undownloaded
+    // items too (metadata is available before the content).
     AsyncFunction("modifiedAt") { (name: String, promise: Promise) in
       queue.async {
         guard let dir = self.documentsURL() else {
@@ -74,8 +104,10 @@ public class ICloudBackupModule: Module {
           return
         }
         let url = dir.appendingPathComponent(name)
-        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
-              let date = attrs[.modificationDate] as? Date else {
+        let placeholder = dir.appendingPathComponent(".\(name).icloud")
+        let candidate = FileManager.default.fileExists(atPath: url.path) ? url : placeholder
+        guard let values = try? candidate.resourceValues(forKeys: [.contentModificationDateKey]),
+              let date = values.contentModificationDate else {
           promise.resolve(nil)
           return
         }
