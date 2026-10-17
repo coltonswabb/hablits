@@ -23,8 +23,7 @@ import { textOn } from '../theme/colors';
 import { calculateStreak, countThisWeek } from '../utils';
 import { ProgressRing } from './ProgressRing';
 import { AnimatedNumber } from './AnimatedNumber';
-import { playSound } from '../utils/sounds';
-import { mediumTap, warningTap, errorTap } from '../utils/haptics';
+import { completionFeedback } from '../utils/celebrate';
 
 interface HabitCardProps {
   habit: Habit;
@@ -159,19 +158,8 @@ export function HabitCard({
       nextState = 'empty';
     }
 
-    // Play sound and haptic based on next state
-    if (nextState === 'complete') {
-      playSound('complete');
-      mediumTap();
-    } else if (nextState === 'skip') {
-      playSound('skip');
-      warningTap();
-    } else if (nextState === 'fail') {
-      playSound('fail');
-      errorTap();
-    } else {
-      mediumTap(); // Just haptic for clearing
-    }
+    // Haptic + sound as one sequenced event (see utils/celebrate)
+    completionFeedback(nextState === 'empty' ? 'clear' : nextState);
 
     // Animate checkbox with satisfying spring and rotation
     Animated.parallel([

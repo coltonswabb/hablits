@@ -8,8 +8,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Dimensions, Animated } from 'react-native';
 import { isReduceMotion } from '../utils/motion';
-import { playCelebrationSequence } from '../utils/sounds';
-import { celebrationTaps } from '../utils/haptics';
 
 interface Particle {
   id: number;
@@ -120,12 +118,6 @@ export function Confetti({
 
   useEffect(() => {
     if (active) {
-      // Play celebration sound and haptics (only for full confetti)
-      if (!mini) {
-        playCelebrationSequence();
-        celebrationTaps();
-      }
-
       const newParticles = createParticles();
       setParticles(newParticles);
 

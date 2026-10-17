@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useTheme, themeConfetti } from '../theme';
 import { textOn } from '../theme/colors';
+import { allDoneCelebration, miniCelebration } from '../utils/celebrate';
 import { useApp } from '../state';
 import {
   HabitCard,
@@ -121,20 +122,17 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
     if (completedCount > prevCompletedCount && activeHabits.length > 0) {
       // Check if ALL habits are now complete
       if (completedCount === activeHabits.length) {
-        // Full-screen confetti for completing everything!
-        fullConfetti.trigger();
-        setTimeout(() => fullConfetti.trigger(), 300);
+        // Everything done: one orchestrated fanfare (haptics → sound → confetti)
+        allDoneCelebration(() => fullConfetti.trigger());
       } else {
-        // Mini confetti for individual habit completion - measure card position
-        if (lastToggledHabitId && habitRefs.current[lastToggledHabitId]) {
-          habitRefs.current[lastToggledHabitId]?.measureInWindow((x: number, y: number, width: number, height: number) => {
-            // Trigger confetti from the left side (where checkbox is) and vertical center of the card
-            const confettiX = x + 40;
-            const confettiY = y + height / 2;
-            miniConfetti.trigger(confettiX, confettiY);
+        // Mini confetti next to the card, timed to land just after the chime
+        const card = lastToggledHabitId ? habitRefs.current[lastToggledHabitId] : null;
+        if (card) {
+          card.measureInWindow((x: number, y: number, width: number, height: number) => {
+            miniCelebration(() => miniConfetti.trigger(x + 40, y + height / 2));
           });
         } else {
-          miniConfetti.trigger();
+          miniCelebration(() => miniConfetti.trigger());
         }
       }
     }
