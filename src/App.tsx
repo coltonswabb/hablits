@@ -32,6 +32,8 @@ import { useReduceMotion } from './utils/motion';
 import { getDayCompletionPercent } from './utils/habits';
 import { bestStreakEver, stageForStreak } from './utils/evolution';
 import { migrateState } from './state/migrations';
+import { backupToICloud, readICloudBackup, shouldBackup, cloudHasMore } from './utils/cloudBackup';
+import Constants from 'expo-constants';
 
 // ============================================
 // MAIN CONTENT (inside providers)
@@ -72,6 +74,57 @@ function AppContent() {
   useEffect(() => {
     import('./utils/haptics').then((m) => m.setHapticsEnabled(state.hapticsEnabled));
   }, [state.hapticsEnabled]);
+
+  // ---- iCloud backup ----
+  // 1) Fresh install: if local is empty and iCloud has a backup, offer to restore
+  //    before onboarding appears.
+  const [restoreChecked, setRestoreChecked] = useState(Platform.OS !== 'ios');
+  useEffect(() => {
+    if (!isLoaded || restoreChecked) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const localEmpty = state.habits.length === 0 && Object.keys(state.logs).length === 0;
+        if (!localEmpty) return;
+        const cloud = await readICloudBackup();
+        if (cancelled || !cloud || !cloudHasMore(state, cloud)) return;
+        const when = cloud.exportedAt ? new Date(cloud.exportedAt).toLocaleString() : 'an earlier date';
+        await new Promise<void>((resolve) =>
+          Alert.alert(
+            'Restore from iCloud?',
+            `Found a Hablits backup from ${when} with ${cloud.data.habits.length} habit${cloud.data.habits.length === 1 ? '' : 's'}. Restore it to this device?`,
+            [
+              { text: 'Start fresh', style: 'cancel', onPress: () => resolve() },
+              {
+                text: 'Restore',
+                onPress: () => {
+                  dispatch({ type: 'LOAD_STATE', payload: migrateState(cloud.data, state) });
+                  resolve();
+                },
+              },
+            ],
+            { cancelable: false }
+          )
+        );
+      } finally {
+        if (!cancelled) setRestoreChecked(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, restoreChecked]);
+
+  // 2) Ongoing: a quiet daily snapshot whenever there's something to protect.
+  useEffect(() => {
+    if (!isLoaded || !restoreChecked || Platform.OS !== 'ios') return;
+    if (!shouldBackup(state, state.lastCloudBackupAt)) return;
+    const t = setTimeout(async () => {
+      const res = await backupToICloud(state, Constants.expoConfig?.version ?? undefined);
+      if (res.ok && res.at) dispatch({ type: 'SET_CLOUD_BACKUP_AT', payload: res.at });
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [isLoaded, restoreChecked, state.habits, state.logs, state.lastCloudBackupAt]);
 
   // ---- Reminders ----
   // Per-habit reminders from Day Plan times + a general reminder for the rest.
@@ -303,7 +356,7 @@ function AppContent() {
 
         {/* Onboarding Modal */}
         <OnboardingModal
-          visible={isLoaded && !state.hasCompletedOnboarding}
+          visible={isLoaded && restoreChecked && !state.hasCompletedOnboarding}
           species={state.petSpecies}
           hat={state.petHat}
           onComplete={(name) => {
@@ -348,6 +401,12 @@ function AppContent() {
             dispatch({ type: 'SET_NOTIFICATION_TIME', payload: { hour, minute } });
           }}
           appState={state}
+          lastCloudBackupAt={state.lastCloudBackupAt}
+          onBackupNow={async () => {
+            const res = await backupToICloud(state, Constants.expoConfig?.version ?? undefined);
+            if (res.ok && res.at) dispatch({ type: 'SET_CLOUD_BACKUP_AT', payload: res.at });
+            return res.ok;
+          }}
           onRestoreHabit={(id) => dispatch({ type: 'RESTORE_HABIT', payload: id })}
           onDeleteHabit={(id) => dispatch({ type: 'DELETE_HABIT', payload: id })}
           onImportData={(data) => dispatch({ type: 'LOAD_STATE', payload: migrateState(data, state) })}

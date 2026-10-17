@@ -67,6 +67,23 @@ app when it's closed, so v1 is read-only and taps open the app.
   `SCHEMA_VERSION` in `src/state/migrations.ts` and add a step.
 - Theme + accent colour persist separately under `hablits_theme_v1`.
 
+## iCloud backup
+
+- `modules/icloud-backup/` is a tiny local Expo module (Swift) exposing
+  read/write/modifiedAt on the app's iCloud Documents container. Expo
+  autolinks anything under `modules/`.
+- `src/utils/cloudBackup.ts`: envelope format, `shouldBackup` (at most every
+  6h, only when there's data), `cloudHasMore` (fresh-install check).
+- App: on first load with empty local data, reads the cloud and offers a
+  restore before onboarding; afterwards snapshots quietly ~daily.
+  Settings → Data shows status and a tap-to-back-up-now.
+- **Apple side (one time):** in the Developer portal, enable the iCloud
+  capability on `com.hablits.app` with "iCloud Documents" and create the
+  container `iCloud.com.hablits.app`. With EAS-managed credentials, the
+  first `eas build` after this change will ask to sync capabilities — say
+  yes. Entitlements are already in `app.json`.
+- The container is visible in the Files app as "Hablits" (NSUbiquitousContainers).
+
 ## Pet evolution & the Sunday letter
 
 - `src/utils/evolution.ts`: stage 0–3 from the best streak ANY habit has

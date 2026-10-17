@@ -39,6 +39,8 @@ interface SettingsModalProps {
   onSetNotificationTime: (hour: number, minute: number) => void;
   appState: AppState;
   onRestoreHabit?: (habitId: string) => void;
+  lastCloudBackupAt?: string;
+  onBackupNow?: () => Promise<boolean>;
   onDeleteHabit?: (habitId: string) => void;
   onImportData: (data: AppState) => void;
   currentTheme: string;
@@ -110,6 +112,8 @@ export function SettingsModal({
   onSetNotificationTime,
   appState,
   onRestoreHabit,
+  lastCloudBackupAt,
+  onBackupNow,
   onDeleteHabit,
   onImportData,
   currentTheme,
@@ -118,6 +122,7 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const { colors } = useTheme();
   const [isExporting, setIsExporting] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
   // Hue slider state (0-360)
@@ -417,6 +422,29 @@ export function SettingsModal({
             {/* Data Section */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Data</Text>
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                  onPress={async () => {
+                    if (!onBackupNow || isBackingUp) return;
+                    setIsBackingUp(true);
+                    const ok = await onBackupNow();
+                    setIsBackingUp(false);
+                    if (!ok) Alert.alert('iCloud unavailable', 'Sign in to iCloud and enable iCloud Drive for Hablits in Settings to back up automatically.');
+                  }}
+                  disabled={isBackingUp}
+                >
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>iCloud Backup</Text>
+                  <Text style={[styles.settingDescription, { color: colors.muted }]}>
+                    {isBackingUp
+                      ? 'Backing up…'
+                      : lastCloudBackupAt
+                        ? `Automatic · last backup ${new Date(lastCloudBackupAt).toLocaleString()} · tap to back up now`
+                        : 'Automatic daily backup · tap to back up now'}
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}

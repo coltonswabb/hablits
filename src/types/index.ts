@@ -81,6 +81,7 @@ export interface AppState {
   petStageSeen: number;                // Highest evolution stage the user has been congratulated for
   lastLetterDismissed?: string;        // weekStart (YYYY-MM-DD) of the last weekly pet letter dismissed
   petName?: string;                    // What the user calls their pet ('' = unnamed)
+  lastCloudBackupAt?: string;          // ISO time of the last successful iCloud backup
 }
 
 // Available theme names

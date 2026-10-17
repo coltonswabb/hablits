@@ -1,0 +1,10 @@
+{
+  "name": "icloud-backup",
+  "version": "1.0.0",
+  "description": "Read/write small files in the app's iCloud Documents container",
+  "main": "index.ts",
+  "license": "MIT",
+  "author": "Hablits",
+  "homepage": "https://github.com/coltonswabb/hablits",
+  "private": true
+}

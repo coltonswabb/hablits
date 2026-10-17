@@ -14,7 +14,26 @@
       "buildNumber": "3",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This app does not track you.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUbiquitousContainers": {
+          "iCloud.com.hablits.app": {
+            "NSUbiquitousContainerIsDocumentScopePublic": true,
+            "NSUbiquitousContainerName": "Hablits",
+            "NSUbiquitousContainerSupportedFolderLevels": "None"
+          }
+        }
+      },
+      "usesIcloudStorage": true,
+      "entitlements": {
+        "com.apple.developer.icloud-container-identifiers": [
+          "iCloud.com.hablits.app"
+        ],
+        "com.apple.developer.icloud-services": [
+          "CloudDocuments"
+        ],
+        "com.apple.developer.ubiquity-container-identifiers": [
+          "iCloud.com.hablits.app"
+        ]
       }
     },
     "android": {
