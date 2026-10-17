@@ -80,6 +80,20 @@ function hexToHue(hex: string | undefined): number {
   return Math.round(h * 360);
 }
 
+/**
+ * Backups are written as { version, exportedAt, data: AppState } by
+ * exportData(); older/manual files may be the bare state. Accept both and
+ * validate the essentials.
+ */
+function unwrapBackup(parsed: any): AppState {
+  const data = parsed && typeof parsed === 'object' && parsed.data && typeof parsed.data === 'object' && Array.isArray(parsed.data.habits)
+    ? parsed.data
+    : parsed;
+  if (!data || typeof data !== 'object') throw new Error('Invalid data format');
+  if (!Array.isArray(data.habits) || !Array.isArray(data.identities)) throw new Error('Missing required fields');
+  return data as AppState;
+}
+
 export function SettingsModal({
   visible,
   onClose,
@@ -162,7 +176,7 @@ export function SettingsModal({
           const file = e.target.files[0];
           if (file) {
             const text = await file.text();
-            const data = JSON.parse(text);
+            const data = unwrapBackup(JSON.parse(text));
             onImportData(data);
             Alert.alert('Success', 'Data imported successfully!');
           }
@@ -177,15 +191,7 @@ export function SettingsModal({
         if (!result.canceled && result.assets && result.assets[0]) {
           const file = new File(result.assets[0].uri);
           const fileContent = await file.text();
-          const data = JSON.parse(fileContent);
-
-          // Validate data structure
-          if (!data || typeof data !== 'object') {
-            throw new Error('Invalid data format');
-          }
-          if (!Array.isArray(data.habits) || !Array.isArray(data.identities)) {
-            throw new Error('Missing required fields');
-          }
+          const data = unwrapBackup(JSON.parse(fileContent));
 
           onImportData(data);
           Alert.alert('Success', 'Data imported successfully!');

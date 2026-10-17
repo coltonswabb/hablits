@@ -9,7 +9,7 @@
 // ============================================
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Providers
@@ -31,6 +31,7 @@ import { syncWidget } from './utils/widgetSync';
 import { useReduceMotion } from './utils/motion';
 import { getDayCompletionPercent } from './utils/habits';
 import { bestStreakEver, stageForStreak } from './utils/evolution';
+import { migrateState } from './state/migrations';
 
 // ============================================
 // MAIN CONTENT (inside providers)
@@ -68,6 +69,18 @@ function AppContent() {
   useEffect(() => {
     setSoundsEnabled(state.sfxEnabled);
   }, [state.sfxEnabled]);
+
+  // ---- Reminders ----
+  // Per-habit reminders from Day Plan times + a general reminder for the rest.
+  // Debounced so dragging a time slider doesn't hammer the OS.
+  useEffect(() => {
+    if (!isLoaded || Platform.OS === 'web') return;
+    const t = setTimeout(async () => {
+      const { syncHabitReminders } = await import('./utils/notifications');
+      syncHabitReminders(state);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [isLoaded, state.notificationsEnabled, state.notificationTime, state.habits, state.dayPlanSchedules]);
 
   // ---- Home screen widget ----
   // The pet is rasterized off-screen (PetSnapshot) so WidgetKit can show it;
@@ -304,45 +317,26 @@ function AppContent() {
           notificationTime={state.notificationTime}
           onToggleNotifications={async () => {
             const newEnabled = !state.notificationsEnabled;
-
             if (newEnabled) {
-              // Check permissions first when enabling
-              const { requestNotificationPermissions, scheduleDailyHabitReminders } = await import('./utils/notifications');
+              const { requestNotificationPermissions } = await import('./utils/notifications');
               const hasPermission = await requestNotificationPermissions();
-
               if (!hasPermission) {
                 Alert.alert(
                   'Permission Required',
-                  'Please enable notifications in your device settings to receive daily habit reminders.',
+                  'Please enable notifications in your device settings to receive habit reminders.',
                   [{ text: 'OK' }]
                 );
-                return; // Don't enable if no permission
+                return;
               }
-
-              dispatch({ type: 'SET_NOTIFICATIONS_ENABLED', payload: newEnabled });
-              await scheduleDailyHabitReminders(
-                state.habits,
-                state.notificationTime.hour,
-                state.notificationTime.minute
-              );
-            } else {
-              // Cancel notifications when disabled
-              dispatch({ type: 'SET_NOTIFICATIONS_ENABLED', payload: newEnabled });
-              const { cancelAllHabitReminders } = await import('./utils/notifications');
-              await cancelAllHabitReminders();
             }
+            dispatch({ type: 'SET_NOTIFICATIONS_ENABLED', payload: newEnabled });
+            // scheduling itself happens in the reminders effect below
           }}
-          onSetNotificationTime={async (hour, minute) => {
+          onSetNotificationTime={(hour, minute) => {
             dispatch({ type: 'SET_NOTIFICATION_TIME', payload: { hour, minute } });
-
-            // Reschedule notifications if enabled
-            if (state.notificationsEnabled) {
-              const { scheduleDailyHabitReminders } = await import('./utils/notifications');
-              await scheduleDailyHabitReminders(state.habits, hour, minute);
-            }
           }}
           appState={state}
-          onImportData={(data) => dispatch({ type: 'LOAD_STATE', payload: data })}
+          onImportData={(data) => dispatch({ type: 'LOAD_STATE', payload: migrateState(data, state) })}
           currentTheme={themeName}
           customAccentColor={customAccentColor}
           onSetCustomAccentColor={setCustomAccentColor}

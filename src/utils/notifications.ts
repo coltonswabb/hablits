@@ -6,7 +6,7 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { ActiveFast, Habit } from '../types';
+import { ActiveFast, Habit, AppState, HabitSchedule } from '../types';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -86,6 +86,7 @@ export async function scheduleFastCompletionNotification(
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: secondsUntilTarget,
         channelId: 'fasting',
       },
@@ -125,49 +126,146 @@ export async function cancelAllFastingNotifications(): Promise<void> {
   }
 }
 
+// iOS keeps at most 64 pending local notifications per app. Leave headroom
+// for fasting timers and the general reminder.
+const MAX_HABIT_TRIGGERS = 56;
+
+export type ReminderPlan = {
+  /** One entry per scheduled notification */
+  triggers: Array<{
+    habitId: string | null; // null = the general "time for your habits" reminder
+    title: string;
+    body: string;
+    hour: number;
+    minute: number;
+    weekday: number | null; // 1 = Sunday … 7 = Saturday, null = daily
+  }>;
+  /** Habits that have no time of their own and fall under the general reminder */
+  generalHabitNames: string[];
+};
+
+function parseTime(t: string): { hour: number; minute: number } | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  if (hour > 23 || minute > 59) return null;
+  return { hour, minute };
+}
+
+/** Days a scheduled habit should fire on, as [Sun..Sat] booleans. */
+function reminderDays(habit: Habit, schedule: HabitSchedule): boolean[] {
+  const active = Array.isArray(habit.days) && habit.days.length === 7 ? habit.days : [true, true, true, true, true, true, true];
+  if (schedule.recurring === 'custom' && Array.isArray(schedule.recurringDays) && schedule.recurringDays.length === 7) {
+    return active.map((a, i) => a && schedule.recurringDays![i]);
+  }
+  return active;
+}
+
 /**
- * Schedule daily habit reminders at a specific time
- * @param habits - List of habits to remind about
- * @param hour - Hour of day (0-23)
- * @param minute - Minute of hour (0-59)
+ * Pure planner: which notifications should exist for this state.
+ *  - a habit with a Day Plan time gets its own reminder at that time, on the
+ *    days it's scheduled (daily trigger if every day, else one per weekday)
+ *  - habits without a time share the general reminder at notificationTime
+ * Exported for tests.
  */
-export async function scheduleDailyHabitReminders(
-  habits: Habit[],
-  hour: number,
-  minute: number
-): Promise<void> {
+export function planHabitReminders(state: AppState): ReminderPlan {
+  const plan: ReminderPlan = { triggers: [], generalHabitNames: [] };
+  if (!state.notificationsEnabled) return plan;
+
+  const habits = [...state.habits].sort((a, b) => (a.order || 999) - (b.order || 999));
+  const perHabit: ReminderPlan['triggers'] = [];
+
+  for (const habit of habits) {
+    const schedule = state.dayPlanSchedules?.[habit.id];
+    const time = schedule?.time ? parseTime(schedule.time) : null;
+    if (!schedule || !time) {
+      plan.generalHabitNames.push(habit.name);
+      continue;
+    }
+    const days = reminderDays(habit, schedule);
+    const stepNote = habit.isRoutine && habit.steps?.length ? ` · ${habit.steps.length} steps` : '';
+    const base = { habitId: habit.id, title: habit.name, body: `Time for ${habit.name}${stepNote}`, ...time };
+
+    if (days.every(Boolean)) {
+      perHabit.push({ ...base, weekday: null });
+    } else if (days.some(Boolean)) {
+      days.forEach((on, i) => on && perHabit.push({ ...base, weekday: i + 1 }));
+    }
+  }
+
+  // Stay under the OS cap: collapse weekly triggers to daily if we'd overflow.
+  if (perHabit.length > MAX_HABIT_TRIGGERS) {
+    const seen = new Set<string>();
+    const collapsed: ReminderPlan['triggers'] = [];
+    for (const t of perHabit) {
+      if (t.habitId && seen.has(t.habitId)) continue;
+      if (t.habitId) seen.add(t.habitId);
+      collapsed.push({ ...t, weekday: null });
+    }
+    plan.triggers.push(...collapsed.slice(0, MAX_HABIT_TRIGGERS));
+  } else {
+    plan.triggers.push(...perHabit);
+  }
+
+  if (plan.generalHabitNames.length > 0) {
+    const names = plan.generalHabitNames.slice(0, 3).join(', ');
+    const more = plan.generalHabitNames.length > 3 ? ` and ${plan.generalHabitNames.length - 3} more` : '';
+    plan.triggers.push({
+      habitId: null,
+      title: 'Time for your habits! 💪',
+      body: `Don't forget: ${names}${more}`,
+      hour: state.notificationTime.hour,
+      minute: state.notificationTime.minute,
+      weekday: null,
+    });
+  }
+  return plan;
+}
+
+/**
+ * Make the OS match the plan: cancel every habit reminder and schedule the
+ * current set. Safe to call often — the planner is cheap and the OS calls
+ * are batched.
+ */
+export async function syncHabitReminders(state: AppState): Promise<void> {
   try {
+    await cancelAllHabitReminders();
+    if (!state.notificationsEnabled) return;
+
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return;
 
-    // Cancel existing habit reminders first
-    await cancelAllHabitReminders();
-
-    // Don't schedule if no habits
-    if (habits.length === 0) return;
-
-    // Schedule a daily repeating notification
-    const habitCount = habits.length;
-    const habitNames = habits.slice(0, 3).map(h => h.name).join(', ');
-    const moreCount = habitCount > 3 ? ` and ${habitCount - 3} more` : '';
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: `Time for your habits! 💪`,
-        body: `Don't forget: ${habitNames}${moreCount}`,
-        sound: true,
-        data: { type: 'habit-reminder' },
-      },
-      trigger: {
-        hour,
-        minute,
-        repeats: true,
-        channelId: 'habits',
-      },
-    });
+    const { triggers } = planHabitReminders(state);
+    await Promise.all(
+      triggers.map((t) =>
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title: t.title,
+            body: t.body,
+            sound: true,
+            data: { type: 'habit-reminder', habitId: t.habitId },
+          },
+          trigger:
+            t.weekday === null
+              ? { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: t.hour, minute: t.minute, channelId: 'habits' }
+              : { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: t.weekday, hour: t.hour, minute: t.minute, channelId: 'habits' },
+        })
+      )
+    );
   } catch (error) {
-    console.error('Error scheduling habit reminders:', error);
+    console.error('Error syncing habit reminders:', error);
   }
+}
+
+/** @deprecated use syncHabitReminders(state) */
+export async function scheduleDailyHabitReminders(habits: Habit[], hour: number, minute: number): Promise<void> {
+  await syncHabitReminders({
+    habits,
+    notificationsEnabled: true,
+    notificationTime: { hour, minute },
+    dayPlanSchedules: {},
+  } as unknown as AppState);
 }
 
 /**
