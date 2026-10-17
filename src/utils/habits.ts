@@ -81,31 +81,46 @@ export function countThisWeek(
 }
 
 /**
- * Calculate current streak for a habit (consecutive days completed)
- * Includes "streak freeze" - allows ONE miss before breaking streak
+ * Calculate current streak for a habit (consecutive scheduled days completed).
+ *
+ * Rules:
+ *  - Only days the habit is scheduled on count (pass `habit` for this; a
+ *    Mon/Wed/Fri habit is not "missed" on Tuesday).
+ *  - "Streak freeze": one missed day between completions is forgiven. Two
+ *    misses in a row end the streak. The counter resets on every completion.
+ *  - If today isn't done yet it is simply not counted — it's not a miss
+ *    until the day is over.
+ *
+ * @param referenceDate  "today" — injectable for tests
  */
 export function calculateStreak(
   logs: Record<string, string[]>,
-  habitId: string
+  habitId: string,
+  habit?: Habit,
+  referenceDate: Date = new Date()
 ): number {
   let streak = 0;
-  let missedDays = 0;
-  const MAX_MISSED_DAYS = 1; // Streak freeze: allow 1 miss
+  let consecutiveMisses = 0;
+  const MAX_CONSECUTIVE_MISSES = 1; // Streak freeze: allow 1 miss in a row
 
   for (let i = 0; i < 365; i++) {
-    const d = new Date();
+    const d = new Date(referenceDate);
     d.setDate(d.getDate() - i);
-    const ds = dateStr(d);
-    const dayLogs = logs[ds] || [];
 
-    if (dayLogs.includes(habitId)) {
+    // Unscheduled days are neutral — neither hit nor miss
+    if (habit && !isHabitActiveOn(habit, d)) continue;
+
+    const done = (logs[dateStr(d)] || []).includes(habitId);
+
+    if (done) {
       streak++;
+      consecutiveMisses = 0;
+    } else if (i === 0) {
+      // Today, not done yet: don't penalize, keep looking back
+      continue;
     } else {
-      missedDays++;
-      // Break streak if we've missed too many days in a row
-      if (missedDays > MAX_MISSED_DAYS) {
-        break;
-      }
+      consecutiveMisses++;
+      if (consecutiveMisses > MAX_CONSECUTIVE_MISSES) break;
     }
   }
 

@@ -22,6 +22,7 @@ export { FastingTimerCard } from './FastingTimerCard';
 export { EmptyState } from './EmptyState';
 export { SwipeHint } from './SwipeHint';
 export { HeatmapCalendar } from './HeatmapCalendar';
+export { ErrorBoundary } from './ErrorBoundary';
 export {
   FadeIn,
   SlideIn,

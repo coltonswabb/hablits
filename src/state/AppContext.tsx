@@ -11,10 +11,11 @@
 // predictable state updates.
 // ============================================
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Habit, Identity, DayMarks, HabitSchedule, PetSpecies, HatType } from '../types';
 import { generateId, todayStr } from '../utils';
+import { migrateState, SCHEMA_VERSION } from './migrations';
 
 // Storage key for AsyncStorage
 const STORAGE_KEY = 'hablits_state_v1';
@@ -88,24 +89,8 @@ type Action =
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'LOAD_STATE':
-      // Ensure routineStepLogs, activeFasts, and hapticsEnabled exist for backward compatibility
-      // Also migrate old routines to ensure isRoutine flag is properly set
-      const migratedHabits = action.payload.habits?.map(habit => {
-        // If habit has steps array but isRoutine is not explicitly true, fix it
-        if (habit.steps && Array.isArray(habit.steps) && habit.steps.length > 0 && !habit.isRoutine) {
-          return { ...habit, isRoutine: true };
-        }
-        return habit;
-      }) || [];
-
-      return {
-        ...action.payload,
-        habits: migratedHabits,
-        routineStepLogs: action.payload.routineStepLogs || {},
-        activeFasts: action.payload.activeFasts || {},
-        hapticsEnabled: action.payload.hapticsEnabled !== undefined ? action.payload.hapticsEnabled : true,
-        hasSeenSwipeHint: action.payload.hasSeenSwipeHint !== undefined ? action.payload.hasSeenSwipeHint : false,
-      };
+      // Payload has already been run through migrateState() in AppProvider.
+      return action.payload;
 
     case 'ADD_HABIT': {
       const newHabit: Habit = {
@@ -440,6 +425,7 @@ function appReducer(state: AppState, action: Action): AppState {
 interface AppContextType {
   state: AppState;
   dispatch: React.Dispatch<Action>;
+  isLoaded: boolean; // true once persisted state has been read from disk
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -452,53 +438,58 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   const [state, dispatch] = useReducer(appReducer, defaultState);
 
+  // Guard: we must NOT write to storage until the saved state has been read.
+  // Without this, the first render's defaultState was being written to disk
+  // on every launch, racing the load — a kill in that window wiped all data.
+  const [isLoaded, setIsLoaded] = useState(false);
+  const lastSavedRef = useRef<string | null>(null);
+
   // Load saved state on mount
   useEffect(() => {
+    let cancelled = false;
     async function loadState() {
       try {
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (saved) {
+        if (saved && !cancelled) {
           const parsed = JSON.parse(saved);
-          // Ensure new fields exist (backward compatibility)
-          if (!parsed.notes) {
-            parsed.notes = {};
-          }
-          if (!parsed.dayPlanSchedules) {
-            parsed.dayPlanSchedules = {};
-          }
-          if (parsed.hasCompletedOnboarding === undefined) {
-            // If user has any habits, they've already used the app - skip onboarding
-            parsed.hasCompletedOnboarding = parsed.habits && parsed.habits.length > 0;
-          }
-          if (!parsed.petSpecies) {
-            parsed.petSpecies = 'blob';
-          }
-          if (!parsed.petHat) {
-            parsed.petHat = 'none';
-          }
-          dispatch({ type: 'LOAD_STATE', payload: parsed });
+          const migrated = migrateState(parsed, defaultState);
+          lastSavedRef.current = saved;
+          dispatch({ type: 'LOAD_STATE', payload: migrated });
         }
       } catch (error) {
+        // A corrupt blob is far rarer than the old race; keep the raw text aside
+        // so it can be recovered rather than silently overwritten.
         console.error('Failed to load state:', error);
+        try {
+          const raw = await AsyncStorage.getItem(STORAGE_KEY);
+          if (raw) await AsyncStorage.setItem(`${STORAGE_KEY}_corrupt_${Date.now()}`, raw);
+        } catch {}
+      } finally {
+        if (!cancelled) setIsLoaded(true);
       }
     }
     loadState();
+    return () => { cancelled = true; };
   }, []);
 
-  // Save state whenever it changes
+  // Save state whenever it changes — but only after the initial load.
   useEffect(() => {
+    if (!isLoaded) return;
+    const serialized = JSON.stringify({ ...state, schemaVersion: SCHEMA_VERSION });
+    if (serialized === lastSavedRef.current) return; // nothing changed on disk
     async function saveState() {
       try {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        await AsyncStorage.setItem(STORAGE_KEY, serialized);
+        lastSavedRef.current = serialized;
       } catch (error) {
         console.error('Failed to save state:', error);
       }
     }
     saveState();
-  }, [state]);
+  }, [state, isLoaded]);
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, isLoaded }}>
       {children}
     </AppContext.Provider>
   );

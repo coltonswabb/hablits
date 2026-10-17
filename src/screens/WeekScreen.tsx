@@ -134,7 +134,7 @@ export function WeekScreen() {
               return state.logs[ds]?.includes(habit.id);
             }).length;
             const pct = Math.min(1, weekProgress / habit.weeklyGoal);
-            const streak = calculateStreak(state.logs, habit.id);
+            const streak = calculateStreak(state.logs, habit.id, habit);
             const goalMet = weekProgress >= habit.weeklyGoal;
             const identityColor = getIdentityColor(habit.identityId);
 

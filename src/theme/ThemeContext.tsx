@@ -9,9 +9,12 @@
 // done the right way in React.
 // ============================================
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeName } from '../types';
 import { themes, ThemeColors } from './colors';
+
+const THEME_STORAGE_KEY = 'hablits_theme_v1';
 
 // What the context provides
 interface ThemeContextType {
@@ -34,6 +37,33 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // State to track current theme
   const [themeName, setThemeName] = useState<ThemeName>('light');
   const [customAccentColor, setCustomAccentColor] = useState<string | undefined>(undefined);
+  const loadedRef = useRef(false);
+
+  // Restore the saved theme on launch
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved.themeName && saved.themeName in themes) setThemeName(saved.themeName);
+          if (typeof saved.customAccentColor === 'string') setCustomAccentColor(saved.customAccentColor);
+        }
+      } catch (error) {
+        console.error('Failed to load theme:', error);
+      } finally {
+        loadedRef.current = true;
+      }
+    })();
+  }, []);
+
+  // Persist whenever the user changes theme or accent (never before load — same race as AppContext)
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    AsyncStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ themeName, customAccentColor })).catch((error) =>
+      console.error('Failed to save theme:', error)
+    );
+  }, [themeName, customAccentColor]);
 
   // Get the colors for current theme
   let colors = themes[themeName];
@@ -54,8 +84,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   // Function to change theme
   const setTheme = (newTheme: ThemeName) => {
-    setThemeName(newTheme);
-    // Later: save to AsyncStorage so it persists
+    setThemeName(newTheme); // persisted by the effect above
   };
 
   return (

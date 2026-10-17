@@ -73,7 +73,7 @@ export function HabitCard({
   const flameScale = useRef(new Animated.Value(1)).current;
   const flameOpacity = useRef(new Animated.Value(1)).current;
 
-  const streak = calculateStreak(logs, habit.id);
+  const streak = calculateStreak(logs, habit.id, habit);
   const thisWeek = countThisWeek(logs, habit.id);
   const progress = Math.min(1, thisWeek / habit.weeklyGoal);
 

@@ -560,11 +560,12 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
                       {allStepsComplete && !expandedRoutines.has(habit.id) ? (
                         // Collapsed/stacked view when all steps complete
                         <View style={{ paddingTop: 2, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <View style={{ flex: 1, position: 'relative', height: 32 + (habit.steps.length - 1) * 6 }}>
-                            {habit.steps.sort((a, b) => b.order - a.order).map((step, idx) => {
-                              const reverseIdx = habit.steps.length - 1 - idx;
+                          <View style={{ flex: 1, position: 'relative', height: 32 + ((habit.steps?.length ?? 1) - 1) * 6 }}>
+                            {[...(habit.steps ?? [])].sort((a, b) => b.order - a.order).map((step, idx) => {
+                              const stepCount = habit.steps?.length ?? 0;
+                              const reverseIdx = stepCount - 1 - idx;
                               const isTopCard = idx === 0;
-                              const opacity = isTopCard ? 1.0 : 0.3 + (reverseIdx / habit.steps.length) * 0.5;
+                              const opacity = isTopCard ? 1.0 : 0.3 + (reverseIdx / stepCount) * 0.5;
                               return (
                                 <View
                                   key={step.id}
@@ -593,7 +594,7 @@ export function TodayScreen({ petSpecies, petHat, onOpenHatCloset }: TodayScreen
                                       }}
                                       numberOfLines={1}
                                     >
-                                      {habit.name} - {habit.steps.length} steps - Complete
+                                      {habit.name} - {habit.steps?.length ?? 0} steps - Complete
                                     </Text>
                                   )}
                                 </View>

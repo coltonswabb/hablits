@@ -152,7 +152,7 @@ export function StatsScreen() {
       }
 
       const rate = totalDays > 0 ? completedDays / totalDays : 0;
-      const streak = calculateStreak(state.logs, habit.id);
+      const streak = calculateStreak(state.logs, habit.id, habit);
 
       return {
         habit,

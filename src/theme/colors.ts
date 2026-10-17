@@ -19,7 +19,6 @@ export interface ThemeColors {
   divider: string;    // Borders and dividers
   danger: string;     // Delete buttons, errors
   good: string;       // Success, completed states
-    textOnAccent: '#ffffff',
   textOnAccent: string; // Text color to use on accent-colored backgrounds
 }
 

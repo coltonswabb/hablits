@@ -4,7 +4,8 @@
 // Functions to export and import app data
 // ============================================
 
-import * as FileSystem from 'expo-file-system';
+// expo-file-system v19 moved documentDirectory/writeAsStringAsync to the legacy entrypoint
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { AppState } from '../types';
 

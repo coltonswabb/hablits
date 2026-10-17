@@ -9,7 +9,7 @@
 // ============================================
 
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Animated } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Providers
@@ -17,7 +17,7 @@ import { ThemeProvider, useTheme } from './theme';
 import { AppProvider, useApp } from './state';
 
 // Components
-import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal } from './components';
+import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary } from './components';
 
 // Screens
 import { TodayScreen, WeekScreen, CalendarScreen, DayPlanScreen, StatsScreen } from './screens';
@@ -322,11 +322,13 @@ function AppContent() {
 // ============================================
 export default function App() {
   return (
-    <ThemeProvider>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
