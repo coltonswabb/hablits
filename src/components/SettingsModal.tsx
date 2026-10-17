@@ -19,6 +19,8 @@ import {
 } from 'react-native';
 import { useTheme } from '../theme';
 import { textOn } from '../theme/colors';
+import { archivedHabits } from '../utils/habits';
+import { longestStreakEver } from '../utils/evolution';
 import { AppState } from '../types';
 import { Paths, File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -36,6 +38,8 @@ interface SettingsModalProps {
   onToggleNotifications: () => void;
   onSetNotificationTime: (hour: number, minute: number) => void;
   appState: AppState;
+  onRestoreHabit?: (habitId: string) => void;
+  onDeleteHabit?: (habitId: string) => void;
   onImportData: (data: AppState) => void;
   currentTheme: string;
   customAccentColor?: string;
@@ -105,6 +109,8 @@ export function SettingsModal({
   onToggleNotifications,
   onSetNotificationTime,
   appState,
+  onRestoreHabit,
+  onDeleteHabit,
   onImportData,
   currentTheme,
   customAccentColor,
@@ -364,6 +370,49 @@ export function SettingsModal({
                 </View>
               )}
             </View>
+
+            {/* Archived habits */}
+            {archivedHabits(appState.habits).length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Archived Habits</Text>
+                <Text style={[styles.settingDescription, { color: colors.muted, marginBottom: 10 }]}>
+                  Retired, but their history still counts toward your pet.
+                </Text>
+                {archivedHabits(appState.habits).map((h) => (
+                  <View key={h.id} style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.settingLabel, { color: colors.text }]}>{h.name}</Text>
+                        <Text style={[styles.settingDescription, { color: colors.muted }]}>
+                          {`Archived ${h.archivedAt} · best streak ${longestStreakEver(appState.logs, h.id, h)}`}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <TouchableOpacity
+                          onPress={() => onRestoreHabit?.(h.id)}
+                          style={[styles.toggle, { backgroundColor: colors.accent }]}
+                          accessibilityLabel={`Restore ${h.name}`}
+                        >
+                          <Text style={[styles.toggleText, { color: colors.textOnAccent }]}>Restore</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() =>
+                            Alert.alert('Delete Forever', `Erase "${h.name}" and all its history?`, [
+                              { text: 'Cancel', style: 'cancel' },
+                              { text: 'Delete', style: 'destructive', onPress: () => onDeleteHabit?.(h.id) },
+                            ])
+                          }
+                          style={[styles.toggle, { backgroundColor: colors.danger }]}
+                          accessibilityLabel={`Delete ${h.name} forever`}
+                        >
+                          <Text style={[styles.toggleText, { color: textOn(colors.danger) }]}>Delete</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
 
             {/* Data Section */}
             <View style={styles.section}>

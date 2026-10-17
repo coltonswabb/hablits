@@ -348,6 +348,8 @@ function AppContent() {
             dispatch({ type: 'SET_NOTIFICATION_TIME', payload: { hour, minute } });
           }}
           appState={state}
+          onRestoreHabit={(id) => dispatch({ type: 'RESTORE_HABIT', payload: id })}
+          onDeleteHabit={(id) => dispatch({ type: 'DELETE_HABIT', payload: id })}
           onImportData={(data) => dispatch({ type: 'LOAD_STATE', payload: migrateState(data, state) })}
           currentTheme={themeName}
           customAccentColor={customAccentColor}

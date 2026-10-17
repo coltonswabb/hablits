@@ -882,6 +882,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         totalHabits={state.habits.length}
         onSave={handleSaveHabit}
         onDelete={handleDeleteHabit}
+        onArchive={(habitId) => dispatch({ type: 'ARCHIVE_HABIT', payload: habitId })}
         onClose={() => setModalVisible(false)}
       />
 

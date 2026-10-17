@@ -18,7 +18,7 @@ import Svg, { Circle, Rect, Line, Text as SvgText, Path } from 'react-native-svg
 import { useTheme } from '../theme';
 import { useApp } from '../state';
 import { dateStr, startOfWeek } from '../utils/dates';
-import { getActiveHabits, getDayCompletionPercent, calculateStreak } from '../utils/habits';
+import { getActiveHabits, getDayCompletionPercent, calculateStreak, liveHabits } from '../utils/habits';
 import { EmptyState, HeatmapCalendar } from '../components';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -105,7 +105,7 @@ export function StatsScreen() {
   const totalCompletions = identityBreakdown.reduce((sum, b) => sum + b.count, 0);
 
   // Calculate total stats FIRST (needed for insights)
-  const totalHabits = state.habits.length;
+  const totalHabits = liveHabits(state.habits).length;
   const allCompletions = Object.values(state.logs).reduce((sum, logs) => sum + logs.length, 0);
   const avgPerDay = daysData.length > 0
     ? daysData.reduce((sum, d) => sum + d.count, 0) / daysData.length
@@ -129,9 +129,10 @@ export function StatsScreen() {
 
   // Calculate best and worst performing habits
   const getHabitPerformance = () => {
-    if (state.habits.length === 0) return { best: [], worst: [] };
+    const live = liveHabits(state.habits);
+    if (live.length === 0) return { best: [], worst: [] };
 
-    const habitStats = state.habits.map(habit => {
+    const habitStats = live.map(habit => {
       let totalDays = 0;
       let completedDays = 0;
 

@@ -28,6 +28,7 @@ interface EditHabitModalProps {
   totalHabits: number;           // For order dropdown
   onSave: (habit: Partial<Habit> & { name: string }) => void;
   onDelete?: (habitId: string) => void;
+  onArchive?: (habitId: string) => void;
   onClose: () => void;
 }
 
@@ -40,6 +41,7 @@ export function EditHabitModal({
   totalHabits,
   onSave,
   onDelete,
+  onArchive,
   onClose,
 }: EditHabitModalProps) {
   const { colors } = useTheme();
@@ -158,6 +160,24 @@ export function EditHabitModal({
     onClose();
   };
 
+  // Handle archive — keeps every log, streak and note; just stops scheduling it
+  const handleArchive = () => {
+    if (!habit || !onArchive) return;
+    const go = () => {
+      onArchive(habit.id);
+      onClose();
+    };
+    if (typeof window !== 'undefined' && window.confirm) {
+      if (window.confirm(`Archive "${habit.name}"? Its history stays; it just leaves your daily list. You can restore it from Settings.`)) go();
+    } else {
+      Alert.alert(
+        'Archive Habit',
+        `"${habit.name}" will leave your daily list but keep all its history. Restore it any time from Settings.`,
+        [{ text: 'Cancel', style: 'cancel' }, { text: 'Archive', onPress: go }]
+      );
+    }
+  };
+
   // Handle delete
   const handleDelete = () => {
     if (!habit || !onDelete) return;
@@ -165,7 +185,7 @@ export function EditHabitModal({
     // For web compatibility, use a simpler confirm
     if (typeof window !== 'undefined' && window.confirm) {
       const confirmed = window.confirm(
-        `Are you sure you want to delete "${habit.name}"? This will remove all its history.`
+        `Delete "${habit.name}" forever? This erases all its history. If you just want it off your list, use Archive instead.`
       );
       if (confirmed) {
         onDelete(habit.id);
@@ -174,8 +194,8 @@ export function EditHabitModal({
     } else {
       // Fallback to Alert for native
       Alert.alert(
-        'Delete Habit',
-        `Are you sure you want to delete "${habit.name}"? This will remove all its history.`,
+        'Delete Forever',
+        `This erases "${habit.name}" and all its history. If you just want it off your list, Archive keeps everything.`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -451,14 +471,23 @@ export function EditHabitModal({
 
             {/* Action Buttons */}
             <View style={styles.actions}>
-              {/* Delete Button (only when editing) */}
-              {isEditing && onDelete && (
-                <TouchableOpacity
-                  style={[styles.deleteButton, { backgroundColor: colors.danger }]}
-                  onPress={handleDelete}
-                >
-                  <Text style={styles.deleteButtonText}>Delete</Text>
-                </TouchableOpacity>
+              {/* Archive / Delete (only when editing) */}
+              {isEditing && (onArchive || onDelete) && (
+                <View style={styles.leftActions}>
+                  {onArchive && (
+                    <TouchableOpacity
+                      style={[styles.deleteButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.divider }]}
+                      onPress={handleArchive}
+                    >
+                      <Text style={[styles.deleteButtonText, { color: colors.text }]}>Archive</Text>
+                    </TouchableOpacity>
+                  )}
+                  {onDelete && (
+                    <TouchableOpacity style={styles.deleteLink} onPress={handleDelete} accessibilityLabel="Delete forever">
+                      <Text style={[styles.deleteLinkText, { color: colors.danger }]}>Delete</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
 
               <View style={styles.rightActions}>
@@ -604,6 +633,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  leftActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  deleteLink: { paddingVertical: 8 },
+  deleteLinkText: { fontSize: 14, fontWeight: '600' },
   deleteButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,

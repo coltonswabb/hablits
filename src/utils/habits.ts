@@ -15,11 +15,23 @@ import { dateStr, startOfWeek } from './dates';
  * @returns true if habit is active on that day
  */
 export function isHabitActiveOn(habit: Habit, date: Date): boolean {
+  // Archived habits keep their history but are never scheduled from the archive day on
+  if (habit.archivedAt && dateStr(date) >= habit.archivedAt) return false;
   if (!habit.days || !Array.isArray(habit.days)) {
     return true; // If no days specified, active every day
   }
   const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
   return habit.days[dayOfWeek];
+}
+
+/** Habits that are not archived — what lists, pickers and reminders should show. */
+export function liveHabits(habits: Habit[]): Habit[] {
+  return habits.filter((h) => !h.archivedAt);
+}
+
+/** Archived habits, most recently archived first. */
+export function archivedHabits(habits: Habit[]): Habit[] {
+  return habits.filter((h) => !!h.archivedAt).sort((a, b) => (b.archivedAt || '').localeCompare(a.archivedAt || ''));
 }
 
 /**

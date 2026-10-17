@@ -54,6 +54,8 @@ type Action =
   | { type: 'ADD_HABIT'; payload: Omit<Habit, 'id' | 'createdAt'> }
   | { type: 'UPDATE_HABIT'; payload: Habit }
   | { type: 'DELETE_HABIT'; payload: string }
+  | { type: 'ARCHIVE_HABIT'; payload: string }
+  | { type: 'RESTORE_HABIT'; payload: string }
   | { type: 'REORDER_HABITS'; payload: Habit[] }
   | { type: 'TOGGLE_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'SKIP_HABIT'; payload: { habitId: string; date: string } }
@@ -123,6 +125,29 @@ function appReducer(state: AppState, action: Action): AppState {
           ...h,
           order: index + 1,
         })),
+      };
+    }
+
+    case 'ARCHIVE_HABIT': {
+      const today = todayStr();
+      // Also drop its Day Plan slot so it stops generating reminders
+      const dayPlanSchedules = { ...state.dayPlanSchedules };
+      delete dayPlanSchedules[action.payload];
+      return {
+        ...state,
+        habits: state.habits.map((h) => (h.id === action.payload ? { ...h, archivedAt: today } : h)),
+        dayPlanSchedules,
+      };
+    }
+
+    case 'RESTORE_HABIT': {
+      return {
+        ...state,
+        habits: state.habits.map((h) => {
+          if (h.id !== action.payload) return h;
+          const { archivedAt: _a, ...rest } = h;
+          return { ...rest, order: state.habits.length + 1 };
+        }),
       };
     }
 

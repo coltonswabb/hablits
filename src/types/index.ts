@@ -25,6 +25,7 @@ export interface Habit {
   order: number;                // Display order in lists
   isRoutine?: boolean;          // Whether this is a routine habit
   steps?: RoutineStep[];        // Steps for routine habits
+  archivedAt?: string;          // YYYY-MM-DD the habit was retired. History before this date still counts.
 }
 
 // An identity (grouping for habits)

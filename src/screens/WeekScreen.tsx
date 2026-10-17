@@ -21,6 +21,7 @@ import {
   dateStr,
   sortByOrder,
   calculateStreak,
+  liveHabits,
 } from '../utils';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -38,8 +39,8 @@ export function WeekScreen() {
   // Filter habits by identity
   const habits =
     state.currentIdentityFilter === 'all'
-      ? state.habits
-      : state.habits.filter((h) => h.identityId === state.currentIdentityFilter);
+      ? liveHabits(state.habits)
+      : liveHabits(state.habits).filter((h) => h.identityId === state.currentIdentityFilter);
 
   const sortedHabits = sortByOrder(habits);
 
