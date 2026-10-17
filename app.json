@@ -104,7 +104,8 @@
                 "initialLayout": "./src/widgets/TodayWidget.tsx"
               }
             }
-          ]
+          ],
+          "frequentUpdates": false
         }
       ]
     ],

@@ -33,6 +33,7 @@ import { getDayCompletionPercent } from './utils/habits';
 import { bestStreakEver, stageForStreak } from './utils/evolution';
 import { migrateState } from './state/migrations';
 import { backupToICloud, readICloudBackup, shouldBackup, cloudHasMore } from './utils/cloudBackup';
+import { syncFastActivities } from './utils/fastActivity';
 import Constants from 'expo-constants';
 
 // ============================================
@@ -125,6 +126,12 @@ function AppContent() {
     }, 5000);
     return () => clearTimeout(t);
   }, [isLoaded, restoreChecked, state.habits, state.logs, state.lastCloudBackupAt]);
+
+  // ---- Fasting Live Activity ----
+  useEffect(() => {
+    if (!isLoaded) return;
+    syncFastActivities(state, colors);
+  }, [isLoaded, state.activeFasts, colors]);
 
   // ---- Reminders ----
   // Per-habit reminders from Day Plan times + a general reminder for the rest.
