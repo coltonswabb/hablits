@@ -23,6 +23,7 @@ import { allDoneCelebration, miniCelebration } from '../utils/celebrate';
 import { currentLetter } from '../utils/petLetter';
 import { PetStage } from '../utils/evolution';
 import { PetLetterCard } from '../components/PetLetterCard';
+import { RoutineRunnerModal } from '../components/RoutineRunnerModal';
 import { useApp } from '../state';
 import {
   HabitCard,
@@ -75,6 +76,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
 
   // Track which routines are manually expanded (even when complete)
   const [expandedRoutines, setExpandedRoutines] = useState<Set<string>>(new Set());
+  const [runningRoutineId, setRunningRoutineId] = useState<string | null>(null);
 
   // Refs for habit card positions (for confetti origin)
   const habitRefs = useRef<Record<string, React.ComponentRef<typeof View> | null>>({});
@@ -669,7 +671,18 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                               </Text>
                             </TouchableOpacity>
                           )}
-                          {habit.steps.sort((a, b) => a.order - b.order).map((step, stepIndex) => {
+                          {!allStepsComplete && (
+                            <TouchableOpacity
+                              onPress={() => setRunningRoutineId(habit.id)}
+                              style={[styles.startRoutine, { backgroundColor: colors.accent }]}
+                              accessibilityLabel={`Start ${habit.name}`}
+                            >
+                              <Text style={[styles.startRoutineText, { color: colors.textOnAccent }]}>
+                                {`▶  Start routine${habit.steps.some((st) => st.duration) ? ` · ${habit.steps.reduce((m, st) => m + (st.duration || 0), 0)} min` : ''}`}
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                          {[...habit.steps].sort((a, b) => a.order - b.order).map((step, stepIndex) => {
                           const isStepComplete = completedSteps.includes(step.id);
                           return (
                             <TouchableOpacity
@@ -886,6 +899,19 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         onClose={() => setModalVisible(false)}
       />
 
+      {/* Routine runner */}
+      <RoutineRunnerModal
+        visible={runningRoutineId !== null}
+        habit={state.habits.find((h) => h.id === runningRoutineId) ?? null}
+        completedStepIds={runningRoutineId ? state.routineStepLogs[today]?.[runningRoutineId] || [] : []}
+        onToggleStep={(stepId) => runningRoutineId && handleToggleRoutineStep(runningRoutineId, stepId)}
+        onClose={() => setRunningRoutineId(null)}
+        species={petSpecies}
+        hat={petHat}
+        stage={petStage}
+        petName={state.petName}
+      />
+
       {/* Note Modal */}
       <NoteModal
         visible={noteModalVisible}
@@ -1047,6 +1073,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: -2,
   },
+  startRoutine: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, marginBottom: 8 },
+  startRoutineText: { fontSize: 13, fontWeight: '700' },
   routineStep: {
     flexDirection: 'row',
     alignItems: 'center',
