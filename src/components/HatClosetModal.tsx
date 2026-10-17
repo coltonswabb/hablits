@@ -275,7 +275,7 @@ export function HatClosetModal({
             ]}
             onPress={onClose}
           >
-            <Text style={styles.closeButtonText}>Done</Text>
+            <Text style={[styles.closeButtonText, { color: colors.textOnAccent }]}>Done</Text>
           </Pressable>
 
           {/* New Hat Unlocked Celebration Overlay */}

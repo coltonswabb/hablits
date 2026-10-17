@@ -78,13 +78,13 @@ export function IdentityFilterModal({
                 <Text
                   style={[
                     styles.filterName,
-                    { color: currentFilter === 'all' ? '#fff' : colors.text },
+                    { color: currentFilter === 'all' ? colors.textOnAccent : colors.text },
                   ]}
                 >
                   All Habits
                 </Text>
                 {currentFilter === 'all' && (
-                  <Text style={styles.checkmark}>✓</Text>
+                  <Text style={[styles.checkmark, { color: colors.textOnAccent }]}>✓</Text>
                 )}
               </View>
             </TouchableOpacity>
@@ -110,13 +110,13 @@ export function IdentityFilterModal({
                     <Text
                       style={[
                         styles.filterName,
-                        { color: isSelected ? '#fff' : colors.text },
+                        { color: isSelected ? colors.textOnAccent : colors.text },
                       ]}
                     >
                       {identity.name}
                     </Text>
                     {isSelected && (
-                      <Text style={styles.checkmark}>✓</Text>
+                      <Text style={[styles.checkmark, { color: colors.textOnAccent }]}>✓</Text>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -130,7 +130,7 @@ export function IdentityFilterModal({
               style={[styles.manageButton, { backgroundColor: colors.accent }]}
               onPress={handleManageIdentities}
             >
-              <Text style={styles.manageButtonText}>Manage Identities</Text>
+              <Text style={[styles.manageButtonText, { color: colors.textOnAccent }]}>Manage Identities</Text>
             </TouchableOpacity>
           </View>
         </View>

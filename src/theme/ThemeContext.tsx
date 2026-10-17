@@ -12,7 +12,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeName } from '../types';
-import { themes, ThemeColors } from './colors';
+import { themes, ThemeColors, textOn } from './colors';
 
 const THEME_STORAGE_KEY = 'hablits_theme_v1';
 
@@ -74,6 +74,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       ...colors,
       accent: customAccentColor,
       accent2: customAccentColor, // Use same color for both accent variants
+      textOnAccent: textOn(customAccentColor),
       // For superdark theme, also change text and muted colors to match accent
       ...(themeName === 'superdark' && {
         text: customAccentColor,

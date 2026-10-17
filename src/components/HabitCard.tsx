@@ -19,6 +19,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Habit, Identity } from '../types';
 import { useTheme } from '../theme';
+import { textOn } from '../theme/colors';
 import { calculateStreak, countThisWeek } from '../utils';
 import { ProgressRing } from './ProgressRing';
 import { AnimatedNumber } from './AnimatedNumber';
@@ -318,6 +319,7 @@ export function HabitCard({
             <Animated.Text
               style={[
                 styles.checkboxText,
+                { color: textOn(checkboxBg) },
                 {
                   transform: [{ scale: checkmarkScale }],
                 },
@@ -326,7 +328,7 @@ export function HabitCard({
               {checkboxText}
             </Animated.Text>
           )}
-          {!isComplete && <Text style={styles.checkboxText}>{checkboxText}</Text>}
+          {!isComplete && <Text style={[styles.checkboxText, { color: textOn(checkboxBg) }]}>{checkboxText}</Text>}
         </Animated.View>
       </TouchableOpacity>
 

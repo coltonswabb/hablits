@@ -232,7 +232,7 @@ export function IdentitiesModal({
               style={[styles.saveButton, { backgroundColor: colors.accent }]}
               onPress={handleSave}
             >
-              <Text style={styles.saveButtonText}>Save</Text>
+              <Text style={[styles.saveButtonText, { color: colors.textOnAccent }]}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>

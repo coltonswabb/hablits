@@ -18,6 +18,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useTheme, themeConfetti } from '../theme';
+import { textOn } from '../theme/colors';
 import { useApp } from '../state';
 import {
   HabitCard,
@@ -430,7 +431,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
               </Text>
             </View>
             <View style={[styles.countPill, { backgroundColor: colors.accent }]}>
-              <Text style={styles.countText}>
+              <Text style={[styles.countText, { color: colors.textOnAccent }]}>
                 {completedCount}/{activeHabits.length}
               </Text>
             </View>
@@ -457,7 +458,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                 style={[styles.addButton, { backgroundColor: colors.accent }]}
                 onPress={handleQuickAdd}
               >
-                <Text style={styles.addButtonText}>Add</Text>
+                <Text style={[styles.addButtonText, { color: colors.textOnAccent }]}>Add</Text>
               </TouchableOpacity>
               {activeHabits.length > 1 && (
                 <TouchableOpacity
@@ -473,7 +474,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
               style={[styles.addButton, { backgroundColor: colors.good, flex: 1 }]}
               onPress={() => setReorderMode(false)}
             >
-              <Text style={styles.addButtonText}>Done Reordering</Text>
+              <Text style={[styles.addButtonText, { color: textOn(colors.good) }]}>Done Reordering</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -677,7 +678,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                                   },
                                 ]}
                               >
-                                {isStepComplete && <Text style={styles.stepCheckmark}>✓</Text>}
+                                {isStepComplete && <Text style={[styles.stepCheckmark, { color: textOn(colors.good) }]}>✓</Text>}
                               </View>
                               <Text
                                 style={[
@@ -855,7 +856,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         style={[styles.fab, { backgroundColor: colors.accent }]}
         onPress={handleAddHabit}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Text style={[styles.fabText, { color: colors.textOnAccent }]}>+</Text>
       </TouchableOpacity>
 
       {/* Edit Modal */}

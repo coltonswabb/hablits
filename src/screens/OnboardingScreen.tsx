@@ -121,7 +121,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           style={[styles.nextButton, { backgroundColor: colors.accent }]}
           onPress={handleNext}
         >
-          <Text style={styles.nextButtonText}>
+          <Text style={[styles.nextButtonText, { color: colors.textOnAccent }]}>
             {isLastStep ? 'Get Started' : 'Next'}
           </Text>
         </TouchableOpacity>

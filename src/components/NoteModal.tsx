@@ -16,6 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../theme';
+import { textOn } from '../theme/colors';
 
 interface NoteModalProps {
   visible: boolean;
@@ -113,20 +114,20 @@ export function NoteModal({
                 style={[styles.button, { backgroundColor: colors.danger }]}
                 onPress={handleDelete}
               >
-                <Text style={styles.buttonText}>Delete</Text>
+                <Text style={[styles.buttonText, { color: textOn(colors.danger) }]}>Delete</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               style={[styles.button, { backgroundColor: colors.muted }]}
               onPress={onClose}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText, { color: textOn(colors.muted) }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: colors.accent }]}
               onPress={handleSave}
             >
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>

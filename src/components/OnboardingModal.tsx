@@ -171,7 +171,7 @@ export function OnboardingModal({ visible, onComplete }: OnboardingModalProps) {
             ]}
             onPress={handleNext}
           >
-            <Text style={styles.nextText}>
+            <Text style={[styles.nextText, { color: colors.textOnAccent }]}>
               {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
             </Text>
           </TouchableOpacity>

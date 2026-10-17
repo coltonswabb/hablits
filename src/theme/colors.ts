@@ -22,6 +22,35 @@ export interface ThemeColors {
   textOnAccent: string; // Text color to use on accent-colored backgrounds
 }
 
+/** Relative luminance (WCAG) of a #rrggbb colour. */
+function luminance(hex: string): number {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const ch = (i: number) => {
+    const v = parseInt(full.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4);
+}
+
+/** WCAG contrast ratio between two #rrggbb colours. */
+export function contrastRatio(a: string, b: string): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+const INK = '#0b0d12';
+
+/**
+ * Text colour to put ON a given background: white or near-black, whichever
+ * reads better. Use for text on accent / good / danger surfaces.
+ */
+export function textOn(background: string): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(background) && !/^#[0-9a-fA-F]{3}$/.test(background)) return '#ffffff';
+  return contrastRatio('#ffffff', background) >= contrastRatio(INK, background) ? '#ffffff' : INK;
+}
+
 // All theme definitions
 export const themes: Record<ThemeName, ThemeColors> = {
   light: {
@@ -47,7 +76,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#21262d',
     danger: '#f85149',
     good: '#3fb950',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   superdark: {
@@ -60,7 +89,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#1a1a1a',
     danger: '#ff0000',
     good: '#00ff00',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#000000',
   },
 
   retro: {
@@ -81,12 +110,12 @@ export const themes: Record<ThemeName, ThemeColors> = {
     card: '#ffffff',
     text: '#000000',
     muted: '#475569',
-    accent: '#00b8d4',
-    accent2: '#00e6e6',
+    accent: '#0891b2',
+    accent2: '#0e7490',
     divider: '#e6eef6',
     danger: '#ef4444',
-    good: '#10b981',
-    textOnAccent: '#ffffff',
+    good: '#059669',
+    textOnAccent: '#0b0d12',
   },
 
   sunshine: {
@@ -98,7 +127,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     accent2: '#fbbf24',
     divider: '#e2e8f0',
     danger: '#ef4444',
-    good: '#22c55e',
+    good: '#15803d',
     textOnAccent: '#ffffff',
   },
 
@@ -125,7 +154,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#1f2140',
     danger: '#ff5a5f',
     good: '#22c55e',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   paper: {
@@ -133,7 +162,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     card: '#ffffff',
     text: '#111827',
     muted: '#4b5563',
-    accent: '#d97706',
+    accent: '#b45309',
     accent2: '#9a3412',
     divider: '#e5e7eb',
     danger: '#b91c1c',
@@ -151,7 +180,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#17324a',
     danger: '#ff4d6d',
     good: '#2bf39c',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   ocean: {
@@ -164,7 +193,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#1a3a5a',
     danger: '#ff6b6b',
     good: '#4ecdc4',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   sunset: {
@@ -177,7 +206,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#3e2a5f',
     danger: '#ff006e',
     good: '#06ffa5',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   cosmic: {
@@ -190,7 +219,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#2d1b5e',
     danger: '#ff0080',
     good: '#00f5ff',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   forest: {
@@ -202,7 +231,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     accent2: '#7d9871',
     divider: '#d4e0cf',
     danger: '#a84432',
-    good: '#6b9e5f',
+    good: '#4f8a45',
     textOnAccent: '#ffffff',
   },
 
@@ -216,7 +245,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#3d3020',
     danger: '#ff4d4d',
     good: '#ffa94d',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   lion: {
@@ -229,7 +258,7 @@ export const themes: Record<ThemeName, ThemeColors> = {
     divider: '#243646',
     danger: '#ff6b6b',
     good: '#5eb3ff',
-    textOnAccent: '#ffffff',
+    textOnAccent: '#0b0d12',
   },
 
   ladyhawke: {
@@ -249,13 +278,13 @@ export const themes: Record<ThemeName, ThemeColors> = {
     bg: '#fff5f7',
     card: '#ffe8ed',
     text: '#4a2831',
-    muted: '#b08691',
-    accent: '#ffb7c5',
-    accent2: '#ffc9d9',
+    muted: '#8f6672',
+    accent: '#d94c6c',
+    accent2: '#e8899d',
     divider: '#ffd4de',
     danger: '#e63946',
-    good: '#06ffa5',
-    textOnAccent: '#ffffff',
+    good: '#1f8f5f',
+    textOnAccent: '#0b0d12',
   },
 };
 

@@ -16,6 +16,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTheme } from '../theme';
+import { textOn } from '../theme/colors';
 import { ActiveFast } from '../types';
 import { formatRemainingTime, getRemainingTime, getFastProgress, isFastComplete } from '../utils';
 
@@ -161,7 +162,7 @@ export function FastingTimerCard({
               style={[styles.button, styles.startButton, { backgroundColor: colors.accent }]}
               onPress={onStartFast}
             >
-              <Text style={styles.buttonText}>Start Fast</Text>
+              <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Start Fast</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.editSmallButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
@@ -178,7 +179,7 @@ export function FastingTimerCard({
               style={[styles.button, styles.cancelButton, { backgroundColor: colors.danger }]}
               onPress={onEndFast}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText, { color: textOn(colors.danger) }]}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -195,7 +196,7 @@ export function FastingTimerCard({
                 onEndFast();
               }}
             >
-              <Text style={styles.buttonText}>
+              <Text style={[styles.buttonText, { color: textOn(fastComplete ? colors.good : colors.accent2) }]}>
                 {fastComplete ? 'Complete' : 'Finish'}
               </Text>
             </TouchableOpacity>
@@ -207,7 +208,7 @@ export function FastingTimerCard({
             style={[styles.button, styles.undoButton, { backgroundColor: colors.muted }]}
             onPress={onToggleComplete}
           >
-            <Text style={styles.buttonText}>Undo</Text>
+            <Text style={[styles.buttonText, { color: textOn(colors.muted) }]}>Undo</Text>
           </TouchableOpacity>
         )}
       </View>

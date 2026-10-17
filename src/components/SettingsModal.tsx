@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useTheme } from '../theme';
+import { textOn } from '../theme/colors';
 import { AppState } from '../types';
 import { Paths, File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -296,7 +297,7 @@ export function SettingsModal({
               >
                 <Text style={[styles.settingLabel, { color: colors.text }]}>Sound Effects</Text>
                 <View style={[styles.toggle, { backgroundColor: sfxEnabled ? colors.good : colors.muted }]}>
-                  <Text style={styles.toggleText}>{sfxEnabled ? 'ON' : 'OFF'}</Text>
+                  <Text style={[styles.toggleText, { color: textOn(sfxEnabled ? colors.good : colors.muted) }]}>{sfxEnabled ? 'ON' : 'OFF'}</Text>
                 </View>
               </TouchableOpacity>
 
@@ -306,7 +307,7 @@ export function SettingsModal({
               >
                 <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic Feedback</Text>
                 <View style={[styles.toggle, { backgroundColor: hapticsEnabled ? colors.good : colors.muted }]}>
-                  <Text style={styles.toggleText}>{hapticsEnabled ? 'ON' : 'OFF'}</Text>
+                  <Text style={[styles.toggleText, { color: textOn(hapticsEnabled ? colors.good : colors.muted) }]}>{hapticsEnabled ? 'ON' : 'OFF'}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -321,7 +322,7 @@ export function SettingsModal({
               >
                 <Text style={[styles.settingLabel, { color: colors.text }]}>Daily Reminders</Text>
                 <View style={[styles.toggle, { backgroundColor: notificationsEnabled ? colors.good : colors.muted }]}>
-                  <Text style={styles.toggleText}>{notificationsEnabled ? 'ON' : 'OFF'}</Text>
+                  <Text style={[styles.toggleText, { color: textOn(notificationsEnabled ? colors.good : colors.muted) }]}>{notificationsEnabled ? 'ON' : 'OFF'}</Text>
                 </View>
               </TouchableOpacity>
 

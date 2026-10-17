@@ -236,7 +236,7 @@ export function EditHabitModal({
                     },
                   ]}
                 >
-                  {isRoutine && <Text style={styles.checkmark}>✓</Text>}
+                  {isRoutine && <Text style={[styles.checkmark, { color: colors.textOnAccent }]}>✓</Text>}
                 </View>
                 <Text style={[styles.routineToggleText, { color: colors.text }]}>
                   This is a routine (multi-step habit)
@@ -323,7 +323,7 @@ export function EditHabitModal({
                     style={[styles.addStepButton, { backgroundColor: colors.accent }]}
                     onPress={addStep}
                   >
-                    <Text style={styles.addStepButtonText}>+ Add Step</Text>
+                    <Text style={[styles.addStepButtonText, { color: colors.textOnAccent }]}>+ Add Step</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -473,7 +473,7 @@ export function EditHabitModal({
                   style={[styles.saveButton, { backgroundColor: colors.accent }]}
                   onPress={handleSave}
                 >
-                  <Text style={styles.saveButtonText}>Save</Text>
+                  <Text style={[styles.saveButtonText, { color: colors.textOnAccent }]}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>
