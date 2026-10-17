@@ -2,7 +2,7 @@
   "expo": {
     "name": "Hablits",
     "slug": "hablits",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hablits.app",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This app does not track you.",
         "ITSAppUsesNonExemptEncryption": false
