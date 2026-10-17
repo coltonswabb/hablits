@@ -15,9 +15,9 @@
 import { Platform } from 'react-native';
 import { AppState, PetMood } from '../types';
 import { ThemeColors } from '../theme/colors';
-import { calculateStreak, getActiveHabits } from './habits';
-import { dateStr } from './dates';
-import type { TodayWidgetProps, WidgetHabit } from '../widgets/TodayWidget';
+import { calculateStreak, getActiveHabits, getDayCompletionPercent } from './habits';
+import { dateStr, getWeekDays } from './dates';
+import type { TodayWidgetProps, WidgetHabit, WidgetDay } from '../widgets/TodayWidget';
 
 const MOOD_WORDS: Record<PetMood, string> = {
   idle: 'waiting for you',
@@ -35,10 +35,26 @@ function moodFor(pct: number): PetMood {
   return 'idle';
 }
 
-/** Max habits we ship to the widget — the large layout shows 9. */
+/** Max habits we ship to the widget — the large layout shows 7. */
 const MAX_HABITS = 12;
 
-export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Date): TodayWidgetProps {
+const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+/** Mon..Sun of the week containing `date`, with each day's completion ratio. */
+export function buildWeek(state: AppState, date: Date): WidgetDay[] {
+  const today = dateStr(date);
+  return getWeekDays(date).map((d) => {
+    const ds = dateStr(d);
+    return {
+      label: DAY_LETTERS[d.getDay()],
+      pct: ds > today ? 0 : getDayCompletionPercent(state.habits, state.logs, d, 'all'),
+      isToday: ds === today,
+      isFuture: ds > today,
+    };
+  });
+}
+
+export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Date, petImage?: string): TodayWidgetProps {
   const ds = dateStr(date);
   const active = getActiveHabits(state.habits, date, 'all');
   const doneIds = new Set(state.logs[ds] || []);
@@ -60,6 +76,8 @@ export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Dat
     bestStreak,
     mood: MOOD_WORDS[moodFor(pct)],
     habits: habits.slice(0, MAX_HABITS),
+    week: buildWeek(state, date),
+    petImage: petImage ?? '',
     bg: colors.bg,
     card: colors.card,
     text: colors.text,
@@ -82,12 +100,18 @@ let lastPayload: string | null = null;
  * Push the current state to the home screen widget. Safe to call often:
  * no-ops on non-iOS, and skips the native call if nothing changed.
  */
-export async function syncWidget(state: AppState, colors: ThemeColors, now: Date = new Date()): Promise<void> {
+export async function syncWidget(
+  state: AppState,
+  colors: ThemeColors,
+  petImages: { current?: string; idle?: string } = {},
+  now: Date = new Date()
+): Promise<void> {
   if (Platform.OS !== 'ios') return;
 
   try {
-    const today = buildWidgetProps(state, colors, now);
-    const tomorrow = buildWidgetProps(state, colors, nextMidnight(now));
+    const today = buildWidgetProps(state, colors, now, petImages.current);
+    // Tomorrow starts at 0 done, so the pet is back to its resting (idle) look
+    const tomorrow = buildWidgetProps(state, colors, nextMidnight(now), petImages.idle ?? petImages.current);
 
     const payload = JSON.stringify([today, tomorrow]);
     if (payload === lastPayload) return;

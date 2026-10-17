@@ -47,6 +47,12 @@ old binary can't run.
 - Config: the `expo-widgets` plugin block in `app.json`. App group
   `group.com.hablits.app`; deep link `hablits://today`.
 - Families: small / medium / large, plus Lock Screen circular, rectangular, inline.
+- Pet: `src/components/PetSnapshot.tsx` renders the pet off-screen and
+  rasterizes it (react-native-svg `toDataURL`) to the app-group folder as
+  `pet-<species>-<hat>-<mood>.png`; the widget shows it with `Image uiImage`.
+  One file per combination, written once. Two snapshots are mounted: the
+  current mood (today's entry) and idle (tomorrow's entry).
+- Large widget also shows a Mon–Sun heatmap (`buildWeek` in widgetSync).
 - To compile-check the widget without a device:
   `node node_modules/expo-widgets/scripts/build-layout-registry.mjs "$PWD" ios /tmp/registry.json`
 

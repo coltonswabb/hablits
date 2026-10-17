@@ -25,6 +25,8 @@ interface PetProps {
   completionsToday?: number;
   streak?: number;
   onPress?: () => void;
+  /** Ref to the root <Svg>; lets PetSnapshot rasterize the pet for the widget */
+  svgRef?: React.Ref<Svg>;
 }
 
 export function Pet({
@@ -32,6 +34,7 @@ export function Pet({
   mood,
   hat,
   size = 64,
+  svgRef,
   completionsToday = 0,
   streak = 0,
   onPress
@@ -1597,7 +1600,7 @@ export function Pet({
         ],
       }}
     >
-      <Svg width={size} height={size} viewBox="0 0 64 64">
+      <Svg ref={svgRef} width={size} height={size} viewBox="0 0 64 64">
         {renderBody()}
         <AnimatedG opacity={blinkOpacity}>
           {renderEyes()}

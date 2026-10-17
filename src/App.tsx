@@ -8,7 +8,7 @@
 // 4. Renders the active screen
 // ============================================
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -17,7 +17,7 @@ import { ThemeProvider, useTheme } from './theme';
 import { AppProvider, useApp } from './state';
 
 // Components
-import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary } from './components';
+import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary, PetSnapshot, getMoodFromProgress } from './components';
 
 // Screens
 import { TodayScreen, WeekScreen, CalendarScreen, DayPlanScreen, StatsScreen } from './screens';
@@ -28,6 +28,7 @@ import { TabName, Identity } from './types';
 // Utils
 import { initializeAudio } from './utils/sounds';
 import { syncWidget } from './utils/widgetSync';
+import { getDayCompletionPercent } from './utils/habits';
 
 // ============================================
 // MAIN CONTENT (inside providers)
@@ -60,11 +61,19 @@ function AppContent() {
     })();
   }, []);
 
-  // Keep the home screen widget in step with today's progress and the theme
+  // ---- Home screen widget ----
+  // The pet is rasterized off-screen (PetSnapshot) so WidgetKit can show it;
+  // we keep one image for the current mood and one for idle (tomorrow's entry).
+  const [petImages, setPetImages] = useState<{ current?: string; idle?: string }>({});
+  const onPetCaptured = useCallback((uri: string) => setPetImages((p) => (p.current === uri ? p : { ...p, current: uri })), []);
+  const onIdlePetCaptured = useCallback((uri: string) => setPetImages((p) => (p.idle === uri ? p : { ...p, idle: uri })), []);
+  const todayPct = getDayCompletionPercent(state.habits, state.logs, new Date(), 'all');
+  const petMood = getMoodFromProgress(todayPct);
+
   useEffect(() => {
     if (!isLoaded) return;
-    syncWidget(state, colors);
-  }, [isLoaded, state.habits, state.logs, colors]);
+    syncWidget(state, colors, petImages);
+  }, [isLoaded, state.habits, state.logs, colors, petImages]);
 
   // Animate screen transitions
   useEffect(() => {
@@ -319,6 +328,12 @@ function AppContent() {
           onSelectHat={(hat) => dispatch({ type: 'SET_PET_HAT', payload: hat })}
           onClose={() => setHatClosetVisible(false)}
         />
+
+        {/* Off-screen pet renders for the home screen widget */}
+        <PetSnapshot species={state.petSpecies} hat={state.petHat} mood={petMood} onCaptured={onPetCaptured} />
+        {petMood !== 'idle' && (
+          <PetSnapshot species={state.petSpecies} hat={state.petHat} mood="idle" onCaptured={onIdlePetCaptured} />
+        )}
       </SafeAreaView>
     </GestureHandlerRootView>
   );

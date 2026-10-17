@@ -13,7 +13,7 @@
 // The app side that computes and pushes the props is src/utils/widgetSync.ts.
 // ============================================
 
-import { Divider, Gauge, HStack, Image, Spacer, Text, VStack } from '@expo/ui/swift-ui';
+import { Divider, Gauge, HStack, Image, RoundedRectangle, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
   containerBackground,
   font,
@@ -22,7 +22,10 @@ import {
   gaugeStyle,
   lineLimit,
   minimumScaleFactor,
+  opacity,
   padding,
+  resizable,
+  strokeBorder,
   tint,
   widgetURL,
 } from '@expo/ui/swift-ui/modifiers';
@@ -31,6 +34,13 @@ import { createWidget } from 'expo-widgets';
 export type WidgetHabit = {
   name: string;
   done: boolean;
+};
+
+export type WidgetDay = {
+  label: string;
+  pct: number;
+  isToday: boolean;
+  isFuture: boolean;
 };
 
 export type TodayWidgetProps = {
@@ -44,6 +54,10 @@ export type TodayWidgetProps = {
   mood: string;
   /** Today's habits, undone first, capped by the sender */
   habits: WidgetHabit[];
+  /** Mon..Sun of the current week for the mini heatmap */
+  week: WidgetDay[];
+  /** file:// URI of the rasterized pet, or '' until the app has produced one */
+  petImage: string;
   /** Theme colours so the widget matches the app */
   bg: string;
   card: string;
@@ -126,6 +140,43 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
     </HStack>
   );
 
+  // The pet, when the app has rasterized one for the widget to read
+  const hasPet = typeof props.petImage === 'string' && props.petImage.length > 0;
+  const pet = (size: number) =>
+    hasPet ? (
+      <Image uiImage={props.petImage} modifiers={[resizable(), frame({ width: size, height: size })]} />
+    ) : null;
+
+  // Mon..Sun mini heatmap — fill opacity tracks that day's completion
+  const week = props.week ?? [];
+  const heatmap = (cell: number) => (
+    <HStack spacing={8}>
+      {week.map((d, i) => (
+        <VStack key={`${i}-${d.label}`} spacing={4}>
+          <ZStack modifiers={[frame({ width: cell, height: cell })]}>
+            <RoundedRectangle
+              cornerRadius={cell * 0.28}
+              modifiers={[
+                foregroundStyle(d.isFuture ? props.muted : props.accent),
+                opacity(d.isFuture ? 0.12 : 0.18 + 0.82 * Math.min(1, d.pct)),
+                frame({ width: cell, height: cell }),
+              ]}
+            />
+            {d.isToday ? (
+              <RoundedRectangle
+                cornerRadius={cell * 0.28}
+                modifiers={[strokeBorder({ content: props.text, style: { lineWidth: 1.5 }, shape: 'roundedRectangle', cornerRadius: cell * 0.28 }), frame({ width: cell, height: cell })]}
+              />
+            ) : null}
+          </ZStack>
+          <Text modifiers={[font({ size: 10, weight: d.isToday ? 'bold' : 'medium' }), foregroundStyle(d.isToday ? props.text : props.muted)]}>
+            {d.label}
+          </Text>
+        </VStack>
+      ))}
+    </HStack>
+  );
+
   // ---------------- Lock screen families ----------------
   if (family === 'accessoryCircular') {
     return (
@@ -159,7 +210,14 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
   if (family === 'systemSmall') {
     return (
       <VStack spacing={6} modifiers={[containerBackground(props.bg, 'widget'), widgetURL(link), padding({ all: 4 })]}>
-        {ring(84, 22)}
+        {hasPet ? (
+          <HStack spacing={6}>
+            {pet(54)}
+            {ring(76, 20)}
+          </HStack>
+        ) : (
+          ring(84, 22)
+        )}
         <Text
           modifiers={[font({ size: 14, weight: 'semibold', design: 'rounded' }), foregroundStyle(props.text), lineLimit(1), minimumScaleFactor(0.8)]}
         >
@@ -176,7 +234,14 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
     return (
       <HStack spacing={16} modifiers={[containerBackground(props.bg, 'widget'), widgetURL(link)]}>
         <VStack spacing={6}>
-          {ring(88, 22)}
+          {hasPet ? (
+            <HStack spacing={4}>
+              {pet(52)}
+              {ring(84, 22)}
+            </HStack>
+          ) : (
+            ring(88, 22)
+          )}
           <Text modifiers={[font({ size: 12, weight: 'semibold', design: 'rounded' }), foregroundStyle(props.text), lineLimit(1)]}>
             {headline}
           </Text>
@@ -202,7 +267,7 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
   }
 
   // ---------------- Home screen: large / extra large ----------------
-  const list = props.habits.slice(0, 9);
+  const list = props.habits.slice(0, 7);
   return (
     <VStack alignment="leading" spacing={10} modifiers={[containerBackground(props.bg, 'widget'), widgetURL(link)]}>
       <HStack spacing={16}>
@@ -215,7 +280,16 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
           {props.bestStreak > 0 ? streakBadge : null}
         </VStack>
         <Spacer />
+        {pet(84)}
       </HStack>
+      <Divider />
+      {week.length === 7 ? (
+        <HStack>
+          <Spacer />
+          {heatmap(30)}
+          <Spacer />
+        </HStack>
+      ) : null}
       <Divider />
       {list.length === 0 ? (
         <Text modifiers={[font({ size: 14 }), foregroundStyle(props.muted)]}>Nothing scheduled today</Text>
@@ -237,6 +311,8 @@ const initialProps: TodayWidgetProps = {
   bestStreak: 0,
   mood: 'curious',
   habits: [],
+  week: [],
+  petImage: '',
   bg: '#eef2f7',
   card: '#ffffff',
   text: '#0f172a',

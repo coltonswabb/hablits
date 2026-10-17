@@ -1,4 +1,4 @@
-import { buildWidgetProps, nextMidnight } from '../utils/widgetSync';
+import { buildWidgetProps, buildWeek, nextMidnight } from '../utils/widgetSync';
 import { themes } from '../theme/colors';
 import { AppState, Habit } from '../types';
 import { dateStr } from '../utils/dates';
@@ -75,5 +75,24 @@ describe('nextMidnight', () => {
     const m = nextMidnight(local(2026, 3, 7, 23)); // US DST starts Mar 8 2026
     expect(dateStr(m)).toBe('2026-03-08');
     expect(m.getHours()).toBe(0);
+  });
+});
+
+describe('buildWeek', () => {
+  it('returns Mon..Sun with today flagged and future days empty', () => {
+    const s = state({ habits: [habit('a', 'A'), habit('b', 'B')], logs: { '2026-01-12': ['a', 'b'], '2026-01-14': ['a'], '2026-01-17': ['a'] } });
+    const w = buildWeek(s, TODAY); // Thu Jan 15
+    expect(w.map((d) => d.label).join('')).toBe('MTWTFSS');
+    expect(w[0].pct).toBe(1); // Mon
+    expect(w[2].pct).toBe(0.5); // Wed
+    expect(w[3].isToday).toBe(true); // Thu
+    expect(w[5].isFuture).toBe(true); // Sat — a log exists but it's in the future, so hidden
+    expect(w[5].pct).toBe(0);
+  });
+
+  it('includes the pet image when provided', () => {
+    const p = buildWidgetProps(state({}), themes.light, TODAY, 'file:///group/pet-hawk-none-idle.png');
+    expect(p.petImage).toBe('file:///group/pet-hawk-none-idle.png');
+    expect(buildWidgetProps(state({}), themes.light, TODAY).petImage).toBe('');
   });
 });
