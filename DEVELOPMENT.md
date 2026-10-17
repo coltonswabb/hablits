@@ -79,11 +79,8 @@ app when it's closed, so v1 is read-only and taps open the app.
 
 ## Known gaps
 
-- Sound effects are only implemented on web (`src/utils/sounds.ts`). On iOS the
-  toggle does nothing yet. `expo-audio` is installed and ready; the old
-  prototype's `sfx/*.wav` files are a starting point.
-- `dayPlanTimes` is deprecated in favour of `dayPlanSchedules`; finish the
-  migration and delete it.
 - `react-native-gesture-handler` 3.x deprecates `PanGestureHandler`
-  (used in `SwipeableHabitCard`, `SettingsModal`). Still works; migrate to
-  `Gesture.Pan()` before v4.
+  (used in `SwipeableHabitCard`). Still works in v3. Deliberately NOT
+  migrated blind: swipe-to-complete is a core interaction and the
+  `Gesture.Pan()` + RN Animated version needs a feel check on a device.
+  Do it with a phone in hand before gesture-handler v4.

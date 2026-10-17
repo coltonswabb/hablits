@@ -16,7 +16,7 @@ function state(o: Partial<AppState>): AppState {
   return {
     theme: 'light', sfxEnabled: true, hapticsEnabled: true, notificationsEnabled: true,
     notificationTime: { hour: 9, minute: 0 }, identities: [], currentIdentityFilter: 'all', habits: [], logs: {}, marks: {},
-    dayPlanTimes: {}, dayPlanSchedules: {}, notes: {}, routineStepLogs: {}, hasCompletedOnboarding: true, hasSeenSwipeHint: true,
+    dayPlanSchedules: {}, notes: {}, routineStepLogs: {}, hasCompletedOnboarding: true, hasSeenSwipeHint: true,
     petSpecies: 'blob', petHat: 'none', activeFasts: {}, petStageSeen: 0, ...o,
   };
 }

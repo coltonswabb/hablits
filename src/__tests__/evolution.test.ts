@@ -79,12 +79,19 @@ describe('migration v2', () => {
   const defaults = {
     theme: 'light', sfxEnabled: true, hapticsEnabled: true, notificationsEnabled: false,
     notificationTime: { hour: 9, minute: 0 }, identities: [], currentIdentityFilter: 'all', habits: [], logs: {}, marks: {},
-    dayPlanTimes: {}, dayPlanSchedules: {}, notes: {}, routineStepLogs: {}, hasCompletedOnboarding: false, hasSeenSwipeHint: false,
+    dayPlanSchedules: {}, notes: {}, routineStepLogs: {}, hasCompletedOnboarding: false, hasSeenSwipeHint: false,
     petSpecies: 'blob', petHat: 'none', activeFasts: {}, petStageSeen: 0,
   } as AppState;
 
+  it('v3 folds dayPlanTimes into dayPlanSchedules and drops the field', () => {
+    const out = migrateState({ schemaVersion: 2, dayPlanTimes: { a: '07:30', b: '09:00' }, dayPlanSchedules: { b: { time: '10:00', duration: 15, recurring: 'daily' } } }, defaults);
+    expect((out as any).dayPlanTimes).toBeUndefined();
+    expect(out.dayPlanSchedules.a).toEqual({ time: '07:30', duration: 30, recurring: 'daily' });
+    expect(out.dayPlanSchedules.b.time).toBe('10:00'); // existing schedule wins
+  });
+
   it('adds petStageSeen=0 to v1 blobs and preserves it on v2', () => {
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
     expect(migrateState({ schemaVersion: 1, habits: [] }, defaults).petStageSeen).toBe(0);
     expect(migrateState({ schemaVersion: 2, petStageSeen: 2 }, defaults).petStageSeen).toBe(2);
     expect(migrateState({ habits: [] }, defaults).petStageSeen).toBe(0); // v0 walks through both

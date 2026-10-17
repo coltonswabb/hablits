@@ -32,7 +32,6 @@ const defaultState: AppState = {
   habits: [],
   logs: {},
   marks: {},
-  dayPlanTimes: {}, // Deprecated but kept for backward compatibility
   dayPlanSchedules: {},
   notes: {},
   routineStepLogs: {},
@@ -64,7 +63,6 @@ type Action =
   | { type: 'UPDATE_IDENTITY'; payload: Identity }
   | { type: 'DELETE_IDENTITY'; payload: string }
   | { type: 'SET_IDENTITY_FILTER'; payload: string }
-  | { type: 'SET_DAY_PLAN_TIME'; payload: { habitId: string; time: string | null } }
   | { type: 'SET_DAY_PLAN_SCHEDULE'; payload: { habitId: string; schedule: HabitSchedule | null } }
   | { type: 'SET_SFX_ENABLED'; payload: boolean }
   | { type: 'SET_HAPTICS_ENABLED'; payload: boolean }
@@ -154,15 +152,11 @@ function appReducer(state: AppState, action: Action): AppState {
         notes[day] = filteredNotes;
       }
 
-      // Remove from dayPlanTimes (deprecated)
-      const dayPlanTimes = { ...state.dayPlanTimes };
-      delete dayPlanTimes[habitId];
-
       // Remove from dayPlanSchedules
       const dayPlanSchedules = { ...state.dayPlanSchedules };
       delete dayPlanSchedules[habitId];
 
-      return { ...state, habits, logs, marks, notes, dayPlanTimes, dayPlanSchedules };
+      return { ...state, habits, logs, marks, notes, dayPlanSchedules };
     }
 
     case 'TOGGLE_HABIT': {
@@ -278,16 +272,6 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_IDENTITY_FILTER':
       return { ...state, currentIdentityFilter: action.payload };
 
-    case 'SET_DAY_PLAN_TIME': {
-      const { habitId, time } = action.payload;
-      const dayPlanTimes = { ...state.dayPlanTimes };
-      if (time) {
-        dayPlanTimes[habitId] = time;
-      } else {
-        delete dayPlanTimes[habitId];
-      }
-      return { ...state, dayPlanTimes };
-    }
 
     case 'SET_DAY_PLAN_SCHEDULE': {
       const { habitId, schedule } = action.payload;

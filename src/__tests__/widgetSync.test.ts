@@ -15,7 +15,7 @@ function state(overrides: Partial<AppState>): AppState {
   return {
     theme: 'light', sfxEnabled: true, hapticsEnabled: true, notificationsEnabled: false,
     notificationTime: { hour: 9, minute: 0 }, identities: [], currentIdentityFilter: 'all',
-    habits: [], logs: {}, marks: {}, dayPlanTimes: {}, dayPlanSchedules: {}, notes: {},
+    habits: [], logs: {}, marks: {}, dayPlanSchedules: {}, notes: {},
     routineStepLogs: {}, hasCompletedOnboarding: true, hasSeenSwipeHint: true,
     petSpecies: 'hawk', petHat: 'none', activeFasts: {}, petStageSeen: 0, ...overrides,
   };

@@ -69,7 +69,6 @@ export interface AppState {
   habits: Habit[];
   logs: Record<string, string[]>;      // { "2024-01-15": ["habit-id-1", "habit-id-2"] }
   marks: Record<string, DayMarks>;     // { "2024-01-15": { skip: [], fail: [] } }
-  dayPlanTimes: Record<string, string>; // DEPRECATED: Use dayPlanSchedules instead { "habit-id": "09:00" }
   dayPlanSchedules: Record<string, HabitSchedule>; // { "habit-id": { time: "09:00", duration: 30, recurring: 'daily' } }
   notes: Record<string, Record<string, string>>; // { "2024-01-15": { "habit-id": "note text" } }
   routineStepLogs: Record<string, Record<string, string[]>>; // { "2024-01-15": { "habit-id": ["step-id-1", "step-id-2"] } }

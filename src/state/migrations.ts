@@ -10,11 +10,12 @@
 //   0 — anything saved before versioning existed (1.0 App Store build)
 //   1 — adds schemaVersion; folds in all the ad-hoc 1.0 backfills
 //   2 — adds petStageSeen (pet evolution)
+//   3 — folds legacy dayPlanTimes into dayPlanSchedules and drops it
 // ============================================
 
 import { AppState } from '../types';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 type AnyState = Record<string, any>;
 
@@ -53,6 +54,20 @@ const migrations: Array<(s: AnyState) => AnyState> = [
   // 1 -> 2: pet evolution. Existing users start at 0 so they get congratulated
   // once for whatever stage their history has already earned.
   (s) => ({ ...s, petStageSeen: typeof s.petStageSeen === 'number' ? s.petStageSeen : 0 }),
+  // 2 -> 3: dayPlanTimes ({habitId: "HH:MM"}) predates dayPlanSchedules. Any
+  // time that has no schedule yet becomes a 30-minute daily schedule.
+  (s) => {
+    const { dayPlanTimes, ...rest } = s;
+    const dayPlanSchedules = { ...(rest.dayPlanSchedules || {}) };
+    if (dayPlanTimes && typeof dayPlanTimes === 'object') {
+      for (const [habitId, time] of Object.entries(dayPlanTimes as Record<string, unknown>)) {
+        if (typeof time === 'string' && !dayPlanSchedules[habitId]) {
+          dayPlanSchedules[habitId] = { time, duration: 30, recurring: 'daily' };
+        }
+      }
+    }
+    return { ...rest, dayPlanSchedules };
+  },
 ];
 
 /**

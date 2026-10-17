@@ -12,7 +12,6 @@ const defaults: AppState = {
   habits: [],
   logs: {},
   marks: {},
-  dayPlanTimes: {},
   dayPlanSchedules: {},
   notes: {},
   routineStepLogs: {},

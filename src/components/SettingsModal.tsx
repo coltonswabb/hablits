@@ -17,7 +17,6 @@ import {
   Animated,
   TextInput,
 } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useTheme } from '../theme';
 import { textOn } from '../theme/colors';
 import { AppState } from '../types';
