@@ -77,6 +77,7 @@ export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Dat
     bestStreak,
     mood: MOOD_WORDS[moodFor(pct)],
     stageName: STAGE_NAMES[getPetStage(state.habits, state.logs, date)],
+    petName: (state.petName || '').trim(),
     habits: habits.slice(0, MAX_HABITS),
     week: buildWeek(state, date),
     petImage: petImage ?? '',

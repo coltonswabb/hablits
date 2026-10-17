@@ -54,6 +54,8 @@ export type TodayWidgetProps = {
   mood: string;
   /** Evolution stage name, e.g. "Veteran" */
   stageName: string;
+  /** Pet's name, or '' */
+  petName: string;
   /** Today's habits, undone first, capped by the sender */
   habits: WidgetHabit[];
   /** Mon..Sun of the current week for the mini heatmap */
@@ -85,15 +87,16 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
   const link = 'hablits://today';
 
   const headline = total === 0 ? 'No habits today' : allDone ? 'All done!' : `${remaining} to go`;
+  const who = props.petName && props.petName.length > 0 ? props.petName : 'Your pet';
 
   const sub =
     total === 0
       ? 'Add one in the app'
       : allDone
-        ? `Your pet is ${props.mood}`
+        ? `${who} is ${props.mood}`
         : props.bestStreak > 0
           ? `${props.stageName} · ${props.bestStreak}-day streak`
-          : `Your pet is ${props.mood}`;
+          : `${who} is ${props.mood}`;
 
   const ringColor = allDone ? props.good : props.accent;
 
@@ -313,6 +316,7 @@ const initialProps: TodayWidgetProps = {
   bestStreak: 0,
   mood: 'curious',
   stageName: 'Hatchling',
+  petName: '',
   habits: [],
   week: [],
   petImage: '',

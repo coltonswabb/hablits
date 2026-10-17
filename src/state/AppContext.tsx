@@ -77,6 +77,7 @@ type Action =
   | { type: 'SET_PET_HAT'; payload: HatType }
   | { type: 'SET_PET_STAGE_SEEN'; payload: number }
   | { type: 'DISMISS_LETTER'; payload: string }
+  | { type: 'SET_PET_NAME'; payload: string }
   | { type: 'START_FAST'; payload: { habitId: string; duration: number; startTime: string } }
   | { type: 'UPDATE_FAST_START_TIME'; payload: { habitId: string; startTime: string } }
   | { type: 'END_FAST'; payload: string };
@@ -353,6 +354,9 @@ function appReducer(state: AppState, action: Action): AppState {
 
     case 'SET_PET_SPECIES':
       return { ...state, petSpecies: action.payload };
+
+    case 'SET_PET_NAME':
+      return { ...state, petName: action.payload.trim().slice(0, 20) };
 
     case 'DISMISS_LETTER':
       return { ...state, lastLetterDismissed: action.payload };

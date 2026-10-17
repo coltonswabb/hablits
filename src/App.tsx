@@ -304,7 +304,12 @@ function AppContent() {
         {/* Onboarding Modal */}
         <OnboardingModal
           visible={isLoaded && !state.hasCompletedOnboarding}
-          onComplete={() => dispatch({ type: 'COMPLETE_ONBOARDING' })}
+          species={state.petSpecies}
+          hat={state.petHat}
+          onComplete={(name) => {
+            if (name.trim()) dispatch({ type: 'SET_PET_NAME', payload: name });
+            dispatch({ type: 'COMPLETE_ONBOARDING' });
+          }}
         />
 
         {/* Settings Modal */}
@@ -357,6 +362,8 @@ function AppContent() {
           totalCompletions={totalCompletions}
           petStage={petStage}
           bestStreak={bestStreak}
+          petName={state.petName}
+          onRenamePet={(name) => dispatch({ type: 'SET_PET_NAME', payload: name })}
           onSelectSpecies={(species) => dispatch({ type: 'SET_PET_SPECIES', payload: species })}
           onSelectHat={(hat) => dispatch({ type: 'SET_PET_HAT', payload: hat })}
           onClose={() => setHatClosetVisible(false)}
@@ -373,6 +380,7 @@ function AppContent() {
           species={state.petSpecies}
           hat={state.petHat}
           stage={petStage}
+          petName={state.petName}
           onClose={() => {
             setEvolutionVisible(false);
             dispatch({ type: 'SET_PET_STAGE_SEEN', payload: petStage });

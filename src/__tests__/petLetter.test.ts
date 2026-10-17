@@ -78,3 +78,14 @@ describe('currentLetter', () => {
     expect(currentLetter({ ...s, lastLetterDismissed: '2026-06-08' }, 0, MONDAY)).toBeNull();
   });
 });
+
+describe('pet name in copy', () => {
+  it('signs with the name when present', () => {
+    const base = { weekStart: '2026-06-08', weekEnd: '2026-06-14', scheduled: 10, completed: 9, pct: 0.9, perfectDays: 0, bestDay: null, topHabit: null, strugglingHabit: null, deltaVsLastWeek: null, longestStreakNow: 0 };
+    const seen = new Set<string>();
+    // the sign-off is picked deterministically; probe several weeks to hit the named variant
+    for (let w = 1; w <= 30; w++) seen.add(composeLetter({ ...base, weekStart: `2026-06-${String(w).padStart(2, '0')}` }, 1, 'Juniper').signoff);
+    expect([...seen].some((s) => s.includes('Juniper'))).toBe(true);
+    expect([...seen].some((s) => s.includes('your pet'))).toBe(false);
+  });
+});

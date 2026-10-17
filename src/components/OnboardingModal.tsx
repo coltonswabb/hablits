@@ -13,12 +13,19 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { useTheme } from '../theme';
+import { Pet } from './Pet';
+import { PetSpecies, HatType } from '../types';
+import { NAME_SUGGESTIONS, MAX_PET_NAME } from '../utils/petName';
 
 interface OnboardingModalProps {
   visible: boolean;
-  onComplete: () => void;
+  species: PetSpecies;
+  hat: HatType;
+  /** Called with the chosen pet name ('' if skipped) */
+  onComplete: (petName: string) => void;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -58,31 +65,40 @@ const slides = [
     title: '🎨 Customize Everything',
     description: 'Make it yours with themes and identities.',
     details: [
-      'Choose from 9 beautiful themes',
+      'Choose from 18 themes, each with its own pet',
       'Create custom identities',
       'Earn pet hats by completing habits',
       'Plan your day with scheduled habits',
     ],
   },
+  {
+    title: 'Meet your pet',
+    description: 'It gets happier as you complete habits, and it grows for good when your streaks do. Give it a name?',
+    details: [],
+    isNaming: true,
+  },
 ];
 
-export function OnboardingModal({ visible, onComplete }: OnboardingModalProps) {
+export function OnboardingModal({ visible, species, hat, onComplete }: OnboardingModalProps) {
   const { colors } = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [petName, setPetName] = useState('');
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      onComplete();
+      onComplete(petName);
     }
   };
 
   const handleSkip = () => {
-    onComplete();
+    // Skip the tour but still offer the name
+    setCurrentSlide(slides.length - 1);
   };
 
   const slide = slides[currentSlide];
+  const naming = 'isNaming' in slide && slide.isNaming;
 
   return (
     <Modal visible={visible} animationType="fade">
@@ -131,23 +147,49 @@ export function OnboardingModal({ visible, onComplete }: OnboardingModalProps) {
             </View>
           </View>
 
-          {/* Illustration placeholder */}
-          <View
-            style={[
-              styles.illustration,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.divider,
-              },
-            ]}
-          >
-            <Text style={styles.illustrationEmoji}>
-              {currentSlide === 0 && '🎯'}
-              {currentSlide === 1 && '✅'}
-              {currentSlide === 2 && '📈'}
-              {currentSlide === 3 && '🎨'}
-            </Text>
-          </View>
+          {naming ? (
+            <View style={[styles.illustration, { backgroundColor: colors.card, borderColor: colors.divider, paddingVertical: 24 }]}>
+              <Pet species={species} mood={petName.trim() ? 'excited' : 'curious'} hat={hat} size={120} />
+              <TextInput
+                style={[styles.nameInput, { color: colors.text, borderColor: colors.divider, backgroundColor: colors.bg }]}
+                placeholder="Name your pet"
+                placeholderTextColor={colors.muted}
+                value={petName}
+                onChangeText={(t) => setPetName(t.slice(0, MAX_PET_NAME))}
+                maxLength={MAX_PET_NAME}
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handleNext}
+                accessibilityLabel="Pet name"
+              />
+              <View style={styles.suggestions}>
+                {NAME_SUGGESTIONS[species].map((n) => (
+                  <TouchableOpacity key={n} onPress={() => setPetName(n)} style={[styles.chip, { borderColor: colors.divider, backgroundColor: petName === n ? colors.accent : 'transparent' }]}>
+                    <Text style={[styles.chipText, { color: petName === n ? colors.textOnAccent : colors.text }]}>{n}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={[styles.hint, { color: colors.muted }]}>You can change this any time from the Hat Closet.</Text>
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.illustration,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.divider,
+                },
+              ]}
+            >
+              <Text style={styles.illustrationEmoji}>
+                {currentSlide === 0 && '🎯'}
+                {currentSlide === 1 && '✅'}
+                {currentSlide === 2 && '📈'}
+                {currentSlide === 3 && '🎨'}
+              </Text>
+            </View>
+          )}
         </ScrollView>
 
         {/* Bottom buttons */}
@@ -172,7 +214,7 @@ export function OnboardingModal({ visible, onComplete }: OnboardingModalProps) {
             onPress={handleNext}
           >
             <Text style={[styles.nextText, { color: colors.textOnAccent }]}>
-              {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
+              {naming ? (petName.trim() ? `Meet ${petName.trim()}` : 'Maybe later') : 'Next'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -182,6 +224,21 @@ export function OnboardingModal({ visible, onComplete }: OnboardingModalProps) {
 }
 
 const styles = StyleSheet.create({
+  nameInput: {
+    marginTop: 18,
+    width: '80%',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  suggestions: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', justifyContent: 'center' },
+  chip: { borderWidth: 1, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
+  chipText: { fontSize: 14, fontWeight: '600' },
+  hint: { fontSize: 12, marginTop: 14, textAlign: 'center' },
   container: {
     flex: 1,
   },

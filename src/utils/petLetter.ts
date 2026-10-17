@@ -13,6 +13,7 @@ import { AppState, PetMood } from '../types';
 import { dateStr, startOfWeek } from './dates';
 import { getActiveHabits, calculateStreak } from './habits';
 import { PetStage, STAGE_NAMES } from './evolution';
+import { petDisplayName } from './petName';
 
 export type WeeklyRecap = {
   weekStart: string; // YYYY-MM-DD (Monday)
@@ -129,7 +130,8 @@ function pick<T>(options: T[], seed: string, salt: number): T {
   return options[h % options.length];
 }
 
-export function composeLetter(recap: WeeklyRecap, stage: PetStage): PetLetter {
+export function composeLetter(recap: WeeklyRecap, stage: PetStage, petName?: string): PetLetter {
+  const me = petDisplayName(petName, '');
   const seed = recap.weekStart;
   const p = Math.round(recap.pct * 100);
   const paragraphs: string[] = [];
@@ -214,11 +216,12 @@ export function composeLetter(recap: WeeklyRecap, stage: PetStage): PetLetter {
   // 3. Streak line
   if (recap.longestStreakNow >= 7) paragraphs.push(`Current streak: ${recap.longestStreakNow} days. I'm keeping count so you don't have to.`);
 
+  const sig = me ? `— ${me}` : null;
   const signoffs: Record<PetStage, string[]> = {
-    0: ['See you tomorrow.', 'Same time tomorrow?', '— your pet (still new here)'],
-    1: ['See you tomorrow. I know you\'ll be there.', '— your Companion', 'Proud of you. Tomorrow, then.'],
-    2: ['Thirty days taught me you come back. Tomorrow.', '— your Veteran', 'Steady as ever. See you tomorrow.'],
-    3: ['A Legend doesn\'t need a pep talk. But here\'s one anyway: tomorrow.', '— your Legend', 'Hundred-day pets don\'t worry. See you tomorrow.'],
+    0: ['See you tomorrow.', 'Same time tomorrow?', sig ? `${sig} (still new here)` : '— your pet (still new here)'],
+    1: ['See you tomorrow. I know you\'ll be there.', sig ? `${sig}, your Companion` : '— your Companion', 'Proud of you. Tomorrow, then.'],
+    2: ['Thirty days taught me you come back. Tomorrow.', sig ? `${sig}, Veteran` : '— your Veteran', 'Steady as ever. See you tomorrow.'],
+    3: ['A Legend doesn\'t need a pep talk. But here\'s one anyway: tomorrow.', sig ? `${sig}, Legend` : '— your Legend', 'Hundred-day pets don\'t worry. See you tomorrow.'],
   };
   const signoff = pick(signoffs[stage], seed, 5);
 
@@ -231,7 +234,7 @@ export function currentLetter(state: AppState, stage: PetStage, today: Date = ne
   const recap = buildWeeklyRecap(state, today);
   if (!recap) return null;
   if (state.lastLetterDismissed === recap.weekStart) return null;
-  return composeLetter(recap, stage);
+  return composeLetter(recap, stage, state.petName);
 }
 
 export { STAGE_NAMES };

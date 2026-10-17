@@ -11,23 +11,27 @@ import { useTheme } from '../theme';
 import { Pet } from './Pet';
 import { PetSpecies, HatType } from '../types';
 import { STAGE_NAMES, STAGE_THRESHOLDS, PetStage } from '../utils/evolution';
+import { petSubject } from '../utils/petName';
 
 interface Props {
   visible: boolean;
   species: PetSpecies;
   hat: HatType;
   stage: PetStage;
+  petName?: string;
   onClose: () => void;
 }
 
-const BLURBS: Record<PetStage, string> = {
-  0: '',
-  1: 'A week of showing up. Your pet has stopped wondering whether you\'ll come back — it knows.',
-  2: 'Thirty days. This isn\'t a streak anymore, it\'s who you are. Your pet glows with it.',
-  3: 'One hundred days. Almost nobody gets here. Your pet is a legend, and so are you.',
-};
+const blurb = (stage: PetStage, who: string): string =>
+  ({
+    0: '',
+    1: `A week of showing up. ${who} has stopped wondering whether you'll come back — it knows.`,
+    2: `Thirty days. This isn't a streak anymore, it's who you are. ${who} glows with it.`,
+    3: `One hundred days. Almost nobody gets here. ${who} is a legend, and so are you.`,
+  })[stage];
 
-export function EvolutionModal({ visible, species, hat, stage, onClose }: Props) {
+export function EvolutionModal({ visible, species, hat, stage, petName, onClose }: Props) {
+  const who = petSubject(petName);
   const { colors } = useTheme();
   const scale = useRef(new Animated.Value(0.6)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -64,9 +68,9 @@ export function EvolutionModal({ visible, species, hat, stage, onClose }: Props)
             <Animated.View style={[styles.glow, { backgroundColor: stage >= 3 ? '#FFD700' : colors.accent, opacity: glowOpacity }]} />
             <Pet species={species} mood="celebrate" hat={hat} size={120} stage={stage} />
           </View>
-          <Text style={[styles.title, { color: colors.text }]}>Your pet is now a {STAGE_NAMES[stage]}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{who} is now a {STAGE_NAMES[stage]}</Text>
           <Text style={[styles.sub, { color: colors.muted }]}>{threshold}-day streak reached</Text>
-          <Text style={[styles.body, { color: colors.text }]}>{BLURBS[stage]}</Text>
+          <Text style={[styles.body, { color: colors.text }]}>{blurb(stage, who)}</Text>
           <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={onClose}>
             <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Keep going</Text>
           </Pressable>

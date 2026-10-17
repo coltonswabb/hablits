@@ -449,6 +449,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
             species={petSpecies}
             hat={petHat}
             stage={petStage}
+            petName={state.petName}
             onDismiss={() => dispatch({ type: 'DISMISS_LETTER', payload: letter.weekStart })}
           />
         )}

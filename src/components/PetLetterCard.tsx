@@ -17,10 +17,11 @@ interface Props {
   species: PetSpecies;
   hat: HatType;
   stage: number;
+  petName?: string;
   onDismiss: () => void;
 }
 
-export function PetLetterCard({ letter, species, hat, stage, onDismiss }: Props) {
+export function PetLetterCard({ letter, species, hat, stage, petName, onDismiss }: Props) {
   const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
@@ -37,7 +38,7 @@ export function PetLetterCard({ letter, species, hat, stage, onDismiss }: Props)
       <View style={styles.header}>
         <Pet species={species} mood={letter.mood} hat={hat} size={44} stage={stage} />
         <View style={{ flex: 1 }}>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>A NOTE FROM YOUR PET</Text>
+          <Text style={[styles.eyebrow, { color: colors.accent }]}>{petName?.trim() ? `A NOTE FROM ${petName.trim().toUpperCase()}` : 'A NOTE FROM YOUR PET'}</Text>
           <Text style={[styles.greeting, { color: colors.text }]}>{letter.greeting}</Text>
         </View>
       </View>
@@ -53,7 +54,7 @@ export function PetLetterCard({ letter, species, hat, stage, onDismiss }: Props)
         accessibilityRole="button"
         accessibilityLabel="Dismiss the weekly note"
       >
-        <Text style={[styles.buttonText, { color: colors.muted }]}>Thanks, little one</Text>
+        <Text style={[styles.buttonText, { color: colors.muted }]}>{petName?.trim() ? `Thanks, ${petName.trim()}` : 'Thanks, little one'}</Text>
       </Pressable>
     </Animated.View>
   );

@@ -5,7 +5,7 @@
 // Shows unlocked hats based on progress.
 // ============================================
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,13 @@ import {
   Modal,
   ScrollView,
   Animated,
+  TextInput,
 } from 'react-native';
 import { PetSpecies, HatType } from '../types';
 import { useTheme } from '../theme';
 import { Pet, getUnlockedHats } from './Pet';
 import { STAGE_NAMES, daysToNextStage } from '../utils/evolution';
+import { MAX_PET_NAME } from '../utils/petName';
 
 interface HatClosetModalProps {
   visible: boolean;
@@ -28,6 +30,8 @@ interface HatClosetModalProps {
   /** Evolution stage 0-3 and the best streak that earned it */
   petStage?: number;
   bestStreak?: number;
+  petName?: string;
+  onRenamePet?: (name: string) => void;
   onSelectSpecies: (species: PetSpecies) => void;
   onSelectHat: (hat: HatType) => void;
   onClose: () => void;
@@ -74,11 +78,15 @@ export function HatClosetModal({
   totalCompletions,
   petStage = 0,
   bestStreak = 0,
+  petName = '',
+  onRenamePet,
   onSelectSpecies,
   onSelectHat,
   onClose,
 }: HatClosetModalProps) {
   const { colors } = useTheme();
+  const [nameDraft, setNameDraft] = useState(petName);
+  useEffect(() => setNameDraft(petName), [petName, visible]);
   const unlockedHats = getUnlockedHats(totalCompletions);
   const previousUnlockedCount = useRef(unlockedHats.length);
 
@@ -183,6 +191,20 @@ export function HatClosetModal({
           {/* Current Pet Preview */}
           <View style={[styles.preview, { backgroundColor: colors.bg, borderColor: colors.divider }]}>
             <Pet species={currentSpecies} mood="happy" hat={currentHat} size={80} stage={petStage} />
+            <TextInput
+              style={[styles.nameInput, { color: colors.text, borderBottomColor: colors.divider }]}
+              value={nameDraft}
+              onChangeText={(t) => setNameDraft(t.slice(0, MAX_PET_NAME))}
+              onBlur={() => onRenamePet?.(nameDraft)}
+              onSubmitEditing={() => onRenamePet?.(nameDraft)}
+              placeholder="Name your pet"
+              placeholderTextColor={colors.muted}
+              maxLength={MAX_PET_NAME}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              accessibilityLabel="Pet name"
+            />
             <Text style={[styles.previewLabel, { color: colors.text, fontWeight: '700' }]}>
               {STAGE_NAMES[petStage]}
             </Text>
@@ -301,6 +323,7 @@ export function HatClosetModal({
 }
 
 const styles = StyleSheet.create({
+  nameInput: { fontSize: 20, fontWeight: '800', textAlign: 'center', borderBottomWidth: 1, paddingVertical: 4, paddingHorizontal: 12, minWidth: 160, marginTop: 6 },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
