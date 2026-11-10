@@ -152,3 +152,27 @@ describe('pet snacks', () => {
     expect(planSnackSaves(state({ logs: done('a', range(-20, -6)), snacks: 5 }), NOW)).toEqual([]);
   });
 });
+
+describe('streak-at-risk nudge', () => {
+  // Imported lazily: the module pulls in expo-notifications
+  jest.mock('expo-notifications', () => ({}));
+  const { planStreakNudges } = require('../utils/streakNudge');
+
+  it('plans tonight and tomorrow for an open streak of a week or more', () => {
+    const s = state({ notificationsEnabled: true, petName: 'Juniper', logs: done('a', range(-8, -1)) });
+    const nudges = planStreakNudges(s, NOW);
+    expect(nudges.map((n: any) => n.id)).toEqual([`streak-nudge-${TODAY}`, `streak-nudge-${day(1)}`]);
+    expect(nudges[0].at.getHours()).toBe(20);
+    expect(nudges[0].title).toContain('Juniper');
+    expect(nudges[0].body).toContain('8-day a streak');
+  });
+
+  it('skips today once the habit is done, short streaks, vacation and notifications off', () => {
+    const logs = done('a', range(-8, 0));
+    const ids = (s: AppState) => planStreakNudges(s, NOW).map((n: any) => n.id);
+    expect(ids(state({ notificationsEnabled: true, logs }))).toEqual([`streak-nudge-${day(1)}`]);
+    expect(ids(state({ notificationsEnabled: true, logs: done('a', range(-3, -1)) }))).toEqual([]);
+    expect(ids(state({ notificationsEnabled: true, logs, vacations: [{ from: TODAY }] }))).toEqual([]);
+    expect(ids(state({ notificationsEnabled: false, logs }))).toEqual([]);
+  });
+});

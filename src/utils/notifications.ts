@@ -214,9 +214,10 @@ export function planHabitReminders(state: AppState): ReminderPlan {
   if (plan.generalHabitNames.length > 0) {
     const names = plan.generalHabitNames.slice(0, 3).join(', ');
     const more = plan.generalHabitNames.length > 3 ? ` and ${plan.generalHabitNames.length - 3} more` : '';
+    const pet = (state.petName || '').trim();
     plan.triggers.push({
       habitId: null,
-      title: 'Time for your habits! 💪',
+      title: pet ? `${pet} is ready when you are` : 'Time for your habits! 💪',
       body: `Don't forget: ${names}${more}`,
       hour: state.notificationTime.hour,
       minute: state.notificationTime.minute,

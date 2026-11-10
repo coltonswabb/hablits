@@ -174,6 +174,17 @@ function AppContent() {
     return () => clearTimeout(t);
   }, [isLoaded, state.notificationsEnabled, state.notificationTime, state.habits, state.dayPlanSchedules, state.vacations]);
 
+  // ---- Streak-at-risk nudge ----
+  // An 8pm heads-up only when a streak of a week or more is still open.
+  useEffect(() => {
+    if (!isLoaded || Platform.OS === 'web') return;
+    const t = setTimeout(async () => {
+      const { syncStreakNudges } = await import('./utils/streakNudge');
+      syncStreakNudges(state);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [isLoaded, state.notificationsEnabled, state.habits, state.logs, state.vacations, state.streakSaves, state.petName, foregroundTick]);
+
   // ---- Home screen widget ----
   // The pet is rasterized off-screen (PetSnapshot) so WidgetKit can show it;
   // we keep one image for the current mood and one for idle (tomorrow's entry).
