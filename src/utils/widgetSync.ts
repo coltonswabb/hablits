@@ -18,6 +18,7 @@ import { ThemeColors } from '../theme/colors';
 import { calculateStreak, getActiveHabits, getDayCompletionPercent } from './habits';
 import { dateStr, getWeekDays } from './dates';
 import { getPetStage, STAGE_NAMES } from './evolution';
+import { collectWidgetTaps, WidgetTap } from './widgetTaps';
 import type { TodayWidgetProps, WidgetHabit, WidgetDay } from '../widgets/TodayWidget';
 
 const MOOD_WORDS: Record<PetMood, string> = {
@@ -60,7 +61,7 @@ export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Dat
   const active = getActiveHabits(state.habits, date, 'all');
   const doneIds = new Set(state.logs[ds] || []);
 
-  const habits: WidgetHabit[] = active.map((h) => ({ name: h.name, done: doneIds.has(h.id) }));
+  const habits: WidgetHabit[] = active.map((h) => ({ id: h.id, name: h.name, done: doneIds.has(h.id) }));
   // Undone first so the widget surfaces what's left; keep app order within each group
   habits.sort((a, b) => Number(a.done) - Number(b.done));
 
@@ -81,6 +82,7 @@ export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Dat
     habits: habits.slice(0, MAX_HABITS),
     week: buildWeek(state, date),
     petImage: petImage ?? '',
+    taps: [],
     bg: colors.bg,
     card: colors.card,
     text: colors.text,
@@ -98,6 +100,27 @@ export function nextMidnight(date: Date): Date {
 }
 
 let lastPayload: string | null = null;
+
+/**
+ * Make the next syncWidget() write even if our payload looks unchanged.
+ * Needed after reading widget taps: the widget's stored props then differ
+ * from what we last sent, and its `taps` list must be cleared.
+ */
+export function forceNextWidgetSync(): void {
+  lastPayload = null;
+}
+
+/** Ticks made on the widget since the app last synced it (iOS only). */
+export async function readWidgetTaps(): Promise<WidgetTap[]> {
+  if (Platform.OS !== 'ios') return [];
+  try {
+    const { default: TodayWidget } = await import('../widgets/TodayWidget');
+    return collectWidgetTaps(await TodayWidget.getTimeline());
+  } catch (error) {
+    console.warn('Reading widget taps failed:', error);
+    return [];
+  }
+}
 
 /**
  * Push the current state to the home screen widget. Safe to call often:

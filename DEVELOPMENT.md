@@ -56,8 +56,8 @@ old binary can't run.
 - To compile-check the widget without a device:
   `node node_modules/expo-widgets/scripts/build-layout-registry.mjs "$PWD" ios /tmp/registry.json`
 
-Not yet: tapping a habit *in* the widget — see `docs/INTERACTIVE_WIDGET.md`
-for why and for the outbox design.
+- Tapping a habit row in the medium/large widget ticks it; the app applies
+  the queued taps on launch/foreground. See `docs/INTERACTIVE_WIDGET.md`.
 
 ## Persistence
 

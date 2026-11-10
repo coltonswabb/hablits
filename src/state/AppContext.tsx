@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Habit, Identity, DayMarks, HabitSchedule, PetSpecies, HatType } from '../types';
 import { generateId, todayStr } from '../utils';
 import { migrateState, SCHEMA_VERSION } from './migrations';
+import { applyHabitDoneChanges } from '../utils/widgetTaps';
 
 // Storage key for AsyncStorage
 const STORAGE_KEY = 'hablits_state_v1';
@@ -58,6 +59,7 @@ type Action =
   | { type: 'RESTORE_HABIT'; payload: string }
   | { type: 'REORDER_HABITS'; payload: Habit[] }
   | { type: 'TOGGLE_HABIT'; payload: { habitId: string; date: string } }
+  | { type: 'SET_HABITS_DONE'; payload: { habitId: string; date: string; done: boolean }[] }
   | { type: 'SKIP_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'FAIL_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'CLEAR_DAY'; payload: string }
@@ -211,6 +213,10 @@ function appReducer(state: AppState, action: Action): AppState {
 
       return { ...state, logs, marks };
     }
+
+    // Absolute (not toggling) so replaying the same widget taps is harmless
+    case 'SET_HABITS_DONE':
+      return applyHabitDoneChanges(state, action.payload);
 
     case 'SKIP_HABIT': {
       const { habitId, date } = action.payload;

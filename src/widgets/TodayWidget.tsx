@@ -13,8 +13,9 @@
 // The app side that computes and pushes the props is src/utils/widgetSync.ts.
 // ============================================
 
-import { Divider, Gauge, HStack, Image, RoundedRectangle, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
+import { Button, Divider, Gauge, HStack, Image, RoundedRectangle, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
+  buttonStyle,
   containerBackground,
   font,
   foregroundStyle,
@@ -32,9 +33,14 @@ import {
 import { createWidget } from 'expo-widgets';
 
 export type WidgetHabit = {
+  /** Habit id; absent in timelines written by 1.3, whose rows aren't tappable */
+  id?: string;
   name: string;
   done: boolean;
 };
+
+/** A tick made on the widget, waiting for the app to apply it (see utils/widgetTaps.ts) */
+export type WidgetTapRecord = { id: string; date: string; done: boolean; ts: number };
 
 export type WidgetDay = {
   label: string;
@@ -62,6 +68,8 @@ export type TodayWidgetProps = {
   week: WidgetDay[];
   /** file:// URI of the rasterized pet, or '' until the app has produced one */
   petImage: string;
+  /** Ticks made on the widget since the app last synced; the app empties it */
+  taps?: WidgetTapRecord[];
   /** Theme colours so the widget matches the app */
   bg: string;
   card: string;
@@ -115,9 +123,11 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
     />
   );
 
-  // One row in the habit list
-  const row = (h: WidgetHabit, idx: number) => (
-    <HStack key={`${idx}-${h.name}`} spacing={8}>
+  // One row in the habit list. Tapping it ticks the habit right here: the
+  // returned props are merged into this timeline entry by WidgetKit, and the
+  // tap is queued in `taps` for the app to apply next time it runs.
+  const rowContent = (h: WidgetHabit) => (
+    <HStack spacing={8}>
       <Image
         systemName={h.done ? 'checkmark.circle.fill' : 'circle'}
         size={15}
@@ -135,6 +145,29 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
       <Spacer />
     </HStack>
   );
+
+  const row = (h: WidgetHabit, idx: number) => {
+    const id = h.id;
+    if (!id || !props.date) {
+      return <HStack key={`${idx}-${h.name}`}>{rowContent(h)}</HStack>;
+    }
+    const onPress = () => ({
+      habits: props.habits.map((x) => (x.id === id ? { ...x, done: !h.done } : x)),
+      done: Math.max(0, Math.min(total, done + (h.done ? -1 : 1))),
+      taps: [...(props.taps ?? []), { id, date: props.date, done: !h.done, ts: Date.now() }],
+    });
+    return (
+      <Button
+        key={`${idx}-${id}`}
+        target={`toggle-${id}`}
+        // The widget runtime merges whatever onPress returns into the entry's props
+        onPress={onPress as unknown as () => void}
+        modifiers={[buttonStyle('plain')]}
+      >
+        {rowContent(h)}
+      </Button>
+    );
+  };
 
   const streakBadge = (
     <HStack spacing={4}>
@@ -320,6 +353,7 @@ const initialProps: TodayWidgetProps = {
   habits: [],
   week: [],
   petImage: '',
+  taps: [],
   bg: '#eef2f7',
   card: '#ffffff',
   text: '#0f172a',

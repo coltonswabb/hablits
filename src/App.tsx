@@ -27,7 +27,8 @@ import { TabName, Identity } from './types';
 
 // Utils
 import { initializeAudio, setSoundsEnabled } from './utils/sounds';
-import { syncWidget } from './utils/widgetSync';
+import { syncWidget, readWidgetTaps, forceNextWidgetSync } from './utils/widgetSync';
+import { planWidgetTaps } from './utils/widgetTaps';
 import { useReduceMotion } from './utils/motion';
 import { getDayCompletionPercent } from './utils/habits';
 import { bestStreakEver, stageForStreak } from './utils/evolution';
@@ -191,10 +192,45 @@ function AppContent() {
     }
   }, [isLoaded, petStage, state.petStageSeen]);
 
+  // Ticks made on the widget: apply them BEFORE the first sync, or that sync
+  // would overwrite the widget (and its queued taps) with stale state.
+  // Re-read on foreground and whenever the widget reports a tap live.
+  const [widgetTapsRead, setWidgetTapsRead] = useState(Platform.OS !== 'ios');
+  const [widgetRefresh, setWidgetRefresh] = useState(0);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const applyWidgetTaps = useCallback(async () => {
+    const taps = await readWidgetTaps();
+    if (taps.length > 0) {
+      const changes = planWidgetTaps(stateRef.current, taps);
+      if (changes.length > 0) dispatch({ type: 'SET_HABITS_DONE', payload: changes });
+      // Always rewrite the widget so its tap queue is emptied
+      forceNextWidgetSync();
+      setWidgetRefresh((n) => n + 1);
+    }
+    setWidgetTapsRead(true);
+  }, [dispatch]);
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || Platform.OS !== 'ios') return;
+    applyWidgetTaps();
+  }, [isLoaded, foregroundTick, applyWidgetTaps]);
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let sub: { remove: () => void } | undefined;
+    import('expo-widgets')
+      .then(({ addUserInteractionListener }) => {
+        sub = addUserInteractionListener((e) => {
+          if (e.target?.startsWith('toggle-')) applyWidgetTaps();
+        });
+      })
+      .catch(() => {});
+    return () => sub?.remove();
+  }, [applyWidgetTaps]);
+
+  useEffect(() => {
+    if (!isLoaded || !widgetTapsRead) return;
     syncWidget(state, colors, petImages);
-  }, [isLoaded, state.habits, state.logs, colors, petImages]);
+  }, [isLoaded, widgetTapsRead, widgetRefresh, state.habits, state.logs, colors, petImages]);
 
   // Animate screen transitions (a plain cross-fade when Reduce Motion is on)
   const reduceMotion = useReduceMotion();
