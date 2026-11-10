@@ -2,18 +2,18 @@
 // LAUNCH SCREEN
 // ============================================
 // Covers the app while saved data and the theme load, so the first thing
-// seen is never the default (Light, empty) screen. It starts as an exact
-// copy of the native splash (same colour, same mark, same size), so the
-// handoff is invisible, then:
+// seen is never the default (Light, empty) screen. The native splash is a
+// plain colour (no logo; see the expo-splash-screen config in app.json) and
+// this starts as the same plain colour, so the handoff is invisible. Then:
 //
-//   mark dips and lifts away → the pet pops up with a greeting → the cover
-//   fades to reveal the app, already in the right theme with data in place.
+//   the pet drops in with a bounce → "Hablits" and a greeting rise in →
+//   the cover fades to reveal the app, already themed with data in place.
 //
-// Reduce Motion: a plain fade.
+// Reduce Motion: no bounce, just fades.
 // ============================================
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, StyleSheet, Text, useColorScheme } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, useColorScheme } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { Pet } from './Pet';
 import { HatType, PetSpecies } from '../types';
@@ -21,7 +21,6 @@ import { useReduceMotion } from '../utils/motion';
 
 // Must match the expo-splash-screen plugin config in app.json
 const SPLASH_BG = { light: '#6c6fe0', dark: '#15121f' };
-const SPLASH_MARK_SIZE = 200;
 
 /** Never hold the app hostage: dismiss even if loading hasn't reported in. */
 const MAX_WAIT_MS = 4000;
@@ -29,29 +28,30 @@ const MAX_WAIT_MS = 4000;
 interface LaunchScreenProps {
   /** True once saved data and theme have loaded */
   ready: boolean;
-  /** Show the pet (false for a first launch, before there is one) */
-  showPet: boolean;
+  /** False on a first launch, before the user has picked a pet */
+  hasPet: boolean;
   species: PetSpecies;
   hat: HatType;
   stage: number;
   petName?: string;
 }
 
-export function LaunchScreen({ ready, showPet, species, hat, stage, petName }: LaunchScreenProps) {
+export function LaunchScreen({ ready, hasPet, species, hat, stage, petName }: LaunchScreenProps) {
   const scheme = useColorScheme();
   const reduceMotion = useReduceMotion();
   const [gone, setGone] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  // The pet is only drawn once we know which pet it is
+  const [showPet, setShowPet] = useState(false);
   const started = useRef(false);
 
   const cover = useRef(new Animated.Value(1)).current;
-  const markScale = useRef(new Animated.Value(1)).current;
-  const markOpacity = useRef(new Animated.Value(1)).current;
-  const markLift = useRef(new Animated.Value(0)).current;
-  const petScale = useRef(new Animated.Value(0.4)).current;
+  const petScale = useRef(new Animated.Value(0.3)).current;
+  const petDrop = useRef(new Animated.Value(-40)).current;
   const petOpacity = useRef(new Animated.Value(0)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
-  const textRise = useRef(new Animated.Value(8)).current;
+  const titleOpacity = useRef(new Animated.Value(0)).current;
+  const titleRise = useRef(new Animated.Value(10)).current;
+  const subOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const t = setTimeout(() => setTimedOut(true), MAX_WAIT_MS);
@@ -65,63 +65,75 @@ export function LaunchScreen({ ready, showPet, species, hat, stage, petName }: L
     const fadeCover = (duration: number) =>
       Animated.timing(cover, { toValue: 0, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
 
-    if (reduceMotion || !showPet || !ready) {
-      // First launch, Reduce Motion, or a slow load: just get out of the way
-      fadeCover(reduceMotion ? 200 : 320).start(() => setGone(true));
+    if (!ready) {
+      // Loading is stuck: get out of the way and let the app show what it has
+      fadeCover(300).start(() => setGone(true));
+      return;
+    }
+
+    setShowPet(true);
+    const fadeIn = (v: Animated.Value, duration: number) => Animated.timing(v, { toValue: 1, duration, useNativeDriver: true });
+
+    if (reduceMotion) {
+      petScale.setValue(1);
+      petDrop.setValue(0);
+      titleRise.setValue(0);
+      Animated.sequence([
+        Animated.parallel([fadeIn(petOpacity, 200), fadeIn(titleOpacity, 200), fadeIn(subOpacity, 200)]),
+        Animated.delay(450),
+        fadeCover(250),
+      ]).start(() => setGone(true));
       return;
     }
 
     Animated.sequence([
-      // The mark takes a breath, then lifts away
-      Animated.timing(markScale, { toValue: 0.9, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      // The pet drops in and lands with a bounce
       Animated.parallel([
-        Animated.timing(markScale, { toValue: 1.15, duration: 220, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-        Animated.timing(markLift, { toValue: -36, duration: 220, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-        Animated.timing(markOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-      ]),
-      // The pet pops up to say hello
-      Animated.parallel([
-        Animated.spring(petScale, { toValue: 1, tension: 140, friction: 6, useNativeDriver: true }),
-        Animated.timing(petOpacity, { toValue: 1, duration: 140, useNativeDriver: true }),
+        fadeIn(petOpacity, 120),
+        Animated.spring(petScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
+        Animated.spring(petDrop, { toValue: 0, tension: 120, friction: 7, useNativeDriver: true }),
+        // The name rises in just behind it
         Animated.sequence([
-          Animated.delay(120),
+          Animated.delay(140),
           Animated.parallel([
-            Animated.timing(textOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
-            Animated.timing(textRise, { toValue: 0, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+            fadeIn(titleOpacity, 240),
+            Animated.timing(titleRise, { toValue: 0, duration: 240, easing: Easing.out(Easing.quad), useNativeDriver: true }),
           ]),
         ]),
+        Animated.sequence([Animated.delay(300), fadeIn(subOpacity, 240)]),
       ]),
-      Animated.delay(260),
-      fadeCover(300),
+      Animated.delay(280),
+      fadeCover(320),
     ]).start(() => setGone(true));
-  }, [ready, timedOut, reduceMotion, showPet]);
+  }, [ready, timedOut, reduceMotion]);
 
   if (gone) return null;
 
   const name = (petName || '').trim();
-  const dark = scheme === 'dark';
+  const greeting = !hasPet ? 'Small habits, happy pet' : name ? `${name} says hi` : 'Welcome back';
 
   return (
     <Animated.View
       // Once it starts fading, touches go to the app underneath
       pointerEvents={started.current ? 'none' : 'auto'}
-      style={[styles.cover, { backgroundColor: dark ? SPLASH_BG.dark : SPLASH_BG.light, opacity: cover }]}
-      // The native splash stays up until this identical frame is on screen
+      style={[styles.cover, { backgroundColor: scheme === 'dark' ? SPLASH_BG.dark : SPLASH_BG.light, opacity: cover }]}
+      // The native splash stays up until this identical plain frame is on screen
       onLayout={() => SplashScreen.hideAsync().catch(() => {})}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <Animated.View style={[styles.center, { opacity: markOpacity, transform: [{ translateY: markLift }, { scale: markScale }] }]}>
-        <Image source={require('../../assets/splash-icon.png')} style={styles.mark} resizeMode="contain" />
-      </Animated.View>
-
       {showPet ? (
-        <Animated.View style={[styles.center, { opacity: petOpacity, transform: [{ scale: petScale }] }]}>
-          <Pet species={species} hat={hat} stage={stage} mood="happy" size={150} />
-          <Animated.View style={{ opacity: textOpacity, transform: [{ translateY: textRise }] }}>
-            <Text style={styles.hello}>{name ? `${name} says hi` : 'Welcome back'}</Text>
+        <>
+          <Animated.View style={{ opacity: petOpacity, transform: [{ translateY: petDrop }, { scale: petScale }] }}>
+            <Pet species={species} hat={hasPet ? hat : 'none'} stage={hasPet ? stage : 0} mood="happy" size={150} />
           </Animated.View>
-        </Animated.View>
+          <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleRise }] }}>
+            <Text style={styles.title}>Hablits</Text>
+          </Animated.View>
+          <Animated.View style={{ opacity: subOpacity }}>
+            <Text style={styles.sub}>{greeting}</Text>
+          </Animated.View>
+        </>
       ) : null}
     </Animated.View>
   );
@@ -132,21 +144,21 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     zIndex: 1000,
     elevation: 1000,
-  },
-  center: {
-    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mark: {
-    width: SPLASH_MARK_SIZE,
-    height: SPLASH_MARK_SIZE,
-  },
-  hello: {
-    marginTop: 14,
-    fontSize: 20,
-    fontWeight: '700',
+  title: {
+    marginTop: 18,
+    fontSize: 34,
+    fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: 0.2,
+    letterSpacing: 0.5,
+  },
+  sub: {
+    marginTop: 6,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+    opacity: 0.85,
   },
 });

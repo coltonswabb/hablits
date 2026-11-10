@@ -574,7 +574,7 @@ function AppContent() {
       {/* Covers the app until data + theme are in, then animates away */}
       <LaunchScreen
         ready={isLoaded && isThemeLoaded}
-        showPet={state.hasCompletedOnboarding}
+        hasPet={state.hasCompletedOnboarding}
         species={state.petSpecies}
         hat={state.petHat}
         stage={petStage}
