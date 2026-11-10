@@ -17,7 +17,7 @@ import { ThemeProvider, useTheme } from './theme';
 import { AppProvider, useApp } from './state';
 
 // Components
-import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary, PetSnapshot, EvolutionModal, LaunchScreen, getMoodFromProgress } from './components';
+import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary, PetSnapshot, EvolutionModal, LaunchScreen, getMoodFromProgress, getUnlockedHats } from './components';
 
 // Screens
 import { TodayScreen, WeekScreen, CalendarScreen, DayPlanScreen, StatsScreen } from './screens';
@@ -545,7 +545,11 @@ function AppContent() {
           onRenamePet={(name) => dispatch({ type: 'SET_PET_NAME', payload: name })}
           onSelectSpecies={(species) => dispatch({ type: 'SET_PET_SPECIES', payload: species })}
           onSelectHat={(hat) => dispatch({ type: 'SET_PET_HAT', payload: hat })}
-          onClose={() => setHatClosetVisible(false)}
+          onClose={() => {
+            setHatClosetVisible(false);
+            // They've seen the closet, so nothing in it is news any more
+            dispatch({ type: 'SET_HATS_SEEN', payload: getUnlockedHats(totalCompletions).length });
+          }}
         />
 
         {/* Off-screen pet renders for the home screen widget */}

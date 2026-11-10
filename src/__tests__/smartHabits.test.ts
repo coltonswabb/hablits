@@ -176,3 +176,24 @@ describe('streak-at-risk nudge', () => {
     expect(ids(state({ notificationsEnabled: false, logs }))).toEqual([]);
   });
 });
+
+describe('pet voice', () => {
+  const { comebackLine, daysSinceLastCompletion, petTapLine } = require('../utils/petVoice');
+
+  it('greets you after 3+ days away, and not otherwise', () => {
+    expect(daysSinceLastCompletion(state({ logs: done('a', [-4]) }), NOW)).toBe(4);
+    expect(comebackLine(state({ petName: 'Juniper', logs: done('a', [-4]) }), NOW)).toContain('Juniper missed you');
+    expect(comebackLine(state({ logs: done('a', [-2]) }), NOW)).toBeNull();
+    expect(comebackLine(state({ logs: done('a', [-4, 0]) }), NOW)).toBeNull();
+    expect(comebackLine(state(), NOW)).toBeNull();
+    expect(comebackLine(state({ logs: done('a', [-4]), vacations: [{ from: day(-3) }] }), NOW)).toBeNull();
+  });
+
+  it('talks about what is left, and rotates on repeated taps', () => {
+    const s = state({ habits: [habit('Read'), habit('Walk')] });
+    expect(petTapLine(s, 0, NOW)).toBe('2 to go. Want to start with Read?');
+    expect(petTapLine(s, 1, NOW)).not.toBe(petTapLine(s, 0, NOW));
+    const allDone = state({ habits: [habit('Read')], logs: { [TODAY]: ['Read'] } });
+    expect(petTapLine(allDone, 0, NOW)).toContain('All done');
+  });
+});

@@ -22,6 +22,7 @@ import { useTheme, themeConfetti } from '../theme';
 import { textOn } from '../theme/colors';
 import { allDoneCelebration, miniCelebration } from '../utils/celebrate';
 import { getProgress, isOnVacation, quitBest, quitDays } from '../utils/smartHabits';
+import { comebackLine, petTapLine } from '../utils/petVoice';
 import { currentLetter } from '../utils/petLetter';
 import { PetStage } from '../utils/evolution';
 import { PetLetterCard } from '../components/PetLetterCard';
@@ -34,6 +35,7 @@ import {
   EditHabitModal,
   Pet,
   getMoodFromProgress,
+  getUnlockedHats,
   Confetti,
   useConfetti,
   NoteModal,
@@ -53,7 +55,7 @@ interface TodayScreenProps {
 
 export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset }: TodayScreenProps) {
   const { colors, themeName } = useTheme();
-  const { state, dispatch } = useApp();
+  const { state, dispatch, isLoaded } = useApp();
   const [quickAdd, setQuickAdd] = useState('');
 
   // Modal state
@@ -153,6 +155,32 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
     }
     setPrevCompletedCount(completedCount);
   }, [completedCount, activeHabits.length, lastToggledHabitId]);
+
+  // ---- Pet ----
+  // Tap the pet and it says something about right now; the line fades after a few seconds
+  const [petLine, setPetLine] = useState<string | null>(null);
+  const petTaps = useRef(0);
+  const petLineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handlePetTap = () => {
+    setPetLine(petTapLine(state, petTaps.current++));
+    if (petLineTimer.current) clearTimeout(petLineTimer.current);
+    petLineTimer.current = setTimeout(() => setPetLine(null), 5000);
+  };
+  useEffect(() => () => {
+    if (petLineTimer.current) clearTimeout(petLineTimer.current);
+  }, []);
+
+  const welcomeBack = comebackLine(state);
+
+  // New-hat announcement. Hats unlock by total completions; hatsSeen is how
+  // many the user has already been shown (set silently the first time).
+  const unlockedHats = getUnlockedHats(Object.values(state.logs).reduce((sum, ids) => sum + ids.length, 0));
+  const unlockedHatCount = unlockedHats.length;
+  useEffect(() => {
+    if (isLoaded && state.hatsSeen === undefined) dispatch({ type: 'SET_HATS_SEEN', payload: unlockedHatCount });
+  }, [isLoaded, state.hatsSeen, unlockedHatCount]);
+  const newHatKey = state.hatsSeen !== undefined && unlockedHatCount > state.hatsSeen ? unlockedHats[unlockedHatCount - 1] : null;
+  const newHat = newHatKey === 'tophat' ? 'top hat' : newHatKey === 'party' ? 'party hat' : newHatKey;
 
   // Count/timed habits: add to (or take from) today's amount
   const handleAddProgress = (habitId: string, delta: number) => {
@@ -446,17 +474,16 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
             <Text style={[styles.title, { color: colors.text }]}>Today</Text>
           </View>
           <View style={styles.headerRight}>
-            {/* Pet - tap to open hat closet */}
-            <TouchableOpacity onPress={onOpenHatCloset} activeOpacity={0.8}>
-              <Pet
-                species={petSpecies}
-                mood={getMoodFromProgress(completionPercent)}
-                hat={petHat}
-                size={48}
-                completionsToday={completedCount}
-                stage={petStage}
-              />
-            </TouchableOpacity>
+            {/* Pet - tap it and it talks */}
+            <Pet
+              species={petSpecies}
+              mood={getMoodFromProgress(completionPercent)}
+              hat={petHat}
+              size={48}
+              completionsToday={completedCount}
+              stage={petStage}
+              onPress={handlePetTap}
+            />
             <View style={[styles.datePill, { borderColor: colors.divider }]}>
               <Text style={[styles.dateText, { color: colors.muted }]}>
                 {new Date().toLocaleDateString(undefined, {
@@ -486,6 +513,44 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
             weekStat={letter.stat}
             onDismiss={() => dispatch({ type: 'DISMISS_LETTER', payload: letter.weekStart })}
           />
+        )}
+
+        {/* What the pet says when tapped */}
+        {petLine && (
+          <View
+            style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.accent }]}
+            accessibilityLiveRegion="polite"
+          >
+            <Text style={[styles.noticeText, { color: colors.text }]}>💬 {petLine}</Text>
+            <TouchableOpacity onPress={onOpenHatCloset} accessibilityRole="button" accessibilityLabel="Open the hat closet">
+              <Text style={[styles.noticeAction, { color: colors.accent }]}>Hats</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* A new hat was earned since the user last looked */}
+        {newHat && (
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            <Text style={[styles.noticeText, { color: colors.text }]}>
+              🎉 New hat unlocked: the {newHat}! {(state.petName || '').trim() || 'Your pet'} wants to try it on.
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                dispatch({ type: 'SET_HATS_SEEN', payload: unlockedHatCount });
+                onOpenHatCloset();
+              }}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.noticeAction, { color: colors.accent }]}>Try it on</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Back after a few days away */}
+        {welcomeBack && !petLine && (
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            <Text style={[styles.noticeText, { color: colors.text }]}>👋 {welcomeBack}</Text>
+          </View>
         )}
 
         {/* Vacation mode: streaks are paused */}

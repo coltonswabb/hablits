@@ -67,6 +67,7 @@ type Action =
   | { type: 'SET_VACATION'; payload: boolean }
   | { type: 'RUN_SNACKS' }
   | { type: 'DISMISS_SNACK_NOTE' }
+  | { type: 'SET_HATS_SEEN'; payload: number }
   | { type: 'SKIP_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'FAIL_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'CLEAR_DAY'; payload: string }
@@ -234,6 +235,9 @@ function appReducer(state: AppState, action: Action): AppState {
     // Earn pet snacks for streak milestones and spend them on missed days
     case 'RUN_SNACKS':
       return runSnacks(state);
+
+    case 'SET_HATS_SEEN':
+      return state.hatsSeen === action.payload ? state : { ...state, hatsSeen: action.payload };
 
     case 'DISMISS_SNACK_NOTE':
       return state.lastSnackNote ? { ...state, lastSnackNote: undefined } : state;

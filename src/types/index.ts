@@ -109,6 +109,7 @@ export interface AppState {
   snackMilestones?: Record<string, number>; // { "habit-id": 14 } highest 7-day multiple already rewarded in the current run
   streakSaves?: Record<string, string[]>;   // { "2024-01-15": ["habit-id"] } missed days a snack covered
   lastSnackNote?: { date: string; habitNames: string[] }; // Shown once on Today after snacks were used
+  hatsSeen?: number;                   // How many hats were unlocked when the user last saw the list; a higher count now = a new hat to announce
 }
 
 // Available theme names
