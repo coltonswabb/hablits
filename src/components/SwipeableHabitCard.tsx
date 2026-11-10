@@ -8,7 +8,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Animated, StyleSheet, View, Dimensions } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { HabitCard } from './HabitCard';
 import { Habit, Identity } from '../types';
 
@@ -46,147 +46,112 @@ export function SwipeableHabitCard({
   isSkipped,
 }: SwipeableHabitCardProps) {
   const translateX = useRef(new Animated.Value(0)).current;
-  const rightRevealOpacity = useRef(new Animated.Value(0)).current;
-  const leftRevealOpacity = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
   const isAnimating = useRef(false);
+
+  // The reveal layers fade in with the swipe distance. Derived on the native
+  // side, so nothing has to listen to translateX on the JS thread.
+  const rightRevealOpacity = translateX.interpolate({
+    inputRange: [0, SWIPE_THRESHOLD],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+  const leftRevealOpacity = translateX.interpolate({
+    inputRange: [-SWIPE_THRESHOLD, 0],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
 
   // Ensure card always returns to center on mount
   useEffect(() => {
     translateX.setValue(0);
     cardScale.setValue(1);
-    rightRevealOpacity.setValue(0);
-    leftRevealOpacity.setValue(0);
   }, []);
 
-  const onGestureEvent = Animated.event(
-    [{ nativeEvent: { translationX: translateX } }],
-    { useNativeDriver: true }
-  );
+  // Slide off to one side with a little bounce, then toggle and reset
+  const swipeAway = (toValue: number) => {
+    isAnimating.current = true;
+    Animated.parallel([
+      Animated.sequence([
+        Animated.spring(cardScale, {
+          toValue: 1.05,
+          useNativeDriver: true,
+          tension: 200,
+          friction: 3,
+        }),
+        Animated.spring(cardScale, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+      ]),
+      Animated.timing(translateX, {
+        toValue,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onToggle(); // Right: complete. Left: cycles to skip.
+      translateX.setValue(0);
+      isAnimating.current = false;
+    });
+  };
 
-  const onHandlerStateChange = (event: any) => {
-    if (event.nativeEvent.oldState === State.ACTIVE) {
-      const { translationX: swipeDistance, velocityX } = event.nativeEvent;
+  // Snap back to original position with bounce - ALWAYS complete this animation
+  const snapBack = () => {
+    isAnimating.current = true;
+    Animated.parallel([
+      Animated.spring(translateX, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 150,
+        friction: 10,
+      }),
+      Animated.spring(cardScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 150,
+        friction: 10,
+      }),
+    ]).start(() => {
+      // Ensure values are exactly centered
+      translateX.setValue(0);
+      cardScale.setValue(1);
+      isAnimating.current = false;
+    });
+  };
 
+  // Created once: a new Animated.event every render would re-bind the gesture
+  const onPanUpdate = useRef(
+    Animated.event([{ nativeEvent: { handlerData: { translationX: translateX } } }], { useNativeDriver: true })
+  ).current;
+
+  const pan = usePanGesture({
+    activeOffsetX: [-10, 10],
+    failOffsetY: [-20, 20],
+    // Drive translateX straight from the native event, as the old
+    // PanGestureHandler + Animated.event did
+    useAnimated: true,
+    onUpdate: onPanUpdate,
+    onDeactivate: (event) => {
       // Prevent multiple animations
       if (isAnimating.current) return;
+
+      const { translationX: swipeDistance, velocityX } = event;
 
       // Determine if we should complete the swipe based on distance or velocity
       const shouldCompleteRight = (swipeDistance > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) && !isComplete;
       const shouldCompleteLeft = (swipeDistance < -SWIPE_THRESHOLD || velocityX < -VELOCITY_THRESHOLD) && !isSkipped;
 
-      // Right swipe - Complete/toggle
       if (shouldCompleteRight) {
-        isAnimating.current = true;
-        // Bounce and slide animation
-        Animated.parallel([
-          Animated.sequence([
-            Animated.spring(cardScale, {
-              toValue: 1.05,
-              useNativeDriver: true,
-              tension: 200,
-              friction: 3,
-            }),
-            Animated.spring(cardScale, {
-              toValue: 1,
-              useNativeDriver: true,
-              tension: 100,
-              friction: 8,
-            }),
-          ]),
-          Animated.timing(translateX, {
-            toValue: SCREEN_WIDTH,
-            duration: 250,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          onToggle();
-          translateX.setValue(0);
-          rightRevealOpacity.setValue(0);
-          isAnimating.current = false;
-        });
+        swipeAway(SCREEN_WIDTH);
+      } else if (shouldCompleteLeft) {
+        swipeAway(-SCREEN_WIDTH);
+      } else {
+        snapBack();
       }
-      // Left swipe - Skip (cycle to skip if not already)
-      else if (shouldCompleteLeft) {
-        isAnimating.current = true;
-        // Bounce and slide animation
-        Animated.parallel([
-          Animated.sequence([
-            Animated.spring(cardScale, {
-              toValue: 1.05,
-              useNativeDriver: true,
-              tension: 200,
-              friction: 3,
-            }),
-            Animated.spring(cardScale, {
-              toValue: 1,
-              useNativeDriver: true,
-              tension: 100,
-              friction: 8,
-            }),
-          ]),
-          Animated.timing(translateX, {
-            toValue: -SCREEN_WIDTH,
-            duration: 250,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          onToggle(); // Will cycle to skip
-          translateX.setValue(0);
-          leftRevealOpacity.setValue(0);
-          isAnimating.current = false;
-        });
-      }
-      // Snap back to original position with bounce - ALWAYS complete this animation
-      else {
-        isAnimating.current = true;
-        Animated.parallel([
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-            tension: 150,
-            friction: 10,
-          }),
-          Animated.spring(cardScale, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 150,
-            friction: 10,
-          }),
-          Animated.timing(rightRevealOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(leftRevealOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          // Ensure values are exactly centered
-          translateX.setValue(0);
-          cardScale.setValue(1);
-          rightRevealOpacity.setValue(0);
-          leftRevealOpacity.setValue(0);
-          isAnimating.current = false;
-        });
-      }
-    }
-  };
-
-  // Update reveal opacity based on swipe distance
-  translateX.addListener(({ value }) => {
-    if (value > 0) {
-      rightRevealOpacity.setValue(Math.min(value / SWIPE_THRESHOLD, 1));
-      leftRevealOpacity.setValue(0);
-    } else if (value < 0) {
-      leftRevealOpacity.setValue(Math.min(Math.abs(value) / SWIPE_THRESHOLD, 1));
-      rightRevealOpacity.setValue(0);
-    } else {
-      rightRevealOpacity.setValue(0);
-      leftRevealOpacity.setValue(0);
-    }
+    },
   });
 
   return (
@@ -216,12 +181,7 @@ export function SwipeableHabitCard({
       </Animated.View>
 
       {/* Card with gesture handler */}
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        activeOffsetX={[-10, 10]}
-        failOffsetY={[-20, 20]}
-      >
+      <GestureDetector gesture={pan}>
         <Animated.View
           style={{
             transform: [{ translateX }, { scale: cardScale }],
@@ -242,7 +202,7 @@ export function SwipeableHabitCard({
             isSkipped={isSkipped}
           />
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </View>
   );
 }

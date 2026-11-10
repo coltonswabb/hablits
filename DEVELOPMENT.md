@@ -126,8 +126,7 @@ old binary can't run.
 
 ## Known gaps
 
-- `react-native-gesture-handler` 3.x deprecates `PanGestureHandler`
-  (used in `SwipeableHabitCard`). Still works in v3. Deliberately NOT
-  migrated blind: swipe-to-complete is a core interaction and the
-  `Gesture.Pan()` + RN Animated version needs a feel check on a device.
-  Do it with a phone in hand before gesture-handler v4.
+- Swipe-to-complete (`SwipeableHabitCard`) moved to gesture-handler v3's
+  `usePanGesture` + `GestureDetector` with RN Animated (`useAnimated`), same
+  thresholds and animations as before. Needs a feel check on a phone before
+  release.
