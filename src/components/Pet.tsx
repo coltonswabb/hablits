@@ -32,7 +32,30 @@ interface PetProps {
   stage?: number;
   /** Render a still frame: no loops, no blink. Used when rasterizing for the widget. */
   isStatic?: boolean;
+  /** Draw in black, white and grey (true) or in the species' own colours (false). Left out, it follows the theme: mono in Pixel. */
+  mono?: boolean;
+  /** The pet is watching something happen below it (a habit card being swiped): eyes drop, head tilts */
+  attentive?: boolean;
+  /** Bump this number to feed the pet a treat: the treat drops in, the pet munches, a heart pops */
+  treatKey?: number;
+  /** The next treat is the big end-of-day one: bigger treat, a hop, a bigger heart */
+  bigTreat?: boolean;
 }
+
+// The black-and-white pet from the app icon
+const MONO_PALETTE = {
+  body: '#FFFFFF',
+  bodyLight: '#D4D4D4',
+  bodyDark: '#BDBDBD',
+  eye: '#000000',
+  eyeShine: '#FFFFFF',
+  cheek: '#CFCFCF',
+  accent: '#FFFFFF',
+};
+
+const TREAT_DROP_MS = 180;
+const MUNCH_MS = 90;
+const HEART_MS = 520;
 
 export function Pet({
   species,
@@ -44,9 +67,13 @@ export function Pet({
   isStatic = false,
   completionsToday = 0,
   streak = 0,
-  onPress
+  onPress,
+  mono,
+  attentive = false,
+  treatKey,
+  bigTreat = false,
 }: PetProps) {
-  const { colors } = useTheme();
+  const { colors, themeName } = useTheme();
   const reduceMotion = useReduceMotion() || isStatic;
 
   // Animation values
@@ -59,6 +86,55 @@ export function Pet({
   const celebrationScale = useRef(new Animated.Value(1)).current;
   const tapBounce = useRef(new Animated.Value(0)).current;
   const tapScale = useRef(new Animated.Value(1)).current;
+  const treatDrop = useRef(new Animated.Value(0)).current; // 0 = above the pet, 1 = in its mouth
+  const treatOpacity = useRef(new Animated.Value(0)).current;
+  const munchScaleY = useRef(new Animated.Value(1)).current;
+  const heartRise = useRef(new Animated.Value(0)).current; // 0 = at the pet, 1 = floated up
+  const heartOpacity = useRef(new Animated.Value(0)).current;
+  const treatHop = useRef(new Animated.Value(0)).current;
+  const attentiveTilt = useRef(new Animated.Value(0)).current;
+
+  // A treat: drops in, two quick munches, a heart floats up. Short, because it
+  // plays on every completed habit. Reduce Motion: only the heart fades in and out.
+  const lastTreatKey = useRef(treatKey);
+  useEffect(() => {
+    if (treatKey === undefined || treatKey === lastTreatKey.current) return;
+    lastTreatKey.current = treatKey;
+    const timing = (v: Animated.Value, toValue: number, duration: number) =>
+      Animated.timing(v, { toValue, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
+    const heart = Animated.sequence([
+      Animated.parallel([timing(heartOpacity, 1, 120), timing(heartRise, 1, HEART_MS)]),
+      timing(heartOpacity, 0, 160),
+    ]);
+    heartRise.setValue(0);
+    if (reduceMotion) {
+      heart.start();
+      return;
+    }
+    treatDrop.setValue(0);
+    treatOpacity.setValue(1);
+    const munch = Animated.sequence([
+      timing(munchScaleY, 0.9, MUNCH_MS),
+      timing(munchScaleY, 1, MUNCH_MS),
+      timing(munchScaleY, 0.94, MUNCH_MS),
+      timing(munchScaleY, 1, MUNCH_MS),
+    ]);
+    const hop = Animated.sequence([timing(treatHop, -size * 0.2, 160), timing(treatHop, 0, 200)]);
+    Animated.sequence([
+      timing(treatDrop, 1, TREAT_DROP_MS),
+      Animated.parallel([timing(treatOpacity, 0, 80), munch, heart, ...(bigTreat ? [hop] : [])]),
+    ]).start();
+  }, [treatKey]);
+
+  // Watching a card being swiped
+  useEffect(() => {
+    Animated.timing(attentiveTilt, {
+      toValue: attentive && !reduceMotion ? 1 : 0,
+      duration: 150,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [attentive, reduceMotion]);
 
   // Idle animation - gentle bob
   useEffect(() => {
@@ -436,7 +512,9 @@ export function Pet({
     },
   };
 
-  const pal = palettes[species];
+  // The Pixel theme is black and white, so every pet is drawn that way in it
+  // (a preview of another theme can pass mono={false} to opt out)
+  const pal = (mono ?? themeName === 'pixel') ? MONO_PALETTE : palettes[species];
 
   // Render detailed pixel art body for each species
   const renderBody = () => {
@@ -1649,9 +1727,11 @@ export function Pet({
     <Animated.View
       style={{
         transform: [
-          { translateY: Animated.add(Animated.add(bobY, bounceY), tapBounce) },
+          { translateY: Animated.add(Animated.add(Animated.add(bobY, bounceY), tapBounce), treatHop) },
           { scale: Animated.multiply(Animated.multiply(breatheScale, celebrationScale), tapScale) },
           { rotate: Animated.add(wiggleInterpolate as any, headTiltInterpolate as any) },
+          { rotate: attentiveTilt.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '6deg'] }) },
+          { scaleY: munchScaleY },
         ],
       }}
     >
@@ -1659,7 +1739,8 @@ export function Pet({
         {renderAura()}
         {renderBody()}
         <AnimatedG opacity={blinkOpacity}>
-          {renderEyes()}
+          {/* Eyes drop a little when the pet is watching a card below it */}
+          <G transform={attentive ? 'translate(0, 1.5)' : undefined}>{renderEyes()}</G>
         </AnimatedG>
         {renderMouth()}
         {renderCheeks()}
@@ -1679,6 +1760,39 @@ export function Pet({
       disabled={!onPress && size <= 32} // Disable tap for small pets (previews)
     >
       {content}
+      {treatKey !== undefined && (
+        <>
+          <Animated.Text
+            style={[
+              styles.treat,
+              {
+                fontSize: size * (bigTreat ? 0.42 : 0.3),
+                opacity: treatOpacity,
+                transform: [{ translateY: treatDrop.interpolate({ inputRange: [0, 1], outputRange: [-size * 0.45, size * 0.2] }) }],
+              },
+            ]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          >
+            {bigTreat ? '🍰' : '🍪'}
+          </Animated.Text>
+          <Animated.Text
+            style={[
+              styles.heart,
+              {
+                fontSize: size * (bigTreat ? 0.36 : 0.24),
+                color: colors.danger,
+                opacity: heartOpacity,
+                transform: [{ translateY: heartRise.interpolate({ inputRange: [0, 1], outputRange: [0, -size * 0.35] }) }],
+              },
+            ]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          >
+            ♥
+          </Animated.Text>
+        </>
+      )}
     </TouchableOpacity>
   );
 }
@@ -1720,5 +1834,16 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  treat: {
+    position: 'absolute',
+    top: 0,
+    alignSelf: 'center',
+  },
+  heart: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    fontWeight: '900',
   },
 });

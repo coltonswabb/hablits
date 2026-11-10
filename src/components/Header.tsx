@@ -9,6 +9,7 @@ import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { useTheme } from '../theme';
 import { ThemeName, Identity } from '../types';
 import { Logo } from './Logo';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface HeaderProps {
   identities: Identity[];
@@ -33,7 +34,7 @@ export function Header({
   onOpenSettings,
   onOpenHatCloset,
 }: HeaderProps) {
-  const { colors } = useTheme();
+  const { colors, radius, headingFont } = useTheme();
 
   const themeLabels: Record<ThemeName, string> = {
     light: 'Light',
@@ -54,6 +55,7 @@ export function Header({
     lion: 'Lion',
     ladyhawke: 'Ladyhawke',
     sakura: 'Sakura',
+    pixel: 'Pixel',
   };
 
   return (
@@ -67,7 +69,7 @@ export function Header({
         {({ pressed }) => (
           <Animated.View style={{ transform: [{ scale: pressed ? 0.96 : 1 }], flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Logo size={24} />
-            <Text style={[styles.brandText, { color: colors.text }]}>Hablits</Text>
+            <Text style={[styles.brandText, { color: colors.text }, headingFont]}>Hablits</Text>
           </Animated.View>
         )}
       </Pressable>
@@ -81,6 +83,7 @@ export function Header({
             {
               backgroundColor: colors.card,
               borderColor: colors.divider,
+              borderRadius: radius.md,
               transform: [{ scale: pressed ? 0.95 : 1 }]
             }
           ]}
@@ -103,6 +106,7 @@ export function Header({
             {
               backgroundColor: colors.card,
               borderColor: colors.divider,
+              borderRadius: radius.md,
               transform: [{ scale: pressed ? 0.95 : 1 }]
             }
           ]}
@@ -121,6 +125,7 @@ export function Header({
             {
               backgroundColor: colors.card,
               borderColor: colors.divider,
+              borderRadius: radius.md,
               transform: [{ scale: pressed ? 0.95 : 1 }]
             }
           ]}
@@ -149,7 +154,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   brandText: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
     letterSpacing: 0.3,
   },
@@ -160,11 +165,11 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   buttonContent: {
@@ -175,6 +180,6 @@ const styles = StyleSheet.create({
   filterDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: radii.xs,
   },
 });

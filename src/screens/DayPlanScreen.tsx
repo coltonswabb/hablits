@@ -12,23 +12,24 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
   Modal,
   Animated,
   PanResponder,
 } from 'react-native';
+import { TouchableScale } from '../components/TouchableScale';
 import { useTheme } from '../theme';
 import { useApp } from '../state';
 import { getActiveHabits, todayStr, dateStr } from '../utils';
 import { EmptyState } from '../components';
+import { radii, fontSizes } from '../theme/tokens';
 
 const START_HOUR = 5;  // 5am
 const END_HOUR = 23;   // 11pm
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 export function DayPlanScreen() {
-  const { colors } = useTheme();
+  const { colors, headingFont } = useTheme();
   const { state, dispatch } = useApp();
 
   // Current time (updates every minute)
@@ -267,7 +268,7 @@ export function DayPlanScreen() {
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Day Plan</Text>
+        <Text style={[styles.title, { color: colors.text }, headingFont]}>Day Plan</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
         </Text>
@@ -373,7 +374,7 @@ export function DayPlanScreen() {
                   },
                 ]}
               >
-                <TouchableOpacity
+                <TouchableScale
                   style={{ flex: 1 }}
                   onPress={() => openTimePicker(habit.id)}
                 >
@@ -396,7 +397,7 @@ export function DayPlanScreen() {
                     >
                       {habit.schedule.time} ({duration}m)
                     </Text>
-                    <TouchableOpacity
+                    <TouchableScale
                       style={[
                         styles.eventCheck,
                         {
@@ -448,7 +449,7 @@ export function DayPlanScreen() {
                       <Text style={{ color: checkboxTextColor, fontWeight: '900' }}>
                         {checkboxText}
                       </Text>
-                    </TouchableOpacity>
+                    </TouchableScale>
                   </View>
 
                   {/* Routine visual indicator */}
@@ -464,19 +465,19 @@ export function DayPlanScreen() {
                             style={{
                               width: 6,
                               height: 6,
-                              borderRadius: 3,
+                              borderRadius: radii.xs,
                               backgroundColor: completedSteps.includes(step.id) ? colors.good : timeColor,
                               opacity: completedSteps.includes(step.id) ? 1 : 0.3,
                             }}
                           />
                         ))}
                       </View>
-                      <Text style={{ fontSize: 10, color: timeColor, opacity: 0.7 }}>
+                      <Text style={{ fontSize: fontSizes.micro, color: timeColor, opacity: 0.7 }}>
                         {completedSteps.length}/{habit.steps.length} steps
                       </Text>
                     </View>
                   )}
-                </TouchableOpacity>
+                </TouchableScale>
               </View>
             );
           })}
@@ -525,7 +526,7 @@ export function DayPlanScreen() {
 
                 return (
                   <View key={habit.id}>
-                    <TouchableOpacity
+                    <TouchableScale
                       style={[styles.unscheduledItem, { borderColor: colors.divider }]}
                       onPress={() => openQuickSchedule(habit.id)}
                     >
@@ -533,7 +534,7 @@ export function DayPlanScreen() {
                       <Text style={[styles.unscheduledName, { color: colors.text }]} numberOfLines={1}>
                         {habit.name}
                       </Text>
-                      <TouchableOpacity
+                      <TouchableScale
                         style={[
                           styles.unscheduledCheck,
                           {
@@ -549,8 +550,8 @@ export function DayPlanScreen() {
                         <Text style={{ color: checkboxTextColor, fontWeight: '900' }}>
                           {checkboxText}
                         </Text>
-                      </TouchableOpacity>
-                    </TouchableOpacity>
+                      </TouchableScale>
+                    </TouchableScale>
                   </View>
                 );
               })
@@ -596,7 +597,7 @@ export function DayPlanScreen() {
             {/* Recurrence Options */}
             <Text style={[styles.modalLabel, { color: colors.text }]}>Repeat</Text>
             <View style={styles.recurrenceButtons}>
-              <TouchableOpacity
+              <TouchableScale
                 style={[
                   styles.recurrenceButton,
                   { borderColor: colors.divider },
@@ -610,9 +611,9 @@ export function DayPlanScreen() {
                 ]}>
                   Once
                 </Text>
-              </TouchableOpacity>
+              </TouchableScale>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[
                   styles.recurrenceButton,
                   { borderColor: colors.divider },
@@ -626,7 +627,7 @@ export function DayPlanScreen() {
                 ]}>
                   Daily
                 </Text>
-              </TouchableOpacity>
+              </TouchableScale>
             </View>
 
             {/* Day of Week Toggles (only show for Daily) */}
@@ -635,7 +636,7 @@ export function DayPlanScreen() {
                 <Text style={[styles.modalLabel, { color: colors.text }]}>Days</Text>
                 <View style={styles.dayToggles}>
                   {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                    <TouchableOpacity
+                    <TouchableScale
                       key={index}
                       style={[
                         styles.dayToggle,
@@ -654,33 +655,33 @@ export function DayPlanScreen() {
                       ]}>
                         {day}
                       </Text>
-                    </TouchableOpacity>
+                    </TouchableScale>
                   ))}
                 </View>
               </>
             )}
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.modalButton, { borderColor: colors.divider }]}
                 onPress={clearTime}
               >
                 <Text style={[styles.modalButtonText, { color: colors.danger }]}>Clear</Text>
-              </TouchableOpacity>
+              </TouchableScale>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.modalButton, { borderColor: colors.divider }]}
                 onPress={() => setTimeModalVisible(false)}
               >
                 <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
+              </TouchableScale>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.modalButton, { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={saveTime}
               >
-                <Text style={[styles.modalButtonText, { color: '#fff' }]}>Save</Text>
-              </TouchableOpacity>
+                <Text style={[styles.modalButtonText, { color: colors.textOnAccent }]}>Save</Text>
+              </TouchableScale>
             </View>
           </View>
         </View>
@@ -723,7 +724,7 @@ export function DayPlanScreen() {
                     {timeOptions.map((option, index) => {
                       const isSelected = option.hour === selectedHour && option.minute === selectedMinute;
                       return (
-                        <TouchableOpacity
+                        <TouchableScale
                           key={`${option.hour}-${option.minute}`}
                           style={styles.pickerItem}
                           onPress={() => {
@@ -741,7 +742,7 @@ export function DayPlanScreen() {
                           >
                             {option.display}
                           </Text>
-                        </TouchableOpacity>
+                        </TouchableScale>
                       );
                     })}
 
@@ -786,7 +787,7 @@ export function DayPlanScreen() {
                       }
 
                       return (
-                        <TouchableOpacity
+                        <TouchableScale
                           key={duration}
                           style={styles.pickerItem}
                           onPress={() => {
@@ -803,7 +804,7 @@ export function DayPlanScreen() {
                           >
                             {display}
                           </Text>
-                        </TouchableOpacity>
+                        </TouchableScale>
                       );
                     })}
 
@@ -815,19 +816,19 @@ export function DayPlanScreen() {
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.modalButton, { borderColor: colors.divider }]}
                 onPress={() => setQuickScheduleVisible(false)}
               >
                 <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
+              </TouchableScale>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.modalButton, { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={confirmSchedule}
               >
-                <Text style={[styles.modalButtonText, { color: '#fff' }]}>Save</Text>
-              </TouchableOpacity>
+                <Text style={[styles.modalButtonText, { color: colors.textOnAccent }]}>Save</Text>
+              </TouchableScale>
             </View>
           </View>
         </View>
@@ -848,11 +849,11 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '900',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   content: {
     flex: 1,
@@ -864,7 +865,7 @@ const styles = StyleSheet.create({
   timelineContainer: {
     flex: 2,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radii.md,
     overflow: 'hidden',
   },
   timelineScroll: {
@@ -883,7 +884,7 @@ const styles = StyleSheet.create({
   },
   hourLabel: {
     width: 45,
-    fontSize: 10,
+    fontSize: fontSizes.micro,
     textAlign: 'right',
     paddingRight: 6,
   },
@@ -908,7 +909,7 @@ const styles = StyleSheet.create({
   nowDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.xs,
     marginLeft: -4,
   },
   nowLineBar: {
@@ -916,7 +917,7 @@ const styles = StyleSheet.create({
     height: 2,
   },
   nowLabel: {
-    fontSize: 10,
+    fontSize: fontSizes.micro,
     fontWeight: '700',
     paddingHorizontal: 4,
   },
@@ -925,34 +926,34 @@ const styles = StyleSheet.create({
     left: 50,
     right: 8,
     padding: 8,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
     zIndex: 5,
   },
   eventName: {
     flex: 1,
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
   eventTime: {
-    fontSize: 11,
+    fontSize: fontSizes.xs,
   },
   eventCheck: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: radii.sm,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   unscheduledPanel: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     padding: 12,
   },
   unscheduledTitle: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -960,7 +961,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emptyText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     textAlign: 'center',
   },
   unscheduledItem: {
@@ -973,16 +974,16 @@ const styles = StyleSheet.create({
   unscheduledDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.xs,
   },
   unscheduledName: {
     flex: 1,
-    fontSize: 13,
+    fontSize: fontSizes.sm,
   },
   unscheduledCheck: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: radii.sm,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -997,31 +998,31 @@ const styles = StyleSheet.create({
   modal: {
     width: '100%',
     maxWidth: 320,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     borderWidth: 1,
     padding: 16,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
     marginBottom: 16,
   },
   modalLabel: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
     marginTop: 12,
     marginBottom: 6,
   },
   timeInput: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radii.md,
     padding: 12,
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     textAlign: 'center',
     fontWeight: '600',
   },
   modalHint: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 16,
@@ -1035,12 +1036,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
     alignItems: 'center',
   },
   recurrenceButtonText: {
-    fontSize: 13,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   dayToggles: {
@@ -1051,13 +1052,13 @@ const styles = StyleSheet.create({
   dayToggle: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayToggleText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
   },
   modalButtons: {
@@ -1068,19 +1069,19 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
   },
   modalButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   pickerModal: {
     width: '90%',
     maxWidth: 400,
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: radii.lg,
     borderWidth: 1,
     padding: 20,
     elevation: 10,
@@ -1098,7 +1099,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pickerLabel: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
     textTransform: 'uppercase',
     marginBottom: 8,
@@ -1107,7 +1108,7 @@ const styles = StyleSheet.create({
   pickerWrapper: {
     height: 200,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radii.md,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -1129,22 +1130,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerItemText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   pickerItemTextSelected: {
     fontWeight: '700',
-    fontSize: 18,
+    fontSize: fontSizes.lg,
   },
   miniStepCheckbox: {
     width: 14,
     height: 14,
-    borderRadius: 3,
+    borderRadius: radii.xs,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   miniStepCheckmark: {
-    fontSize: 9,
+    fontSize: fontSizes.micro,
     fontWeight: '900',
   },
 });

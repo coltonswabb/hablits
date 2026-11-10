@@ -8,13 +8,14 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Modal,
   ScrollView,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { Identity } from '../types';
 import { useTheme } from '../theme';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface IdentityFilterModalProps {
   visible: boolean;
@@ -55,15 +56,15 @@ export function IdentityFilterModal({
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.divider }]}>
             <Text style={[styles.title, { color: colors.text }]}>Filter Habits</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableScale onPress={onClose} style={styles.closeButton}>
               <Text style={[styles.closeText, { color: colors.muted }]}>×</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
 
           {/* Filter list */}
           <ScrollView style={styles.scrollView}>
             {/* All option */}
-            <TouchableOpacity
+            <TouchableScale
               style={[
                 styles.filterOption,
                 {
@@ -87,14 +88,14 @@ export function IdentityFilterModal({
                   <Text style={[styles.checkmark, { color: colors.textOnAccent }]}>✓</Text>
                 )}
               </View>
-            </TouchableOpacity>
+            </TouchableScale>
 
             {/* Identity options */}
             {identities.map((identity) => {
               const isSelected = currentFilter === identity.id;
 
               return (
-                <TouchableOpacity
+                <TouchableScale
                   key={identity.id}
                   style={[
                     styles.filterOption,
@@ -119,19 +120,19 @@ export function IdentityFilterModal({
                       <Text style={[styles.checkmark, { color: colors.textOnAccent }]}>✓</Text>
                     )}
                   </View>
-                </TouchableOpacity>
+                </TouchableScale>
               );
             })}
           </ScrollView>
 
           {/* Manage Identities Button */}
           <View style={[styles.footer, { borderTopColor: colors.divider }]}>
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.manageButton, { backgroundColor: colors.accent }]}
               onPress={handleManageIdentities}
             >
               <Text style={[styles.manageButtonText, { color: colors.textOnAccent }]}>Manage Identities</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
         </View>
       </View>
@@ -146,8 +147,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modal: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
     maxHeight: '60%',
   },
   header: {
@@ -158,14 +159,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
   },
   closeButton: {
     padding: 4,
   },
   closeText: {
-    fontSize: 32,
+    fontSize: fontSizes.hero,
     fontWeight: '300',
   },
   scrollView: {
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
   },
   filterOption: {
     padding: 14,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 2,
     marginBottom: 8,
   },
@@ -185,15 +186,15 @@ const styles = StyleSheet.create({
   colorDot: {
     width: 16,
     height: 16,
-    borderRadius: 8,
+    borderRadius: radii.sm,
   },
   filterName: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     flex: 1,
   },
   checkmark: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     color: '#fff',
   },
   footer: {
@@ -203,12 +204,12 @@ const styles = StyleSheet.create({
   manageButton: {
     paddingVertical: 14,
     paddingHorizontal: 20,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
   manageButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
 });

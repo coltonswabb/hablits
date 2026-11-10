@@ -11,8 +11,8 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
 } from 'react-native';
+import { TouchableScale } from '../components/TouchableScale';
 import { useTheme } from '../theme';
 import { useApp } from '../state';
 import { NoteModal } from '../components';
@@ -26,11 +26,12 @@ import {
   isFastingHabit,
   liveHabits,
 } from '../utils';
+import { radii, fontSizes } from '../theme/tokens';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function CalendarScreen() {
-  const { colors } = useTheme();
+  const { colors, headingFont } = useTheme();
   const { state, dispatch } = useApp();
 
   // Track which month we're viewing
@@ -207,9 +208,9 @@ export function CalendarScreen() {
       <ScrollView>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Calendar</Text>
+          <Text style={[styles.title, { color: colors.text }, headingFont]}>Calendar</Text>
           <View style={styles.headerButtons}>
-            <TouchableOpacity
+            <TouchableScale
               onPress={toggleJournal}
               style={[
                 styles.journalButton,
@@ -222,26 +223,26 @@ export function CalendarScreen() {
               <Text style={[styles.journalButtonText, { color: showJournal ? colors.accent : colors.text }]}>
                 📓 Journal
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={goToToday}>
+            </TouchableScale>
+            <TouchableScale onPress={goToToday}>
               <Text style={[styles.todayLink, { color: colors.accent }]}>Today</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
         </View>
 
         {/* Month Navigation */}
         <View style={styles.monthNav}>
-        <TouchableOpacity onPress={prevMonth} style={styles.navButton}>
+        <TouchableScale onPress={prevMonth} style={styles.navButton}>
           <Text style={[styles.navButtonText, { color: colors.text }]}>←</Text>
-        </TouchableOpacity>
+        </TouchableScale>
         
         <Text style={[styles.monthLabel, { color: colors.text }]}>
           {viewingMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
         </Text>
         
-        <TouchableOpacity onPress={nextMonth} style={styles.navButton}>
+        <TouchableScale onPress={nextMonth} style={styles.navButton}>
           <Text style={[styles.navButtonText, { color: colors.text }]}>→</Text>
-        </TouchableOpacity>
+        </TouchableScale>
       </View>
 
       {/* Day Labels */}
@@ -275,7 +276,7 @@ export function CalendarScreen() {
           }
 
           return (
-            <TouchableOpacity
+            <TouchableScale
               key={dateStr(date)}
               style={[
                 styles.dayCell,
@@ -299,7 +300,7 @@ export function CalendarScreen() {
                   {date.getDate()}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </TouchableScale>
           );
         })}
       </View>
@@ -430,19 +431,19 @@ export function CalendarScreen() {
 
                     return (
                       <View key={habit.id} style={styles.habitWithNote}>
-                        <TouchableOpacity onPress={() => handleNotePress(habit.id, ds)}>
+                        <TouchableScale onPress={() => handleNotePress(habit.id, ds)}>
                           <Text style={[styles.detailsHabit, { color: colors.text }]}>
                             {isFasting && '⏱️ '}{habit.name}
                             {fastDuration && ` (${fastDuration}h fast)`}
                             {note && ' 📝'}
                           </Text>
-                        </TouchableOpacity>
+                        </TouchableScale>
                         {note && (
-                          <TouchableOpacity onPress={() => handleNotePress(habit.id, ds)}>
+                          <TouchableScale onPress={() => handleNotePress(habit.id, ds)}>
                             <Text style={[styles.noteText, { color: colors.muted }]}>
                               "{note}"
                             </Text>
-                          </TouchableOpacity>
+                          </TouchableScale>
                         )}
                       </View>
                     );
@@ -514,7 +515,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '900',
   },
   headerButtons: {
@@ -525,15 +526,15 @@ const styles = StyleSheet.create({
   journalButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
   },
   journalButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   todayLink: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '600',
   },
   monthNav: {
@@ -547,11 +548,11 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   navButtonText: {
-    fontSize: 24,
+    fontSize: fontSizes.xxl,
     fontWeight: '600',
   },
   monthLabel: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
   },
   dayLabelsRow: {
@@ -564,7 +565,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   dayLabelText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
   calendarGrid: {
@@ -578,7 +579,7 @@ const styles = StyleSheet.create({
     aspectRatio: 0.85,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: radii.sm,
     paddingVertical: 8,
   },
   dayContent: {
@@ -588,38 +589,38 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayNumber: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
   },
   completionDot: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     color: '#fff',
   },
   detailsPanel: {
     margin: 16,
     marginTop: 8,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     padding: 16,
     height: 300,
   },
   detailsTitle: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     marginBottom: 12,
   },
   detailsEmpty: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   detailsSection: {
     marginBottom: 12,
   },
   detailsSectionTitle: {
-    fontSize: 13,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
     marginBottom: 4,
   },
   detailsHabit: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     paddingVertical: 2,
     paddingLeft: 8,
   },
@@ -627,7 +628,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   noteText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     paddingLeft: 16,
     paddingTop: 2,
     fontStyle: 'italic',
@@ -638,13 +639,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   summaryText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   journalPanel: {
     margin: 16,
     marginTop: 8,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     padding: 16,
     height: 300,
@@ -653,26 +654,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   journalTitle: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     marginBottom: 4,
   },
   journalCount: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
   },
   journalEmpty: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     textAlign: 'center',
     paddingVertical: 20,
   },
   journalHint: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     textAlign: 'center',
     fontStyle: 'italic',
     paddingTop: 8,
   },
   journalSectionTitle: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
     marginTop: 12,
     marginBottom: 8,
@@ -687,15 +688,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   journalDate: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
   journalHabit: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
   },
   journalNote: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     lineHeight: 20,
   },
 });

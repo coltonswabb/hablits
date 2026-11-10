@@ -9,11 +9,21 @@
 // ============================================
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Animated, Alert, Platform, AppState as RNAppState } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Alert, Platform, AppState as RNAppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Providers
 import { ThemeProvider, useTheme } from './theme';
+import { textOn } from './theme/colors';
+import { useFonts } from 'expo-font';
+import { Silkscreen_700Bold } from '@expo-google-fonts/silkscreen';
+import { ZenMaruGothic_700Bold } from '@expo-google-fonts/zen-maru-gothic';
+import { Fredoka_700Bold } from '@expo-google-fonts/fredoka';
+import { SpaceMono_700Bold } from '@expo-google-fonts/space-mono';
+import { Orbitron_700Bold } from '@expo-google-fonts/orbitron';
+import { RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
+import { Lora_700Bold } from '@expo-google-fonts/lora';
+import { Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { AppProvider, useApp } from './state';
 
 // Components
@@ -30,7 +40,6 @@ import { initializeAudio, setSoundsEnabled } from './utils/sounds';
 import { syncWidget, readWidgetTaps, forceNextWidgetSync } from './utils/widgetSync';
 import { planWidgetTaps } from './utils/widgetTaps';
 import { isOnVacation } from './utils/smartHabits';
-import { useReduceMotion } from './utils/motion';
 import { getDayCompletionPercent } from './utils/habits';
 import { bestStreakEver, stageForStreak } from './utils/evolution';
 import { migrateState } from './state/migrations';
@@ -50,6 +59,19 @@ setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 6000);
 function AppContent() {
   const { colors, themeName, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded } = useTheme();
   const { state, dispatch, isLoaded } = useApp();
+  // Heading fonts for the themes that have one (see theme/tokens). If loading
+  // fails, text falls back to the system font.
+  const [fontsLoaded, fontError] = useFonts({
+    Silkscreen_700Bold,
+    ZenMaruGothic_700Bold,
+    Fredoka_700Bold,
+    SpaceMono_700Bold,
+    Orbitron_700Bold,
+    RacingSansOne_400Regular,
+    Lora_700Bold,
+    Cinzel_700Bold,
+  });
+  const fontsReady = fontsLoaded || fontError !== null;
   const [activeTab, setActiveTab] = useState<TabName>('today');
   const [identitiesModalVisible, setIdentitiesModalVisible] = useState(false);
   const [identityFilterModalVisible, setIdentityFilterModalVisible] = useState(false);
@@ -58,11 +80,6 @@ function AppContent() {
 
   // Hat closet state
   const [hatClosetVisible, setHatClosetVisible] = useState(false);
-
-  // Screen transition animations
-  const screenOpacity = useRef(new Animated.Value(1)).current;
-  const screenTranslateX = useRef(new Animated.Value(0)).current;
-  const screenScale = useRef(new Animated.Value(1)).current;
 
   // Initialize audio and haptics on mount
   useEffect(() => {
@@ -259,57 +276,6 @@ function AppContent() {
   }, [isLoaded, widgetTapsRead, state.logs, state.habits, state.vacations, foregroundTick]);
 
 
-  // Animate screen transitions (a plain cross-fade when Reduce Motion is on)
-  const reduceMotion = useReduceMotion();
-  useEffect(() => {
-    if (reduceMotion) {
-      screenTranslateX.setValue(0);
-      screenScale.setValue(1);
-      screenOpacity.setValue(0.4);
-      Animated.timing(screenOpacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
-      return;
-    }
-    // Slide and fade out, then slide and fade in
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(screenOpacity, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(screenTranslateX, {
-          toValue: -20,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(screenScale, {
-          toValue: 0.97,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(screenOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(screenTranslateX, {
-          toValue: 0,
-          tension: 200,
-          friction: 20,
-          useNativeDriver: true,
-        }),
-        Animated.spring(screenScale, {
-          toValue: 1,
-          tension: 200,
-          friction: 20,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, [activeTab]);
-
   // Render the active screen
   const renderScreen = () => {
     switch (activeTab) {
@@ -372,7 +338,8 @@ function AppContent() {
   );
 
   // Determine status bar style based on theme
-  const isDarkTheme = ['dark', 'fzero', 'mmbn'].includes(themeName);
+  // Light status bar text on any theme with a dark background
+  const isDarkTheme = textOn(colors.bg) === '#ffffff';
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -401,20 +368,10 @@ function AppContent() {
           </View>
 
           {/* Screen Content */}
-          <Animated.View
-            style={[
-              styles.screenContainer,
-              {
-                opacity: screenOpacity,
-                transform: [
-                  { translateX: screenTranslateX },
-                  { scale: screenScale },
-                ],
-              },
-            ]}
-          >
+          {/* Tabs are peers, so switching is instant: no slide or fade */}
+          <View style={styles.screenContainer}>
             {renderScreen()}
-          </Animated.View>
+          </View>
         </View>
 
         {/* Identities Modal */}
@@ -573,7 +530,7 @@ function AppContent() {
 
       {/* Covers the app until data + theme are in, then animates away */}
       <LaunchScreen
-        ready={isLoaded && isThemeLoaded}
+        ready={isLoaded && isThemeLoaded && fontsReady}
         hasPet={state.hasCompletedOnboarding}
         species={state.petSpecies}
         hat={state.petHat}

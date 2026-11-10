@@ -7,6 +7,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../theme';
+import { fontSizes } from '../theme/tokens';
 
 interface SwipeHintProps {
   onDismiss: () => void;
@@ -120,11 +121,11 @@ const styles = StyleSheet.create({
     right: 20,
   },
   arrow: {
-    fontSize: 32,
+    fontSize: fontSizes.hero,
     opacity: 0.7,
   },
   label: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
     opacity: 0.8,
   },

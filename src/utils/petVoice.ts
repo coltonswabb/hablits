@@ -34,6 +34,11 @@ export function comebackLine(state: AppState, now: Date = new Date()): string | 
     : `${who} missed you! Pick one easy habit and you're back.`;
 }
 
+/** The pet gets one treat for every habit ever completed. */
+export function totalTreats(state: AppState): number {
+  return Object.values(state.logs).reduce((count, ids) => count + ids.length, 0);
+}
+
 /**
  * The line for a tap on the pet. `tap` rotates through the options that fit
  * right now, so repeated taps say different things.
@@ -46,6 +51,7 @@ export function petTapLine(state: AppState, tap: number, now: Date = new Date())
   const best = liveHabits(state.habits).reduce((b, h) => Math.max(b, calculateStreak(state.logs, h.id, h, now)), 0);
   const hour = now.getHours();
   const snacks = state.snacks ?? 0;
+  const treats = totalTreats(state);
 
   const lines: string[] = [];
 
@@ -65,6 +71,7 @@ export function petTapLine(state: AppState, tap: number, now: Date = new Date())
 
   if (best >= 7) lines.push(`${best} days in a row on your best streak. I'm counting!`);
   if (snacks > 0) lines.push(`I've got ${snacks} snack${snacks === 1 ? '' : 's'} saved in case you ever miss a day.`);
+  if (treats > 0) lines.push(`I've had ${treats} treat${treats === 1 ? '' : 's'} so far. One for every habit you finish. Yum.`);
   lines.push('That tickles!');
 
   return lines[Math.abs(tap) % lines.length];

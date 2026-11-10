@@ -6,19 +6,21 @@
 
 import React, { useState } from 'react';
 import {
+  Image,
   View,
   Text,
   Modal,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   Alert,
   Platform,
   Animated,
   TextInput,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { isOnVacation, MAX_SNACKS } from '../utils/smartHabits';
 import { useTheme } from '../theme';
+import { APP_ICONS, canChangeAppIcon, currentAppIcon, setAppIcon } from '../utils/appIcon';
 import { textOn } from '../theme/colors';
 import { archivedHabits } from '../utils/habits';
 import { longestStreakEver } from '../utils/evolution';
@@ -26,6 +28,7 @@ import { AppState } from '../types';
 import { Paths, File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -127,6 +130,7 @@ export function SettingsModal({
   onSetCustomAccentColor,
 }: SettingsModalProps) {
   const { colors } = useTheme();
+  const [appIcon, setAppIconState] = useState<string | null>(() => currentAppIcon());
   const [isExporting, setIsExporting] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -229,9 +233,9 @@ export function SettingsModal({
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.divider }]}>
             <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableScale onPress={onClose}>
               <Text style={[styles.closeButton, { color: colors.muted }]}>✕</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
 
           {/* Content */}
@@ -287,7 +291,7 @@ export function SettingsModal({
                     ]}
                   />
                   {/* Touch overlay for dragging */}
-                  <TouchableOpacity
+                  <TouchableScale
                     style={styles.hueSliderTouch}
                     activeOpacity={1}
                     onPress={(e) => {
@@ -299,14 +303,44 @@ export function SettingsModal({
                 </View>
 
                 {/* Reset Button */}
-                <TouchableOpacity
+                <TouchableScale
                   style={[styles.resetButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
                   onPress={handleResetColor}
                 >
                   <Text style={[styles.resetButtonText, { color: colors.text }]}>
                     Reset to Default
                   </Text>
-                </TouchableOpacity>
+                </TouchableScale>
+              </View>
+            )}
+
+            {/* App icon (only in builds that include the alternate icons) */}
+            {canChangeAppIcon() && (
+              <View style={[styles.section, { borderBottomColor: colors.divider }]}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>App Icon</Text>
+                <View style={styles.iconChoices}>
+                  {APP_ICONS.map((icon) => {
+                    const isSelected = icon.name === appIcon;
+                    return (
+                      <TouchableScale
+                        key={icon.label}
+                        style={styles.iconChoice}
+                        onPress={async () => {
+                          if (await setAppIcon(icon.name)) setAppIconState(icon.name);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${icon.label} app icon`}
+                        accessibilityState={{ selected: isSelected }}
+                      >
+                        <Image
+                          source={icon.preview}
+                          style={[styles.iconPreview, { borderColor: isSelected ? colors.accent : colors.divider }]}
+                        />
+                        <Text style={[styles.iconLabel, { color: isSelected ? colors.text : colors.muted }]}>{icon.label}</Text>
+                      </TouchableScale>
+                    );
+                  })}
+                </View>
               </View>
             )}
 
@@ -314,7 +348,7 @@ export function SettingsModal({
             <View style={[styles.section, { borderBottomColor: colors.divider }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Sound & Feedback</Text>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                 onPress={onToggleSfx}
               >
@@ -322,9 +356,9 @@ export function SettingsModal({
                 <View style={[styles.toggle, { backgroundColor: sfxEnabled ? colors.good : colors.muted }]}>
                   <Text style={[styles.toggleText, { color: textOn(sfxEnabled ? colors.good : colors.muted) }]}>{sfxEnabled ? 'ON' : 'OFF'}</Text>
                 </View>
-              </TouchableOpacity>
+              </TouchableScale>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                 onPress={onToggleHaptics}
               >
@@ -332,14 +366,14 @@ export function SettingsModal({
                 <View style={[styles.toggle, { backgroundColor: hapticsEnabled ? colors.good : colors.muted }]}>
                   <Text style={[styles.toggleText, { color: textOn(hapticsEnabled ? colors.good : colors.muted) }]}>{hapticsEnabled ? 'ON' : 'OFF'}</Text>
                 </View>
-              </TouchableOpacity>
+              </TouchableScale>
             </View>
 
             {/* Notifications Section */}
             <View style={[styles.section, { borderBottomColor: colors.divider }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                 onPress={onToggleNotifications}
               >
@@ -347,7 +381,7 @@ export function SettingsModal({
                 <View style={[styles.toggle, { backgroundColor: notificationsEnabled ? colors.good : colors.muted }]}>
                   <Text style={[styles.toggleText, { color: textOn(notificationsEnabled ? colors.good : colors.muted) }]}>{notificationsEnabled ? 'ON' : 'OFF'}</Text>
                 </View>
-              </TouchableOpacity>
+              </TouchableScale>
 
               {notificationsEnabled && (
                 <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}>
@@ -387,7 +421,7 @@ export function SettingsModal({
             {onToggleVacation && (
               <View style={[styles.section, { borderBottomColor: colors.divider }]}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Streaks</Text>
-                <TouchableOpacity
+                <TouchableScale
                   style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                   onPress={onToggleVacation}
                   accessibilityRole="switch"
@@ -395,7 +429,7 @@ export function SettingsModal({
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.settingLabel, { color: colors.text }]}>Vacation Mode</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                    <Text style={{ color: colors.muted, fontSize: fontSizes.xs, marginTop: 2 }}>
                       Pauses every streak and turns reminders off until you're back.
                     </Text>
                   </View>
@@ -404,11 +438,11 @@ export function SettingsModal({
                       {isOnVacation(appState) ? 'ON' : 'OFF'}
                     </Text>
                   </View>
-                </TouchableOpacity>
+                </TouchableScale>
                 <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.settingLabel, { color: colors.text }]}>Pet Snacks</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                    <Text style={{ color: colors.muted, fontSize: fontSizes.xs, marginTop: 2 }}>
                       Earn one for every 7 days of a streak. A snack saves a streak of 7+ when you miss two days in a row.
                     </Text>
                   </View>
@@ -434,14 +468,14 @@ export function SettingsModal({
                         </Text>
                       </View>
                       <View style={{ flexDirection: 'row', gap: 8 }}>
-                        <TouchableOpacity
+                        <TouchableScale
                           onPress={() => onRestoreHabit?.(h.id)}
                           style={[styles.toggle, { backgroundColor: colors.accent }]}
                           accessibilityLabel={`Restore ${h.name}`}
                         >
                           <Text style={[styles.toggleText, { color: colors.textOnAccent }]}>Restore</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        </TouchableScale>
+                        <TouchableScale
                           onPress={() =>
                             Alert.alert('Delete Forever', `Erase "${h.name}" and all its history?`, [
                               { text: 'Cancel', style: 'cancel' },
@@ -452,7 +486,7 @@ export function SettingsModal({
                           accessibilityLabel={`Delete ${h.name} forever`}
                         >
                           <Text style={[styles.toggleText, { color: textOn(colors.danger) }]}>Delete</Text>
-                        </TouchableOpacity>
+                        </TouchableScale>
                       </View>
                     </View>
                   </View>
@@ -465,7 +499,7 @@ export function SettingsModal({
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Data</Text>
 
               {Platform.OS === 'ios' && (
-                <TouchableOpacity
+                <TouchableScale
                   style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                   onPress={async () => {
                     if (!onBackupNow || isBackingUp) return;
@@ -484,11 +518,11 @@ export function SettingsModal({
                         ? `Automatic · last backup ${new Date(lastCloudBackupAt).toLocaleString()} · tap to back up now`
                         : 'Automatic daily backup · tap to back up now'}
                   </Text>
-                </TouchableOpacity>
+                </TouchableScale>
               )}
 
               {Platform.OS === 'ios' && (
-                <TouchableOpacity
+                <TouchableScale
                   style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                   onPress={async () => {
                     if (!onRestoreFromCloud || isRestoring) return;
@@ -503,10 +537,10 @@ export function SettingsModal({
                   <Text style={[styles.settingDescription, { color: colors.muted }]}>
                     {isRestoring ? 'Looking for a backup…' : 'Replace this device\'s data with your iCloud backup'}
                   </Text>
-                </TouchableOpacity>
+                </TouchableScale>
               )}
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                 onPress={handleExport}
                 disabled={isExporting}
@@ -515,9 +549,9 @@ export function SettingsModal({
                 <Text style={[styles.settingDescription, { color: colors.muted }]}>
                   {isExporting ? 'Exporting...' : 'Save a backup of all your data'}
                 </Text>
-              </TouchableOpacity>
+              </TouchableScale>
 
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
                 onPress={handleImport}
                 disabled={isImporting}
@@ -526,7 +560,7 @@ export function SettingsModal({
                 <Text style={[styles.settingDescription, { color: colors.muted }]}>
                   {isImporting ? 'Importing...' : 'Restore from a backup file'}
                 </Text>
-              </TouchableOpacity>
+              </TouchableScale>
             </View>
           </ScrollView>
         </View>
@@ -546,7 +580,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 500,
     maxHeight: '80%',
-    borderRadius: 20,
+    borderRadius: radii.xl,
     overflow: 'hidden',
   },
   header: {
@@ -557,11 +591,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: fontSizes.xxl,
     fontWeight: '900',
   },
   closeButton: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '300',
   },
   content: {
@@ -571,13 +605,31 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingBottom: 24,
   },
+  iconChoices: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconChoice: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  iconPreview: {
+    width: 60,
+    height: 60,
+    borderRadius: 14,
+    borderWidth: 2,
+  },
+  iconLabel: {
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+  },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
     marginBottom: 12,
   },
   sectionDescription: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     marginBottom: 16,
   },
   colorPreviewContainer: {
@@ -593,7 +645,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
   },
   colorLabel: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   hueSliderContainer: {
@@ -604,7 +656,7 @@ const styles = StyleSheet.create({
   hueSliderTrack: {
     flexDirection: 'row',
     height: 32,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     overflow: 'hidden',
     borderWidth: 2,
   },
@@ -613,7 +665,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     borderWidth: 3,
     marginLeft: -16,
   },
@@ -626,27 +678,27 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
     alignItems: 'center',
   },
   resetButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   settingRow: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     marginBottom: 12,
   },
   settingLabel: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '600',
     marginBottom: 4,
   },
   settingDescription: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     marginTop: 4,
   },
   toggle: {
@@ -655,13 +707,13 @@ const styles = StyleSheet.create({
     top: 14,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   toggleText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
   },
   timeInputs: {
@@ -673,14 +725,14 @@ const styles = StyleSheet.create({
     width: 50,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '600',
     textAlign: 'center',
   },
   timeColon: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '700',
   },
 });

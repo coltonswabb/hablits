@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Habit, Identity } from '../types';
@@ -26,6 +27,8 @@ import { AnimatedNumber } from './AnimatedNumber';
 import { completionFeedback } from '../utils/celebrate';
 import { formatProgress, progressStep } from '../utils/smartHabits';
 import { lightTap } from '../utils/haptics';
+import { useReduceMotion } from '../utils/motion';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface HabitCardProps {
   habit: Habit;
@@ -62,7 +65,8 @@ export function HabitCard({
   progressAmount = 0,
   onAddProgress,
 }: HabitCardProps) {
-  const { colors } = useTheme();
+  const { colors, radius, headingFont } = useTheme();
+  const reduceMotion = useReduceMotion();
 
   // Calculate states first to know initial animation values
   // Use prop if provided (for routines), otherwise calculate from logs
@@ -73,7 +77,7 @@ export function HabitCard({
   // Animation values - initialize with correct starting values
   const checkboxScale = useRef(new Animated.Value(1)).current;
   const checkboxRotate = useRef(new Animated.Value(0)).current;
-  const checkmarkScale = useRef(new Animated.Value(isComplete ? 1 : 0)).current;
+  const checkmarkScale = useRef(new Animated.Value(1)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslateY = useRef(new Animated.Value(20)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
@@ -84,6 +88,21 @@ export function HabitCard({
   const streak = calculateStreak(logs, habit.id, habit);
   const thisWeek = countThisWeek(logs, habit.id);
   const progress = Math.min(1, thisWeek / habit.weeklyGoal);
+
+  // Count/timed habits: how much of today's target is done, and a small pop when it is reached
+  const todayFraction = habit.target ? Math.min(1, progressAmount / habit.target.amount) : 0;
+  const ringPop = useRef(new Animated.Value(1)).current;
+  const wasAtTarget = useRef(todayFraction >= 1);
+  useEffect(() => {
+    const atTarget = todayFraction >= 1;
+    if (atTarget && !wasAtTarget.current && !reduceMotion) {
+      Animated.sequence([
+        Animated.timing(ringPop, { toValue: 1.3, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(ringPop, { toValue: 1, duration: 180, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      ]).start();
+    }
+    wasAtTarget.current = atTarget;
+  }, [todayFraction]);
 
   // Slide in animation on mount
   useEffect(() => {
@@ -105,11 +124,13 @@ export function HabitCard({
 
   // Animate progress bar when progress changes
   useEffect(() => {
-    Animated.spring(progressWidth, {
+    // Width is fine here: the fill is a childless bar, so nothing else re-lays out.
+    // Ease-out with no spring, so the bar never runs past its target.
+    Animated.timing(progressWidth, {
       toValue: progress,
-      useNativeDriver: false, // Can't use native driver for width
-      tension: 40,
-      friction: 6,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
     }).start();
   }, [progress]);
 
@@ -200,13 +221,14 @@ export function HabitCard({
 
     // Animate checkmark pop-in
     if (nextState === 'complete') {
-      checkmarkScale.setValue(0);
-      Animated.spring(checkmarkScale, {
+      // Grows from a quarter size and fades in; no overshoot
+      checkmarkScale.setValue(0.25);
+      Animated.timing(checkmarkScale, {
         toValue: 1,
+        duration: 220,
+        delay: 60,
+        easing: Easing.bezier(0.2, 0, 0, 1),
         useNativeDriver: true,
-        tension: 200,
-        friction: 8,
-        delay: 100,
       }).start();
     }
 
@@ -267,6 +289,7 @@ export function HabitCard({
         {
           backgroundColor: colors.card,
           borderColor: colors.divider,
+          borderRadius: radius.md,
           opacity: cardOpacity,
           transform: [
             { translateY: cardTranslateY },
@@ -299,6 +322,7 @@ export function HabitCard({
             {
               backgroundColor: checkboxBg,
               borderColor: checkboxBorder,
+              borderRadius: radius.md,
               transform: [
                 { scale: checkboxScale },
                 {
@@ -317,6 +341,7 @@ export function HabitCard({
                 styles.checkboxText,
                 { color: textOn(checkboxBg) },
                 {
+                  opacity: checkmarkScale.interpolate({ inputRange: [0.25, 1], outputRange: [0, 1] }),
                   transform: [{ scale: checkmarkScale }],
                 },
               ]}
@@ -340,14 +365,14 @@ export function HabitCard({
         accessibilityRole="button"
       >
         <View style={styles.nameRow}>
-          <Text style={[styles.name, { color: colors.text }]}>{habit.name}</Text>
+          <Text style={[styles.name, { color: colors.text }, headingFont]}>{habit.name}</Text>
           
           {/* Streak badge */}
           <View style={[styles.streakBadge, { borderColor: colors.divider }]}>
             <AnimatedNumber
               value={streak}
               suffix="d"
-              style={[styles.streakText, { color: colors.muted }]}
+              style={[styles.streakText, { color: colors.muted }, headingFont]}
             />
           </View>
           
@@ -374,14 +399,29 @@ export function HabitCard({
           )}
         </View>
 
-        <Text style={[styles.meta, { color: colors.muted }]}>
-          {habit.target
-            ? `${formatProgress(habit, progressAmount)} today · ${thisWeek}/${habit.weeklyGoal} this week`
-            : `Weekly goal ${habit.weeklyGoal} · ${thisWeek} this week`}
-        </Text>
+        {habit.target ? (
+          <View style={styles.metaRow}>
+            {/* The amount ticks when it changes */}
+            <AnimatedNumber
+              value={progressAmount}
+              format={(amount) => formatProgress(habit, amount)}
+              style={[styles.meta, { color: colors.muted }]}
+            />
+            <Text style={[styles.meta, { color: colors.muted }]}>
+              {` today · ${thisWeek}/${habit.weeklyGoal} this week`}
+            </Text>
+          </View>
+        ) : (
+          <Text style={[styles.meta, { color: colors.muted }]}>
+            {`Weekly goal ${habit.weeklyGoal} · ${thisWeek} this week`}
+          </Text>
+        )}
 
         <View style={styles.bottomRow}>
-          <ProgressRing progress={progress} size={22} strokeWidth={3} />
+          {/* Count/timed habits: the ring is today's amount; others: this week's goal (same as the bar below) */}
+          <Animated.View style={{ transform: [{ scale: ringPop }] }}>
+            <ProgressRing progress={habit.target ? todayFraction : progress} size={22} strokeWidth={3} />
+          </Animated.View>
 
           {/* Identity chip */}
           <View style={[styles.identityChip, { borderColor: colors.divider }]}>
@@ -451,7 +491,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     marginBottom: 10,
     gap: 10,
@@ -468,13 +508,13 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 100,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
+    borderTopLeftRadius: radii.md,
+    borderBottomLeftRadius: radii.md,
   },
   checkbox: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -482,7 +522,7 @@ const styles = StyleSheet.create({
   checkboxText: {
     color: 'white',
     fontWeight: '900',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   content: {
     flex: 1,
@@ -494,19 +534,23 @@ const styles = StyleSheet.create({
   },
   name: {
     fontWeight: '900',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   streakBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
   streakText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   meta: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     marginTop: 2,
   },
   bottomRow: {
@@ -521,16 +565,16 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
   identityDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.xs,
   },
   identityName: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
   },
   progressBar: {
     position: 'absolute',
@@ -538,23 +582,23 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     height: 3,
-    borderRadius: 999,
+    borderRadius: radii.pill,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 999,
+    borderRadius: radii.pill,
   },
   noteButton: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 'auto',
   },
   noteIcon: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
   },
   addButton: {
     minWidth: 44,
@@ -566,7 +610,7 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   addButtonText: {
-    fontSize: 13,
+    fontSize: fontSizes.sm,
     fontWeight: '800',
   },
 });

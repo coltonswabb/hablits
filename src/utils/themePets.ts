@@ -25,6 +25,7 @@ export const themeDefaultPets: Record<ThemeName, PetSpecies> = {
   lion: 'lion',
   ladyhawke: 'hawk',
   sakura: 'dragon',
+  pixel: 'pixel',
 };
 
 export function getDefaultPetForTheme(theme: ThemeName): PetSpecies {

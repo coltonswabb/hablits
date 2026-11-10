@@ -10,13 +10,14 @@ import {
   Text,
   Modal,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { useTheme } from '../theme';
 import { textOn } from '../theme/colors';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface NoteModalProps {
   visible: boolean;
@@ -66,7 +67,7 @@ export function NoteModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <TouchableOpacity
+        <TouchableScale
           style={styles.backdrop}
           activeOpacity={1}
           onPress={onClose}
@@ -110,25 +111,25 @@ export function NoteModal({
           {/* Buttons */}
           <View style={styles.buttons}>
             {existingNote && onDelete && (
-              <TouchableOpacity
+              <TouchableScale
                 style={[styles.button, { backgroundColor: colors.danger }]}
                 onPress={handleDelete}
               >
                 <Text style={[styles.buttonText, { color: textOn(colors.danger) }]}>Delete</Text>
-              </TouchableOpacity>
+              </TouchableScale>
             )}
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.button, { backgroundColor: colors.muted }]}
               onPress={onClose}
             >
               <Text style={[styles.buttonText, { color: textOn(colors.muted) }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </TouchableScale>
+            <TouchableScale
               style={[styles.button, { backgroundColor: colors.accent }]}
               onPress={handleSave}
             >
               <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Save</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 400,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -161,23 +162,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   input: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radii.md,
     padding: 12,
-    fontSize: 16,
+    fontSize: fontSizes.md,
     minHeight: 100,
     textAlignVertical: 'top',
   },
   charCount: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     textAlign: 'right',
     marginTop: 4,
     marginBottom: 16,
@@ -190,11 +191,11 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: radii.sm,
   },
   buttonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
 });

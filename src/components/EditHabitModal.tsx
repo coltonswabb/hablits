@@ -11,16 +11,17 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Modal,
   ScrollView,
   Alert,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { Habit, Identity, RoutineStep } from '../types';
 import { useTheme } from '../theme';
 import { generateId } from '../utils';
 import { newQuitTracker } from '../utils/smartHabits';
+import { radii, fontSizes } from '../theme/tokens';
 
 type HabitKind = 'check' | 'count' | 'timed' | 'quit';
 
@@ -278,7 +279,7 @@ export function EditHabitModal({
 
             {/* Routine Toggle */}
             <View style={styles.field}>
-              <TouchableOpacity
+              <TouchableScale
                 style={styles.routineToggle}
                 onPress={() => setIsRoutine(!isRoutine)}
               >
@@ -296,7 +297,7 @@ export function EditHabitModal({
                 <Text style={[styles.routineToggleText, { color: colors.text }]}>
                   This is a routine (multi-step habit)
                 </Text>
-              </TouchableOpacity>
+              </TouchableScale>
             </View>
 
             {/* Routine Steps Editor */}
@@ -322,27 +323,27 @@ export function EditHabitModal({
                     </View>
                     <View style={styles.stepActions}>
                       {index > 0 && (
-                        <TouchableOpacity
+                        <TouchableScale
                           style={[styles.stepActionButton, { borderColor: colors.divider }]}
                           onPress={() => moveStepUp(index)}
                         >
                           <Text style={[styles.stepActionText, { color: colors.text }]}>↑</Text>
-                        </TouchableOpacity>
+                        </TouchableScale>
                       )}
                       {index < steps.length - 1 && (
-                        <TouchableOpacity
+                        <TouchableScale
                           style={[styles.stepActionButton, { borderColor: colors.divider }]}
                           onPress={() => moveStepDown(index)}
                         >
                           <Text style={[styles.stepActionText, { color: colors.text }]}>↓</Text>
-                        </TouchableOpacity>
+                        </TouchableScale>
                       )}
-                      <TouchableOpacity
+                      <TouchableScale
                         style={[styles.stepActionButton, { borderColor: colors.danger }]}
                         onPress={() => removeStep(step.id)}
                       >
                         <Text style={[styles.stepActionText, { color: colors.danger }]}>×</Text>
-                      </TouchableOpacity>
+                      </TouchableScale>
                     </View>
                   </View>
                 ))}
@@ -374,12 +375,12 @@ export function EditHabitModal({
                       maxLength={3}
                     />
                   </View>
-                  <TouchableOpacity
+                  <TouchableScale
                     style={[styles.addStepButton, { backgroundColor: colors.accent }]}
                     onPress={addStep}
                   >
                     <Text style={[styles.addStepButtonText, { color: colors.textOnAccent }]}>+ Add Step</Text>
-                  </TouchableOpacity>
+                  </TouchableScale>
                 </View>
               </View>
             )}
@@ -390,7 +391,7 @@ export function EditHabitModal({
                 <Text style={[styles.label, { color: colors.muted }]}>Track as</Text>
                 <View style={styles.goalRow}>
                   {KIND_OPTIONS.map((opt) => (
-                    <TouchableOpacity
+                    <TouchableScale
                       key={opt.kind}
                       style={[
                         styles.kindButton,
@@ -406,7 +407,7 @@ export function EditHabitModal({
                       <Text style={[styles.kindButtonText, { color: kind === opt.kind ? colors.textOnAccent : colors.text }]}>
                         {opt.label}
                       </Text>
-                    </TouchableOpacity>
+                    </TouchableScale>
                   ))}
                 </View>
                 <Text style={[styles.kindHint, { color: colors.muted }]}>{KIND_OPTIONS.find((o) => o.kind === kind)?.hint}</Text>
@@ -448,7 +449,7 @@ export function EditHabitModal({
               <Text style={[styles.label, { color: colors.muted }]}>Weekly goal (1-7)</Text>
               <View style={styles.goalRow}>
                 {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-                  <TouchableOpacity
+                  <TouchableScale
                     key={num}
                     style={[
                       styles.goalButton,
@@ -467,7 +468,7 @@ export function EditHabitModal({
                     >
                       {num}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableScale>
                 ))}
               </View>
             </View>
@@ -478,7 +479,7 @@ export function EditHabitModal({
               <Text style={[styles.label, { color: colors.muted }]}>Identity</Text>
               <View style={styles.identityRow}>
                 {identities.map((identity) => (
-                  <TouchableOpacity
+                  <TouchableScale
                     key={identity.id}
                     style={[
                       styles.identityButton,
@@ -498,7 +499,7 @@ export function EditHabitModal({
                     >
                       {identity.name}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableScale>
                 ))}
               </View>
             </View>
@@ -508,7 +509,7 @@ export function EditHabitModal({
               <Text style={[styles.label, { color: colors.muted }]}>Active days</Text>
               <View style={styles.daysRow}>
                 {DAY_LABELS.map((label, index) => (
-                  <TouchableOpacity
+                  <TouchableScale
                     key={index}
                     style={[
                       styles.dayButton,
@@ -527,7 +528,7 @@ export function EditHabitModal({
                     >
                       {label.charAt(0)}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableScale>
                 ))}
               </View>
               <Text style={[styles.hint, { color: colors.muted }]}>
@@ -540,7 +541,7 @@ export function EditHabitModal({
               <Text style={[styles.label, { color: colors.muted }]}>Order</Text>
               <View style={styles.orderRow}>
                 {Array.from({ length: isEditing ? totalHabits : totalHabits + 1 }, (_, i) => i + 1).map((num) => (
-                  <TouchableOpacity
+                  <TouchableScale
                     key={num}
                     style={[
                       styles.orderButton,
@@ -559,7 +560,7 @@ export function EditHabitModal({
                     >
                       {num}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableScale>
                 ))}
               </View>
             </View>
@@ -570,35 +571,35 @@ export function EditHabitModal({
               {isEditing && (onArchive || onDelete) && (
                 <View style={styles.leftActions}>
                   {onArchive && (
-                    <TouchableOpacity
+                    <TouchableScale
                       style={[styles.deleteButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.divider }]}
                       onPress={handleArchive}
                     >
                       <Text style={[styles.deleteButtonText, { color: colors.text }]}>Archive</Text>
-                    </TouchableOpacity>
+                    </TouchableScale>
                   )}
                   {onDelete && (
-                    <TouchableOpacity style={styles.deleteLink} onPress={handleDelete} accessibilityLabel="Delete forever">
+                    <TouchableScale style={styles.deleteLink} onPress={handleDelete} accessibilityLabel="Delete forever">
                       <Text style={[styles.deleteLinkText, { color: colors.danger }]}>Delete</Text>
-                    </TouchableOpacity>
+                    </TouchableScale>
                   )}
                 </View>
               )}
 
               <View style={styles.rightActions}>
-                <TouchableOpacity
+                <TouchableScale
                   style={[styles.cancelButton, { borderColor: colors.divider }]}
                   onPress={onClose}
                 >
                   <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
-                </TouchableOpacity>
+                </TouchableScale>
 
-                <TouchableOpacity
+                <TouchableScale
                   style={[styles.saveButton, { backgroundColor: colors.accent }]}
                   onPress={handleSave}
                 >
                   <Text style={[styles.saveButtonText, { color: colors.textOnAccent }]}>Save</Text>
-                </TouchableOpacity>
+                </TouchableScale>
               </View>
             </View>
           </ScrollView>
@@ -620,12 +621,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     maxHeight: '90%',
-    borderRadius: 14,
+    borderRadius: radii.lg,
     borderWidth: 1,
     padding: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
     marginBottom: 16,
   },
@@ -633,33 +634,33 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     marginBottom: 8,
   },
   hint: {
-    fontSize: 11,
+    fontSize: fontSizes.xs,
     marginTop: 6,
   },
   input: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radii.md,
     padding: 12,
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   kindButton: {
     flex: 1,
     height: 40,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   kindButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   kindHint: {
-    fontSize: 13,
+    fontSize: fontSizes.sm,
     marginTop: 8,
   },
   targetRow: {
@@ -676,7 +677,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   targetSuffix: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   goalRow: {
     flexDirection: 'row',
@@ -685,13 +686,13 @@ const styles = StyleSheet.create({
   goalButton: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   goalButtonText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   identityRow: {
@@ -705,7 +706,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
   },
   identityDot: {
@@ -714,7 +715,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   identityButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   daysRow: {
@@ -724,13 +725,13 @@ const styles = StyleSheet.create({
   dayButton: {
     width: 38,
     height: 38,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   orderRow: {
@@ -741,13 +742,13 @@ const styles = StyleSheet.create({
   orderButton: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   orderButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   actions: {
@@ -766,36 +767,36 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   deleteLink: { paddingVertical: 8 },
-  deleteLinkText: { fontSize: 14, fontWeight: '600' },
+  deleteLinkText: { fontSize: fontSizes.sm, fontWeight: '600' },
   deleteButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
   },
   deleteButtonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   cancelButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
   },
   cancelButtonText: {
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   saveButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
   },
   saveButtonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   routineToggle: {
     flexDirection: 'row',
@@ -805,18 +806,18 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: radii.sm,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkmark: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   routineToggleText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   stepItem: {
@@ -824,7 +825,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
     marginBottom: 8,
   },
@@ -832,12 +833,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepName: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
     marginBottom: 2,
   },
   stepDuration: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
   },
   stepActions: {
     flexDirection: 'row',
@@ -846,13 +847,13 @@ const styles = StyleSheet.create({
   stepActionButton: {
     width: 28,
     height: 28,
-    borderRadius: 6,
+    borderRadius: radii.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepActionText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   addStepContainer: {
@@ -866,29 +867,29 @@ const styles = StyleSheet.create({
   stepNameInput: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   stepDurationInput: {
     width: 70,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     textAlign: 'center',
   },
   addStepButton: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     alignItems: 'center',
   },
   addStepButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
 });

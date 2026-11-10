@@ -9,10 +9,12 @@
 // done the right way in React.
 // ============================================
 
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeName } from '../types';
 import { themes, ThemeColors, textOn } from './colors';
+import { TextStyle } from 'react-native';
+import { radiiForTheme, headingFontForTheme, ThemeRadii } from './tokens';
 
 const THEME_STORAGE_KEY = 'hablits_theme_v1';
 
@@ -20,6 +22,8 @@ const THEME_STORAGE_KEY = 'hablits_theme_v1';
 interface ThemeContextType {
   themeName: ThemeName;                      // Current theme name
   colors: ThemeColors;                       // Current theme's colors
+  radius: ThemeRadii;                        // Current theme's corner radii (square for pixel themes, rounder for soft ones)
+  headingFont: TextStyle;                    // Extra style for headings and numbers (a pixel font on the pixel-art themes, nothing elsewhere)
   setTheme: (theme: ThemeName) => void;      // Function to change theme
   customAccentColor: string | undefined;     // Custom accent color override
   setCustomAccentColor: (color: string | undefined) => void; // Set custom accent
@@ -86,13 +90,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     };
   }
 
+  const radius = useMemo(() => radiiForTheme(themeName), [themeName]);
+  const headingFont = useMemo(() => headingFontForTheme(themeName), [themeName]);
+
   // Function to change theme
   const setTheme = (newTheme: ThemeName) => {
     setThemeName(newTheme); // persisted by the effect above
   };
 
   return (
-    <ThemeContext.Provider value={{ themeName, colors, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded }}>
+    <ThemeContext.Provider value={{ themeName, colors, radius, headingFont, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded }}>
       {children}
     </ThemeContext.Provider>
   );

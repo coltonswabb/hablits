@@ -11,8 +11,8 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
 } from 'react-native';
+import { TouchableScale } from '../components/TouchableScale';
 import { useTheme } from '../theme';
 import { useApp } from '../state';
 import { ProgressRing, EmptyState } from '../components';
@@ -23,11 +23,12 @@ import {
   calculateStreak,
   liveHabits,
 } from '../utils';
+import { radii, fontSizes } from '../theme/tokens';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function WeekScreen() {
-  const { colors } = useTheme();
+  const { colors, headingFont } = useTheme();
   const { state, dispatch } = useApp();
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -88,7 +89,7 @@ export function WeekScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Week</Text>
+          <Text style={[styles.title, { color: colors.text }, headingFont]}>Week</Text>
           <Text style={[styles.subtitle, { color: colors.muted }]}>
             {weekDays[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
             {' – '}
@@ -96,26 +97,26 @@ export function WeekScreen() {
           </Text>
         </View>
         <View style={styles.weekNav}>
-          <TouchableOpacity
+          <TouchableScale
             style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
             onPress={() => setWeekOffset(weekOffset - 1)}
           >
             <Text style={[styles.navButtonText, { color: colors.text }]}>←</Text>
-          </TouchableOpacity>
+          </TouchableScale>
           {weekOffset !== 0 && (
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
               onPress={() => setWeekOffset(0)}
             >
               <Text style={[styles.navButtonTextSmall, { color: colors.text }]}>Today</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           )}
-          <TouchableOpacity
+          <TouchableScale
             style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
             onPress={() => setWeekOffset(weekOffset + 1)}
           >
             <Text style={[styles.navButtonText, { color: colors.text }]}>→</Text>
-          </TouchableOpacity>
+          </TouchableScale>
         </View>
       </View>
 
@@ -209,7 +210,7 @@ export function WeekScreen() {
                         <Text style={[styles.dayLabel, { color: colors.muted }]}>
                           {DAY_LABELS[index]}
                         </Text>
-                        <TouchableOpacity
+                        <TouchableScale
                           style={[
                             styles.dayCell,
                             {
@@ -226,7 +227,7 @@ export function WeekScreen() {
                           <Text style={[styles.dayCellText, { color: textColor }]}>
                             {cellText}
                           </Text>
-                        </TouchableOpacity>
+                        </TouchableScale>
                         <Text style={[styles.dateLabel, { color: colors.muted }]}>
                           {day.getDate()}
                         </Text>
@@ -255,11 +256,11 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '900',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
   weekNav: {
     flexDirection: 'row',
@@ -268,15 +269,15 @@ const styles = StyleSheet.create({
   navButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
   },
   navButtonText: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
   },
   navButtonTextSmall: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
   scrollView: {
@@ -286,10 +287,10 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     marginTop: 40,
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   habitRow: {
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     padding: 12,
     marginBottom: 12,
@@ -304,17 +305,17 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   habitName: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '800',
   },
   streakBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
   streakText: {
-    fontSize: 11,
+    fontSize: fontSizes.xs,
   },
   progressRow: {
     flexDirection: 'row',
@@ -322,16 +323,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   progressText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
   },
   goalBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
   goalBadgeText: {
-    fontSize: 11,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
   dayGrid: {
@@ -343,21 +344,21 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   dayLabel: {
-    fontSize: 11,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
   dayCell: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayCellText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   dateLabel: {
-    fontSize: 10,
+    fontSize: fontSizes.micro,
   },
 });

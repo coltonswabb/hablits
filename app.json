@@ -68,10 +68,10 @@
           "image": "./assets/splash-blank.png",
           "imageWidth": 16,
           "resizeMode": "contain",
-          "backgroundColor": "#6c6fe0",
+          "backgroundColor": "#000000",
           "dark": {
             "image": "./assets/splash-blank.png",
-            "backgroundColor": "#15121f"
+            "backgroundColor": "#000000"
           }
         }
       ],
@@ -90,7 +90,7 @@
             {
               "name": "HablitsToday",
               "displayName": "Today",
-              "description": "Today's habits, your progress ring, and your streak \u2014 at a glance.",
+              "description": "Today's habits, your progress ring, and your streak — at a glance.",
               "ios": {
                 "supportedFamilies": [
                   "systemSmall",
@@ -106,7 +106,37 @@
           ],
           "frequentUpdates": false
         }
-      ]
+      ],
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "White",
+            "ios": "./assets/icons/white.png",
+            "android": {
+              "foregroundImage": "./assets/adaptive-icon.png",
+              "backgroundColor": "#ffffff"
+            }
+          },
+          {
+            "name": "Violet",
+            "ios": "./assets/icons/violet.png",
+            "android": {
+              "foregroundImage": "./assets/adaptive-icon.png",
+              "backgroundColor": "#6c6fe0"
+            }
+          },
+          {
+            "name": "Mint",
+            "ios": "./assets/icons/mint.png",
+            "android": {
+              "foregroundImage": "./assets/adaptive-icon.png",
+              "backgroundColor": "#0f1320"
+            }
+          }
+        ]
+      ],
+      "expo-font"
     ],
     "scheme": "hablits"
   }

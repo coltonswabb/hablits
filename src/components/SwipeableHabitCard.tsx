@@ -7,14 +7,17 @@
 // ============================================
 
 import React, { useRef, useEffect } from 'react';
-import { Animated, StyleSheet, View, Dimensions } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { HabitCard } from './HabitCard';
 import { Habit, Identity } from '../types';
+import { useReduceMotion } from '../utils/motion';
+import { SCREEN_WIDTH, SWIPE_THRESHOLD, swipeDirection } from '../utils/swipe';
+import { useTheme } from '../theme';
+import { radii, fontSizes } from '../theme/tokens';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.15; // 15% of screen width for easy triggering
-const VELOCITY_THRESHOLD = 0.5; // Minimum velocity to auto-complete swipe
+const SWIPE_AWAY_MIN_MS = 120;
+const SWIPE_AWAY_MAX_MS = 250;
 
 interface SwipeableHabitCardProps {
   habit: Habit;
@@ -31,6 +34,8 @@ interface SwipeableHabitCardProps {
   isSkipped: boolean;
   progressAmount?: number;
   onAddProgress?: (delta: number) => void;
+  /** Called with true while a finger is swiping this card, false when it lets go */
+  onSwipeActiveChange?: (active: boolean) => void;
 }
 
 export function SwipeableHabitCard({
@@ -48,10 +53,12 @@ export function SwipeableHabitCard({
   isSkipped,
   progressAmount,
   onAddProgress,
+  onSwipeActiveChange,
 }: SwipeableHabitCardProps) {
   const translateX = useRef(new Animated.Value(0)).current;
-  const cardScale = useRef(new Animated.Value(1)).current;
   const isAnimating = useRef(false);
+  const reduceMotion = useReduceMotion();
+  const { radius } = useTheme();
 
   // The reveal layers fade in with the swipe distance. Derived on the native
   // side, so nothing has to listen to translateX on the JS thread.
@@ -69,59 +76,46 @@ export function SwipeableHabitCard({
   // Ensure card always returns to center on mount
   useEffect(() => {
     translateX.setValue(0);
-    cardScale.setValue(1);
   }, []);
 
-  // Slide off to one side with a little bounce, then toggle and reset
-  const swipeAway = (toValue: number) => {
+  // Settle back to centre with no overshoot
+  const snapBack = (onDone?: () => void) => {
     isAnimating.current = true;
-    Animated.parallel([
-      Animated.sequence([
-        Animated.spring(cardScale, {
-          toValue: 1.05,
-          useNativeDriver: true,
-          tension: 200,
-          friction: 3,
-        }),
-        Animated.spring(cardScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }),
-      ]),
-      Animated.timing(translateX, {
-        toValue,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onToggle(); // Right: complete. Left: cycles to skip.
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      // Critically damped: settles in about a quarter of a second
+      stiffness: 300,
+      damping: 35,
+      mass: 1,
+      overshootClamping: true,
+    }).start(() => {
       translateX.setValue(0);
       isAnimating.current = false;
+      onDone?.();
     });
   };
 
-  // Snap back to original position with bounce - ALWAYS complete this animation
-  const snapBack = () => {
+  // Carry the card off screen at the speed it was released, then toggle and reset
+  const swipeAway = (direction: 1 | -1, swipeDistance: number, velocityX: number) => {
+    if (reduceMotion) {
+      // No fly-off: commit straight away and let the card settle back
+      onToggle(); // Right: complete. Left: cycles to skip.
+      snapBack();
+      return;
+    }
     isAnimating.current = true;
-    Animated.parallel([
-      Animated.spring(translateX, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 150,
-        friction: 10,
-      }),
-      Animated.spring(cardScale, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 150,
-        friction: 10,
-      }),
-    ]).start(() => {
-      // Ensure values are exactly centered
+    const remaining = Math.max(0, SCREEN_WIDTH - Math.abs(swipeDistance));
+    const speed = Math.abs(velocityX); // points per second
+    const duration = speed > 0 ? (remaining / speed) * 1000 : SWIPE_AWAY_MAX_MS;
+    Animated.timing(translateX, {
+      toValue: direction * SCREEN_WIDTH,
+      duration: Math.min(SWIPE_AWAY_MAX_MS, Math.max(SWIPE_AWAY_MIN_MS, duration)),
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      onToggle(); // Right: complete. Left: cycles to skip.
       translateX.setValue(0);
-      cardScale.setValue(1);
       isAnimating.current = false;
     });
   };
@@ -138,20 +132,19 @@ export function SwipeableHabitCard({
     // PanGestureHandler + Animated.event did
     useAnimated: true,
     onUpdate: onPanUpdate,
+    onActivate: () => onSwipeActiveChange?.(true),
+    onFinalize: () => onSwipeActiveChange?.(false),
     onDeactivate: (event) => {
       // Prevent multiple animations
       if (isAnimating.current) return;
 
       const { translationX: swipeDistance, velocityX } = event;
+      const direction = swipeDirection(swipeDistance, velocityX);
 
-      // Determine if we should complete the swipe based on distance or velocity
-      const shouldCompleteRight = (swipeDistance > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) && !isComplete;
-      const shouldCompleteLeft = (swipeDistance < -SWIPE_THRESHOLD || velocityX < -VELOCITY_THRESHOLD) && !isSkipped;
-
-      if (shouldCompleteRight) {
-        swipeAway(SCREEN_WIDTH);
-      } else if (shouldCompleteLeft) {
-        swipeAway(-SCREEN_WIDTH);
+      if (direction === 1 && !isComplete) {
+        swipeAway(1, swipeDistance, velocityX);
+      } else if (direction === -1 && !isSkipped) {
+        swipeAway(-1, swipeDistance, velocityX);
       } else {
         snapBack();
       }
@@ -164,9 +157,7 @@ export function SwipeableHabitCard({
       <Animated.View
         style={[
           styles.revealLayerRight,
-          {
-            opacity: rightRevealOpacity,
-          },
+          { opacity: rightRevealOpacity, borderRadius: radius.md },
         ]}
       >
         <Animated.Text style={styles.revealText}>✓</Animated.Text>
@@ -176,9 +167,7 @@ export function SwipeableHabitCard({
       <Animated.View
         style={[
           styles.revealLayerLeft,
-          {
-            opacity: leftRevealOpacity,
-          },
+          { opacity: leftRevealOpacity, borderRadius: radius.md },
         ]}
       >
         <Animated.Text style={styles.revealText}>–</Animated.Text>
@@ -188,7 +177,7 @@ export function SwipeableHabitCard({
       <GestureDetector gesture={pan}>
         <Animated.View
           style={{
-            transform: [{ translateX }, { scale: cardScale }],
+            transform: [{ translateX }],
           }}
         >
           <HabitCard
@@ -227,7 +216,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: 20,
     backgroundColor: '#22c55e',
-    borderRadius: 10,
+    borderRadius: radii.md,
     zIndex: -1,
   },
   revealLayerLeft: {
@@ -240,11 +229,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingRight: 20,
     backgroundColor: '#f59e0b',
-    borderRadius: 10,
+    borderRadius: radii.md,
     zIndex: -1,
   },
   revealText: {
-    fontSize: 32,
+    fontSize: fontSizes.hero,
     fontWeight: '900',
     color: '#fff',
   },

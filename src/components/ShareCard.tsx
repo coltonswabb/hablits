@@ -15,6 +15,7 @@ import { useTheme } from '../theme';
 import { Pet } from './Pet';
 import { PetSpecies, HatType, PetMood } from '../types';
 import { lightTap } from '../utils/haptics';
+import { radii, fontSizes } from '../theme/tokens';
 
 export type ShareCardContent = {
   eyebrow: string; // e.g. "EVOLUTION" / "PERFECT WEEK"
@@ -92,17 +93,17 @@ export function ShareCard({ content, species, hat, stage, children, onShared }: 
 }
 
 const styles = StyleSheet.create({
-  pill: { borderWidth: 1, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 18 },
-  pillText: { fontSize: 14, fontWeight: '700' },
+  pill: { borderWidth: 1, borderRadius: radii.pill, paddingVertical: 10, paddingHorizontal: 18 },
+  pillText: { fontSize: fontSizes.sm, fontWeight: '700' },
   offscreen: { position: 'absolute', left: -3000, top: -3000, width: W, height: H },
   card: { width: W, height: H, padding: 22, justifyContent: 'space-between' },
   inner: { flex: 1, borderRadius: 28, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
-  eyebrow: { fontSize: 13, fontWeight: '800', letterSpacing: 3 },
+  eyebrow: { fontSize: fontSizes.sm, fontWeight: '800', letterSpacing: 3 },
   petWrap: { width: 200, height: 200, alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute', width: 190, height: 190, borderRadius: 95, opacity: 0.18 },
   headline: { fontSize: 26, fontWeight: '800', textAlign: 'center', letterSpacing: -0.5 },
-  stat: { fontSize: 16, fontWeight: '600' },
-  footer: { fontSize: 12, textAlign: 'center', marginTop: 14, letterSpacing: 0.5 },
+  stat: { fontSize: fontSizes.md, fontWeight: '600' },
+  footer: { fontSize: fontSizes.xs, textAlign: 'center', marginTop: 14, letterSpacing: 0.5 },
 });
 
 export const canShare = Platform.OS !== 'web';

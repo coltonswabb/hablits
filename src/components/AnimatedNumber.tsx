@@ -1,51 +1,48 @@
 // ============================================
 // ANIMATED NUMBER COMPONENT
 // ============================================
-// Animates number changes with a rolling effect
+// When the number changes, the new value rises into place and fades in.
+// Nothing plays on first render. Reduce Motion: fade only.
 // ============================================
 
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleProp, TextStyle } from 'react-native';
+import { Animated, Easing, StyleProp, TextStyle } from 'react-native';
+import { useReduceMotion } from '../utils/motion';
+
+const RISE_PX = 6;
+const DURATION_MS = 180;
 
 interface AnimatedNumberProps {
   value: number;
   style?: StyleProp<TextStyle>;
   suffix?: string; // e.g., "d" for days
+  /** Custom text for the value, e.g. "3/8 glasses". Overrides the plain number and suffix. */
+  format?: (value: number) => string;
 }
 
-export function AnimatedNumber({ value, style, suffix = '' }: AnimatedNumberProps) {
-  const animatedValue = useRef(new Animated.Value(value)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
+export function AnimatedNumber({ value, style, suffix = '', format }: AnimatedNumberProps) {
+  const reduceMotion = useReduceMotion();
+  // 0 = just changed, 1 = settled
+  const settle = useRef(new Animated.Value(1)).current;
+  const previous = useRef(value);
 
   useEffect(() => {
-    // Quick fade and number change effect with scale
-    Animated.sequence([
-      Animated.timing(opacity, {
-        toValue: 0.2,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.parallel([
-        Animated.spring(animatedValue, {
-          toValue: value,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 6,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
+    if (previous.current === value) return;
+    previous.current = value;
+    settle.setValue(0);
+    Animated.timing(settle, {
+      toValue: 1,
+      duration: DURATION_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
   }, [value]);
 
-  // For display, we'll use the value directly but animate opacity
-  // Since we can't interpolate text directly, we animate the opacity instead
+  const translateY = reduceMotion ? 0 : settle.interpolate({ inputRange: [0, 1], outputRange: [RISE_PX, 0] });
+
   return (
-    <Animated.Text style={[style, { opacity }]}>
-      {value}{suffix}
+    <Animated.Text style={[style, { opacity: settle, transform: [{ translateY }] }]}>
+      {format ? format(value) : `${value}${suffix}`}
     </Animated.Text>
   );
 }

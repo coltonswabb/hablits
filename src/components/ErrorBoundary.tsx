@@ -12,6 +12,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface Props {
   children: ReactNode;
@@ -72,24 +73,24 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     backgroundColor: '#1c1f27',
-    borderRadius: 20,
+    borderRadius: radii.xl,
     padding: 28,
     alignItems: 'center',
   },
   face: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     color: '#f5c76b',
     marginBottom: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '700',
     color: '#ffffff',
     textAlign: 'center',
     marginBottom: 10,
   },
   body: {
-    fontSize: 15,
+    fontSize: fontSizes.md,
     lineHeight: 22,
     color: '#a7adbb',
     textAlign: 'center',
@@ -99,24 +100,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#3ddc97',
     paddingVertical: 12,
     paddingHorizontal: 28,
-    borderRadius: 999,
+    borderRadius: radii.pill,
   },
   buttonText: {
     color: '#0b1a12',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   debug: {
     marginTop: 20,
     maxHeight: 180,
     alignSelf: 'stretch',
     backgroundColor: '#0d0f14',
-    borderRadius: 10,
+    borderRadius: radii.md,
     padding: 10,
   },
   debugText: {
     color: '#ff8a8a',
     fontFamily: 'Courier',
-    fontSize: 11,
+    fontSize: fontSizes.xs,
   },
 });

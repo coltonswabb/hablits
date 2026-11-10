@@ -4,3 +4,5 @@
 export { ThemeProvider, useTheme } from './ThemeContext';
 export { themes, themeConfetti } from './colors';
 export type { ThemeColors } from './colors';
+export { spacing, radii, fontSizes, radiiForTheme, headingFontForTheme } from './tokens';
+export type { ThemeRadii } from './tokens';

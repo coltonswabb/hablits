@@ -39,3 +39,4 @@ export {
   staggerDelay,
 } from './Animations';
 export { LaunchScreen } from './LaunchScreen';
+export { TouchableScale } from './TouchableScale';

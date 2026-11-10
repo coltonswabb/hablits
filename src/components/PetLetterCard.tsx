@@ -13,6 +13,7 @@ import { PetSpecies, HatType } from '../types';
 import { PetLetter } from '../utils/petLetter';
 import { ShareCard, canShare } from './ShareCard';
 import { petDisplayName } from '../utils/petName';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface Props {
   letter: PetLetter;
@@ -27,7 +28,7 @@ interface Props {
 }
 
 export function PetLetterCard({ letter, species, hat, stage, petName, weekPct = 0, weekStat = '', onDismiss }: Props) {
-  const { colors } = useTheme();
+  const { colors, radius } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
 
@@ -39,7 +40,7 @@ export function PetLetterCard({ letter, species, hat, stage, petName, weekPct = 
   }, []);
 
   return (
-    <Animated.View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider, opacity, transform: [{ translateY }] }]}>
+    <Animated.View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider, borderRadius: radius.lg, opacity, transform: [{ translateY }] }]}>
       <View style={styles.header}>
         <Pet species={species} mood={letter.mood} hat={hat} size={44} stage={stage} />
         <View style={{ flex: 1 }}>
@@ -81,13 +82,13 @@ export function PetLetterCard({ letter, species, hat, stage, petName, weekPct = 
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, borderWidth: 1, padding: 16, marginBottom: 14, gap: 10 },
+  card: { borderRadius: radii.xl, borderWidth: 1, padding: 16, marginBottom: 14, gap: 10 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 2 },
-  greeting: { fontSize: 18, fontWeight: '700' },
-  body: { fontSize: 15, lineHeight: 22 },
-  signoff: { fontSize: 14, fontStyle: 'italic', marginTop: 2 },
+  eyebrow: { fontSize: fontSizes.xs, fontWeight: '800', letterSpacing: 1.5, marginBottom: 2 },
+  greeting: { fontSize: fontSizes.lg, fontWeight: '700' },
+  body: { fontSize: fontSizes.md, lineHeight: 22 },
+  signoff: { fontSize: fontSizes.sm, fontStyle: 'italic', marginTop: 2 },
   buttons: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 4 },
-  button: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
-  buttonText: { fontSize: 13, fontWeight: '600' },
+  button: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 14 },
+  buttonText: { fontSize: fontSizes.sm, fontWeight: '600' },
 });

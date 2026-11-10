@@ -131,7 +131,8 @@ export type ThemeName =
   | 'bengal'
   | 'lion'
   | 'ladyhawke'
-  | 'sakura';
+  | 'sakura'
+  | 'pixel';
 
 // Tab names for navigation
 export type TabName = 'today' | 'week' | 'calendar' | 'dayplan' | 'stats';

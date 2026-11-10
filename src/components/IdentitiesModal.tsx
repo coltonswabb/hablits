@@ -10,14 +10,15 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Modal,
   ScrollView,
   Alert,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { Identity } from '../types';
 import { useTheme } from '../theme';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface IdentitiesModalProps {
   visible: boolean;
@@ -151,7 +152,7 @@ export function IdentitiesModal({
                 style={[styles.identityRow, { borderColor: colors.divider }]}
               >
                 {/* Color button */}
-                <TouchableOpacity
+                <TouchableScale
                   style={[styles.colorButton, { backgroundColor: identity.color }]}
                   onPress={() => setColorPickerFor(identity.id)}
                 />
@@ -171,12 +172,12 @@ export function IdentitiesModal({
 
                 {/* Delete button (not for general) */}
                 {identity.id !== 'general' ? (
-                  <TouchableOpacity
+                  <TouchableScale
                     style={[styles.deleteButton, { backgroundColor: colors.danger + '22' }]}
                     onPress={() => deleteIdentity(identity.id)}
                   >
                     <Text style={[styles.deleteButtonText, { color: colors.danger }]}>×</Text>
-                  </TouchableOpacity>
+                  </TouchableScale>
                 ) : (
                   <View style={styles.deleteButtonPlaceholder} />
                 )}
@@ -188,14 +189,14 @@ export function IdentitiesModal({
           {colorPickerFor && (
             <>
               {/* Backdrop to close picker */}
-              <TouchableOpacity
+              <TouchableScale
                 style={styles.colorPickerBackdrop}
                 onPress={() => setColorPickerFor(null)}
                 activeOpacity={1}
               />
               <View style={[styles.colorPicker, { backgroundColor: colors.card, borderColor: colors.divider }]}>
                 {COLOR_PRESETS.map((color) => (
-                  <TouchableOpacity
+                  <TouchableScale
                     key={color}
                     style={[
                       styles.colorOption,
@@ -210,30 +211,30 @@ export function IdentitiesModal({
           )}
 
           {/* Add button */}
-          <TouchableOpacity
+          <TouchableScale
             style={[styles.addButton, { borderColor: colors.divider }]}
             onPress={addIdentity}
           >
             <Text style={[styles.addButtonText, { color: colors.accent }]}>
               + Add Identity
             </Text>
-          </TouchableOpacity>
+          </TouchableScale>
 
           {/* Action buttons */}
           <View style={styles.actions}>
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.cancelButton, { borderColor: colors.divider }]}
               onPress={onClose}
             >
               <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
-            </TouchableOpacity>
+            </TouchableScale>
 
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.saveButton, { backgroundColor: colors.accent }]}
               onPress={handleSave}
             >
               <Text style={[styles.saveButtonText, { color: colors.textOnAccent }]}>Save</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
         </View>
       </View>
@@ -253,17 +254,17 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     maxHeight: '80%',
-    borderRadius: 14,
+    borderRadius: radii.lg,
     borderWidth: 1,
     padding: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     marginBottom: 16,
   },
   list: {
@@ -279,25 +280,25 @@ const styles = StyleSheet.create({
   colorButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radii.lg,
   },
   nameInput: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   deleteButton: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   deleteButtonText: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '700',
   },
   deleteButtonPlaceholder: {
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 2,
     zIndex: 1000,
     elevation: 10,
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
   colorOption: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radii.lg,
   },
   colorOptionSelected: {
     borderWidth: 3,
@@ -341,14 +342,14 @@ const styles = StyleSheet.create({
   },
   addButton: {
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderStyle: 'dashed',
     alignItems: 'center',
     marginTop: 12,
   },
   addButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   actions: {
@@ -359,23 +360,23 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '600',
   },
   saveButton: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
   saveButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
 });

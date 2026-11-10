@@ -5,12 +5,75 @@
 // Uses React Native's Animated API.
 // ============================================
 
-import React, { useEffect, useRef } from 'react';
-import { Animated, ViewStyle, Easing } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, StyleProp, ViewStyle, Easing } from 'react-native';
+import { useReduceMotion } from '../utils/motion';
 
 // ============================================
 // ANIMATED WRAPPERS
 // ============================================
+
+const ENTER_MS = 300;
+const EXIT_MS = 150;
+const ENTER_EXIT_OFFSET = 12;
+
+interface EnterExitProps {
+  /** Whether the content should be on screen */
+  show: boolean;
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}
+
+/**
+ * Fades content up into place when `show` turns true and out (shorter, softer)
+ * when it turns false, keeping it mounted until the exit has played.
+ * Content already showing on first render does not animate.
+ * Reduce Motion: fade only.
+ */
+export function EnterExit({ show, children, style }: EnterExitProps) {
+  const reduceMotion = useReduceMotion();
+  const [mounted, setMounted] = useState(show);
+  const opacity = useRef(new Animated.Value(show ? 1 : 0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  const isFirstRender = useRef(true);
+  // What to keep drawing while the exit plays
+  const lastChildren = useRef(children);
+  if (show) lastChildren.current = children;
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (show) {
+      setMounted(true);
+      translateY.setValue(reduceMotion ? 0 : ENTER_EXIT_OFFSET);
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: ENTER_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: ENTER_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      ]).start();
+      return;
+    }
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 0, duration: EXIT_MS, useNativeDriver: true }),
+      Animated.timing(translateY, {
+        toValue: reduceMotion ? 0 : -ENTER_EXIT_OFFSET,
+        duration: EXIT_MS,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  }, [show]);
+
+  if (!show && !mounted) return null;
+
+  return (
+    <Animated.View style={[style, { opacity, transform: [{ translateY }] }]} pointerEvents={show ? 'auto' : 'none'}>
+      {lastChildren.current}
+    </Animated.View>
+  );
+}
 
 interface FadeInProps {
   children: React.ReactNode;

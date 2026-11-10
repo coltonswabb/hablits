@@ -9,16 +9,17 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Animated,
   Pressable,
   Alert,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { useTheme } from '../theme';
 import { textOn } from '../theme/colors';
 import { ActiveFast } from '../types';
 import { formatRemainingTime, getRemainingTime, getFastProgress, isFastComplete } from '../utils';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface FastingTimerCardProps {
   habitId: string;
@@ -158,38 +159,38 @@ export function FastingTimerCard({
       <View style={styles.actions}>
         {!activeFast && !isComplete && (
           <>
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.button, styles.startButton, { backgroundColor: colors.accent }]}
               onPress={onStartFast}
             >
               <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>Start Fast</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </TouchableScale>
+            <TouchableScale
               style={[styles.button, styles.editSmallButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
               onPress={onEdit}
             >
               <Text style={[styles.editButtonText, { color: colors.text }]}>Edit</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </>
         )}
 
         {activeFast && !isComplete && (
           <>
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.button, styles.cancelButton, { backgroundColor: colors.danger }]}
               onPress={onEndFast}
             >
               <Text style={[styles.buttonText, { color: textOn(colors.danger) }]}>Cancel</Text>
-            </TouchableOpacity>
+            </TouchableScale>
 
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.button, styles.editButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
               onPress={onEditStartTime}
             >
               <Text style={[styles.editButtonText, { color: colors.text }]}>Edit</Text>
-            </TouchableOpacity>
+            </TouchableScale>
 
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.button, styles.endButton, { backgroundColor: fastComplete ? colors.good : colors.accent2 }]}
               onPress={() => {
                 onToggleComplete();
@@ -199,17 +200,17 @@ export function FastingTimerCard({
               <Text style={[styles.buttonText, { color: textOn(fastComplete ? colors.good : colors.accent2) }]}>
                 {fastComplete ? 'Complete' : 'Finish'}
               </Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </>
         )}
 
         {isComplete && (
-          <TouchableOpacity
+          <TouchableScale
             style={[styles.button, styles.undoButton, { backgroundColor: colors.muted }]}
             onPress={onToggleComplete}
           >
             <Text style={[styles.buttonText, { color: textOn(colors.muted) }]}>Undo</Text>
-          </TouchableOpacity>
+          </TouchableScale>
         )}
       </View>
       </View>
@@ -220,7 +221,7 @@ export function FastingTimerCard({
 const styles = StyleSheet.create({
   card: {
     padding: 16,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     borderWidth: 2,
     marginBottom: 12,
   },
@@ -231,11 +232,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   habitName: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
   },
   duration: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
     opacity: 0.8,
   },
@@ -244,23 +245,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   timer: {
-    fontSize: 32,
+    fontSize: fontSizes.hero,
     fontWeight: '900',
     marginBottom: 8,
   },
   progressBar: {
     width: '100%',
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.xs,
     overflow: 'hidden',
     marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: radii.xs,
   },
   progressText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
   },
   completedSection: {
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   completedText: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
   },
   actions: {
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -305,11 +306,11 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   editButtonText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
 });

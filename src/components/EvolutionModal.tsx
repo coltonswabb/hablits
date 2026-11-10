@@ -13,6 +13,7 @@ import { PetSpecies, HatType } from '../types';
 import { STAGE_NAMES, STAGE_THRESHOLDS, PetStage } from '../utils/evolution';
 import { petSubject } from '../utils/petName';
 import { ShareCard, canShare } from './ShareCard';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface Props {
   visible: boolean;
@@ -94,13 +95,13 @@ export function EvolutionModal({ visible, species, hat, stage, petName, onClose 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 28 },
   card: { width: '100%', maxWidth: 380, borderRadius: 28, borderWidth: 1, padding: 28, alignItems: 'center' },
-  eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 2, marginBottom: 12 },
+  eyebrow: { fontSize: fontSizes.xs, fontWeight: '800', letterSpacing: 2, marginBottom: 12 },
   petWrap: { width: 160, height: 160, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   glow: { position: 'absolute', width: 150, height: 150, borderRadius: 75 },
-  title: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
-  sub: { fontSize: 14, marginTop: 4, marginBottom: 14 },
-  body: { fontSize: 16, lineHeight: 23, textAlign: 'center', marginBottom: 22 },
+  title: { fontSize: fontSizes.xxl, fontWeight: '800', textAlign: 'center' },
+  sub: { fontSize: fontSizes.sm, marginTop: 4, marginBottom: 14 },
+  body: { fontSize: fontSizes.md, lineHeight: 23, textAlign: 'center', marginBottom: 22 },
   buttons: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  button: { paddingVertical: 13, paddingHorizontal: 32, borderRadius: 999 },
-  buttonText: { fontSize: 16, fontWeight: '700' },
+  button: { paddingVertical: 13, paddingHorizontal: 32, borderRadius: radii.pill },
+  buttonText: { fontSize: fontSizes.md, fontWeight: '700' },
 });

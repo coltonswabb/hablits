@@ -16,6 +16,7 @@ import { lightTap, successTap } from '../utils/haptics';
 import { playSound } from '../utils/sounds';
 import { petDisplayName } from '../utils/petName';
 import { endRoutineActivity, showRoutineStep } from '../utils/routineActivity';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface Props {
   visible: boolean;
@@ -152,7 +153,7 @@ export function RoutineRunnerModal({ visible, habit, completedStepIds, onToggleS
             </Text>
           </View>
           <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Close routine" style={[styles.close, { borderColor: colors.divider }]}>
-            <Text style={{ color: colors.muted, fontSize: 18, lineHeight: 20 }}>×</Text>
+            <Text style={{ color: colors.muted, fontSize: fontSizes.lg, lineHeight: 20 }}>×</Text>
           </Pressable>
         </View>
 
@@ -236,27 +237,27 @@ export function RoutineRunnerModal({ visible, habit, completedStepIds, onToggleS
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 64, paddingHorizontal: 24, paddingBottom: 32 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
-  title: { fontSize: 24, fontWeight: '800' },
+  eyebrow: { fontSize: fontSizes.xs, fontWeight: '800', letterSpacing: 1.5 },
+  title: { fontSize: fontSizes.xxl, fontWeight: '800' },
   close: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 6, borderRadius: 3, marginTop: 18, overflow: 'hidden' },
-  fill: { height: 6, borderRadius: 3 },
-  progressText: { fontSize: 13, marginTop: 8 },
+  track: { height: 6, borderRadius: radii.xs, marginTop: 18, overflow: 'hidden' },
+  fill: { height: 6, borderRadius: radii.xs },
+  progressText: { fontSize: fontSizes.sm, marginTop: 8 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  stepName: { fontSize: 28, fontWeight: '800', textAlign: 'center' },
+  stepName: { fontSize: fontSizes.display, fontWeight: '800', textAlign: 'center' },
   timer: { fontSize: 72, fontWeight: '800', letterSpacing: -2, marginTop: 8 },
-  timerLabel: { fontSize: 14 },
-  upNext: { fontSize: 14, marginTop: 14 },
+  timerLabel: { fontSize: fontSizes.sm },
+  upNext: { fontSize: fontSizes.sm, marginTop: 14 },
   controls: { flexDirection: 'row', gap: 10, marginTop: 26, alignSelf: 'stretch' },
-  primary: { paddingVertical: 16, paddingHorizontal: 22, borderRadius: 16, alignItems: 'center' },
-  primaryText: { fontSize: 17, fontWeight: '800' },
-  secondary: { paddingVertical: 16, paddingHorizontal: 20, borderRadius: 16, borderWidth: 1 },
-  secondaryText: { fontSize: 16, fontWeight: '700' },
+  primary: { paddingVertical: 16, paddingHorizontal: 22, borderRadius: radii.lg, alignItems: 'center' },
+  primaryText: { fontSize: fontSizes.lg, fontWeight: '800' },
+  secondary: { paddingVertical: 16, paddingHorizontal: 20, borderRadius: radii.lg, borderWidth: 1 },
+  secondaryText: { fontSize: fontSizes.md, fontWeight: '700' },
   doneTitle: { fontSize: 26, fontWeight: '800', marginTop: 10 },
-  doneBody: { fontSize: 15, textAlign: 'center', marginBottom: 18 },
+  doneBody: { fontSize: fontSizes.md, textAlign: 'center', marginBottom: 18 },
   list: { gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
   dot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2 },
-  rowText: { flex: 1, fontSize: 15 },
-  rowMeta: { fontSize: 12 },
+  rowText: { flex: 1, fontSize: fontSizes.md },
+  rowMeta: { fontSize: fontSizes.xs },
 });

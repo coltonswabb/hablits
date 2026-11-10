@@ -92,6 +92,20 @@ export const themes: Record<ThemeName, ThemeColors> = {
     textOnAccent: '#000000',
   },
 
+  // Black and white, to match the app icon
+  pixel: {
+    bg: '#000000',
+    card: '#111111',
+    text: '#ffffff',
+    muted: '#a3a3a3',
+    accent: '#ffffff',
+    accent2: '#d4d4d4',
+    divider: '#2e2e2e',
+    danger: '#ff6b6b',
+    good: '#ffffff',
+    textOnAccent: '#000000',
+  },
+
   retro: {
     bg: '#f2efe6',
     card: '#f9f5ec',
@@ -308,4 +322,5 @@ export const themeConfetti: Record<ThemeName, string[]> = {
   lion: ['#4a90e2', '#7bb3ff', '#5eb3ff', '#91c7ff'],
   ladyhawke: ['#8b5a99', '#a855f7', '#6b4575', '#b794c3'],
   sakura: ['#ffb7c5', '#ffc9d9', '#ff8fa3', '#ffd4de'],
+  pixel: ['#ffffff', '#d4d4d4', '#8a8a8a', '#ffffff'],
 };

@@ -9,16 +9,17 @@ import {
   View,
   Text,
   Modal,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
   Dimensions,
   TextInput,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { useTheme } from '../theme';
 import { Pet } from './Pet';
 import { PetSpecies, HatType } from '../types';
 import { NAME_SUGGESTIONS, MAX_PET_NAME } from '../utils/petName';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface OnboardingModalProps {
   visible: boolean;
@@ -166,9 +167,9 @@ export function OnboardingModal({ visible, species, hat, onComplete }: Onboardin
               />
               <View style={styles.suggestions}>
                 {NAME_SUGGESTIONS[species].map((n) => (
-                  <TouchableOpacity key={n} onPress={() => setPetName(n)} style={[styles.chip, { borderColor: colors.divider, backgroundColor: petName === n ? colors.accent : 'transparent' }]}>
+                  <TouchableScale key={n} onPress={() => setPetName(n)} style={[styles.chip, { borderColor: colors.divider, backgroundColor: petName === n ? colors.accent : 'transparent' }]}>
                     <Text style={[styles.chipText, { color: petName === n ? colors.textOnAccent : colors.text }]}>{n}</Text>
-                  </TouchableOpacity>
+                  </TouchableScale>
                 ))}
               </View>
               <Text style={[styles.hint, { color: colors.muted }]}>You can change this any time from the Hat Closet.</Text>
@@ -196,17 +197,17 @@ export function OnboardingModal({ visible, species, hat, onComplete }: Onboardin
         {/* Bottom buttons */}
         <View style={styles.footer}>
           {currentSlide < slides.length - 1 && (
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.skipButton]}
               onPress={handleSkip}
             >
               <Text style={[styles.skipText, { color: colors.muted }]}>
                 Skip
               </Text>
-            </TouchableOpacity>
+            </TouchableScale>
           )}
 
-          <TouchableOpacity
+          <TouchableScale
             style={[
               styles.nextButton,
               { backgroundColor: colors.accent },
@@ -217,7 +218,7 @@ export function OnboardingModal({ visible, species, hat, onComplete }: Onboardin
             <Text style={[styles.nextText, { color: colors.textOnAccent }]}>
               {naming ? (petName.trim() ? `Meet ${petName.trim()}` : 'Maybe later') : 'Next'}
             </Text>
-          </TouchableOpacity>
+          </TouchableScale>
         </View>
       </View>
     </Modal>
@@ -229,17 +230,17 @@ const styles = StyleSheet.create({
     marginTop: 18,
     width: '80%',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: radii.lg,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '700',
     textAlign: 'center',
   },
   suggestions: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', justifyContent: 'center' },
-  chip: { borderWidth: 1, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
-  chipText: { fontSize: 14, fontWeight: '600' },
-  hint: { fontSize: 12, marginTop: 14, textAlign: 'center' },
+  chip: { borderWidth: 1, borderRadius: radii.pill, paddingVertical: 6, paddingHorizontal: 12 },
+  chipText: { fontSize: fontSizes.sm, fontWeight: '600' },
+  hint: { fontSize: fontSizes.xs, marginTop: 14, textAlign: 'center' },
   container: {
     flex: 1,
   },
@@ -258,19 +259,19 @@ const styles = StyleSheet.create({
   indicator: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.xs,
   },
   slideContent: {
     marginBottom: 32,
   },
   title: {
-    fontSize: 32,
+    fontSize: fontSizes.hero,
     fontWeight: '900',
     marginBottom: 12,
     textAlign: 'center',
   },
   description: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -285,15 +286,15 @@ const styles = StyleSheet.create({
   bullet: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.xs,
   },
   detailText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     flex: 1,
   },
   illustration: {
     height: 200,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -318,19 +319,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   skipText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   nextButton: {
     flex: 2,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   nextText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '900',
   },
 });

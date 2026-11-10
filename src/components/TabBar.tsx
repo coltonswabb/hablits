@@ -5,9 +5,11 @@
 // ============================================
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { TabName } from '../types';
 import { useTheme } from '../theme';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface TabBarProps {
   activeTab: TabName;
@@ -23,20 +25,21 @@ const tabs: { key: TabName; label: string }[] = [
 ];
 
 export function TabBar({ activeTab, onChangeTab }: TabBarProps) {
-  const { colors } = useTheme();
+  const { colors, radius } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.divider, borderRadius: radius.lg }]}>
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
         return (
-          <TouchableOpacity
+          <TouchableScale
             key={tab.key}
             style={[
               styles.tab,
               {
                 backgroundColor: isActive ? colors.accent : 'transparent',
                 borderColor: isActive ? colors.accent2 : colors.divider,
+                borderRadius: radius.md,
               },
             ]}
             onPress={() => onChangeTab(tab.key)}
@@ -48,14 +51,14 @@ export function TabBar({ activeTab, onChangeTab }: TabBarProps) {
               style={[
                 styles.tabText,
                 {
-                  color: isActive ? '#fff' : colors.text,
+                  color: isActive ? colors.textOnAccent : colors.text,
                   fontWeight: isActive ? '800' : '600',
                 },
               ]}
             >
               {tab.label}
             </Text>
-          </TouchableOpacity>
+          </TouchableScale>
         );
       })}
     </View>
@@ -67,7 +70,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     padding: 6,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     marginVertical: 8,
   },
@@ -75,14 +78,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 4,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     textAlign: 'center',
   },
 });

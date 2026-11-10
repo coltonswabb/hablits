@@ -21,6 +21,7 @@ import { useTheme } from '../theme';
 import { Pet, getUnlockedHats } from './Pet';
 import { STAGE_NAMES, daysToNextStage } from '../utils/evolution';
 import { MAX_PET_NAME } from '../utils/petName';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface HatClosetModalProps {
   visible: boolean;
@@ -325,7 +326,7 @@ export function HatClosetModal({
 }
 
 const styles = StyleSheet.create({
-  nameInput: { fontSize: 20, fontWeight: '800', textAlign: 'center', borderBottomWidth: 1, paddingVertical: 4, paddingHorizontal: 12, minWidth: 160, marginTop: 6 },
+  nameInput: { fontSize: fontSizes.xl, fontWeight: '800', textAlign: 'center', borderBottomWidth: 1, paddingVertical: 4, paddingHorizontal: 12, minWidth: 160, marginTop: 6 },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -337,12 +338,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     maxHeight: '85%',
-    borderRadius: 14,
+    borderRadius: radii.lg,
     borderWidth: 1,
     padding: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
     textAlign: 'center',
     marginBottom: 12,
@@ -350,16 +351,16 @@ const styles = StyleSheet.create({
   preview: {
     alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
     marginBottom: 16,
   },
   previewLabel: {
     marginTop: 8,
-    fontSize: 12,
+    fontSize: fontSizes.xs,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     marginBottom: 10,
     marginTop: 8,
@@ -374,11 +375,11 @@ const styles = StyleSheet.create({
     width: 70,
     alignItems: 'center',
     padding: 8,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
   },
   gridItemLabel: {
-    fontSize: 10,
+    fontSize: fontSizes.micro,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -392,21 +393,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lockedText: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
   },
   unlockLabel: {
-    fontSize: 9,
+    fontSize: fontSizes.micro,
     marginTop: 2,
   },
   closeButton: {
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: radii.md,
     alignItems: 'center',
     marginTop: 12,
   },
   closeButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   celebrationOverlay: {
@@ -418,14 +419,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.8)',
-    borderRadius: 14,
+    borderRadius: radii.lg,
   },
   celebrationEmoji: {
     fontSize: 64,
     marginBottom: 12,
   },
   celebrationText: {
-    fontSize: 24,
+    fontSize: fontSizes.xxl,
     fontWeight: '900',
     textAlign: 'center',
   },

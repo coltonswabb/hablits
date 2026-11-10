@@ -10,11 +10,12 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { TouchableScale } from '../components/TouchableScale';
 import { useTheme } from '../theme';
 import { Pet } from '../components';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -66,12 +67,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Skip button */}
       {!isLastStep && (
-        <TouchableOpacity
+        <TouchableScale
           style={styles.skipButton}
           onPress={handleSkip}
         >
           <Text style={[styles.skipText, { color: colors.muted }]}>Skip</Text>
-        </TouchableOpacity>
+        </TouchableScale>
       )}
 
       <ScrollView
@@ -117,14 +118,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
       {/* Next/Get Started button */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity
+        <TouchableScale
           style={[styles.nextButton, { backgroundColor: colors.accent }]}
           onPress={handleNext}
         >
           <Text style={[styles.nextButtonText, { color: colors.textOnAccent }]}>
             {isLastStep ? 'Get Started' : 'Next'}
           </Text>
-        </TouchableOpacity>
+        </TouchableScale>
       </View>
     </View>
   );
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   skipText: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '600',
   },
   content: {
@@ -157,13 +158,13 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '900',
     textAlign: 'center',
     marginBottom: 16,
   },
   description: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 40,
@@ -175,19 +176,19 @@ const styles = StyleSheet.create({
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.xs,
   },
   bottomContainer: {
     padding: 20,
   },
   nextButton: {
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
   nextButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
   },
 });

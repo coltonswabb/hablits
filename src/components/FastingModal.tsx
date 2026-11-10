@@ -10,11 +10,12 @@ import {
   View,
   Text,
   Modal,
-  TouchableOpacity,
   StyleSheet,
   TextInput,
 } from 'react-native';
+import { TouchableScale } from './TouchableScale';
 import { useTheme } from '../theme';
+import { radii, fontSizes } from '../theme/tokens';
 
 interface FastingModalProps {
   visible: boolean;
@@ -80,9 +81,9 @@ export function FastingModal({
             <Text style={[styles.title, { color: colors.text }]}>
               ⏱️ Start Fast Timer
             </Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableScale onPress={onClose}>
               <Text style={[styles.closeButton, { color: colors.muted }]}>✕</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
 
           {/* Start Time Picker */}
@@ -104,7 +105,7 @@ export function FastingModal({
           {/* Duration Options */}
           <View style={styles.content}>
             {FAST_DURATIONS.map((option) => (
-              <TouchableOpacity
+              <TouchableScale
                 key={option.hours}
                 style={[
                   styles.option,
@@ -118,7 +119,7 @@ export function FastingModal({
                 <Text style={[styles.optionDescription, { color: colors.muted }]}>
                   {option.description}
                 </Text>
-              </TouchableOpacity>
+              </TouchableScale>
             ))}
           </View>
         </View>
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
   modal: {
     width: '90%',
     maxWidth: 400,
-    borderRadius: 20,
+    borderRadius: radii.xl,
     overflow: 'hidden',
   },
   header: {
@@ -148,11 +149,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
   },
   closeButton: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '300',
   },
   timeSection: {
@@ -163,14 +164,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   timeLabel: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   timeInput: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 2,
     minWidth: 100,
     textAlign: 'center',
@@ -181,15 +182,15 @@ const styles = StyleSheet.create({
   },
   option: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 2,
   },
   optionLabel: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     marginBottom: 4,
   },
   optionDescription: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
   },
 });

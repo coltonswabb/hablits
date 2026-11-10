@@ -11,14 +11,14 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
   Animated,
   PanResponder,
   Pressable,
   Alert,
 } from 'react-native';
-import { useTheme, themeConfetti } from '../theme';
+import { TouchableScale } from '../components/TouchableScale';
+import { useTheme, themeConfetti, spacing } from '../theme';
 import { textOn } from '../theme/colors';
 import { allDoneCelebration, miniCelebration } from '../utils/celebrate';
 import { getProgress, isOnVacation, quitBest, quitDays } from '../utils/smartHabits';
@@ -27,6 +27,7 @@ import { currentLetter } from '../utils/petLetter';
 import { PetStage } from '../utils/evolution';
 import { PetLetterCard } from '../components/PetLetterCard';
 import { RoutineRunnerModal } from '../components/RoutineRunnerModal';
+import { EnterExit } from '../components/Animations';
 import { useApp } from '../state';
 import {
   HabitCard,
@@ -45,6 +46,10 @@ import {
 } from '../components';
 import { getActiveHabits, todayStr, isFastingHabit, scheduleFastCompletionNotification } from '../utils';
 import { Habit, PetSpecies, HatType } from '../types';
+import { radii, fontSizes } from '../theme/tokens';
+
+const PET_SIZE = 48;
+const SPEECH_TAIL = 12;
 
 interface TodayScreenProps {
   petSpecies: PetSpecies;
@@ -54,7 +59,7 @@ interface TodayScreenProps {
 }
 
 export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset }: TodayScreenProps) {
-  const { colors, themeName } = useTheme();
+  const { colors, themeName, radius, headingFont } = useTheme();
   const { state, dispatch, isLoaded } = useApp();
   const [quickAdd, setQuickAdd] = useState('');
 
@@ -133,10 +138,19 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
 
   // Track previous completion count to detect new completions
   const [prevCompletedCount, setPrevCompletedCount] = useState(completedCount);
+  const [treatKey, setTreatKey] = useState(0);
+  const [bigTreat, setBigTreat] = useState(false);
+  // True while a habit card is being swiped, so the pet can watch
+  const [petAttentive, setPetAttentive] = useState(false);
+  // Where the pet sits in the header, so its speech bubble can point at it
+  const [petCenterX, setPetCenterX] = useState<number | null>(null);
 
   useEffect(() => {
     // Trigger celebrations when a habit is completed
     if (completedCount > prevCompletedCount && activeHabits.length > 0) {
+      // The pet gets a treat for every finished habit, and a big one for finishing the day
+      setBigTreat(completedCount === activeHabits.length);
+      setTreatKey((k) => k + 1);
       // Check if ALL habits are now complete
       if (completedCount === activeHabits.length) {
         // Everything done: one orchestrated fanfare (haptics → sound → confetti)
@@ -471,18 +485,24 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.title, { color: colors.text }]}>Today</Text>
+            <Text style={[styles.title, { color: colors.text }, headingFont]}>Today</Text>
           </View>
-          <View style={styles.headerRight}>
+          <View
+            style={styles.headerRight}
+            onLayout={(e) => setPetCenterX(e.nativeEvent.layout.x + PET_SIZE / 2)}
+          >
             {/* Pet - tap it and it talks */}
             <Pet
               species={petSpecies}
               mood={getMoodFromProgress(completionPercent)}
               hat={petHat}
-              size={48}
+              size={PET_SIZE}
               completionsToday={completedCount}
               stage={petStage}
               onPress={handlePetTap}
+              attentive={petAttentive}
+              treatKey={treatKey}
+              bigTreat={bigTreat}
             />
             <View style={[styles.datePill, { borderColor: colors.divider }]}>
               <Text style={[styles.dateText, { color: colors.muted }]}>
@@ -501,6 +521,28 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
           </View>
         </View>
 
+        {/* What the pet says when tapped: a speech bubble right under it */}
+        <EnterExit show={!!petLine}>
+          <View
+            style={[styles.noticeCard, styles.speechBubble, { backgroundColor: colors.card, borderColor: colors.accent, borderRadius: radius.lg }]}
+            accessibilityLiveRegion="polite"
+          >
+            {/* The tail points up at the pet in the header */}
+            {petCenterX !== null && (
+              <View
+                style={[
+                  styles.speechTail,
+                  { left: petCenterX - SPEECH_TAIL / 2, backgroundColor: colors.card, borderColor: colors.accent },
+                ]}
+              />
+            )}
+            <Text style={[styles.noticeText, { color: colors.text }]}>{petLine}</Text>
+            <TouchableScale onPress={onOpenHatCloset} accessibilityRole="button" accessibilityLabel="Open the hat closet">
+              <Text style={[styles.noticeAction, { color: colors.accent }]}>Hats</Text>
+            </TouchableScale>
+          </View>
+        </EnterExit>
+
         {/* Quick add and Reorder button */}
         {letter && (
           <PetLetterCard
@@ -515,26 +557,13 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
           />
         )}
 
-        {/* What the pet says when tapped */}
-        {petLine && (
-          <View
-            style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.accent }]}
-            accessibilityLiveRegion="polite"
-          >
-            <Text style={[styles.noticeText, { color: colors.text }]}>💬 {petLine}</Text>
-            <TouchableOpacity onPress={onOpenHatCloset} accessibilityRole="button" accessibilityLabel="Open the hat closet">
-              <Text style={[styles.noticeAction, { color: colors.accent }]}>Hats</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* A new hat was earned since the user last looked */}
         {newHat && (
-          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider, borderRadius: radius.md }]}>
             <Text style={[styles.noticeText, { color: colors.text }]}>
               🎉 New hat unlocked: the {newHat}! {(state.petName || '').trim() || 'Your pet'} wants to try it on.
             </Text>
-            <TouchableOpacity
+            <TouchableScale
               onPress={() => {
                 dispatch({ type: 'SET_HATS_SEEN', payload: unlockedHatCount });
                 onOpenHatCloset();
@@ -542,39 +571,39 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
               accessibilityRole="button"
             >
               <Text style={[styles.noticeAction, { color: colors.accent }]}>Try it on</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
         )}
 
         {/* Back after a few days away */}
         {welcomeBack && !petLine && (
-          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider, borderRadius: radius.md }]}>
             <Text style={[styles.noticeText, { color: colors.text }]}>👋 {welcomeBack}</Text>
           </View>
         )}
 
         {/* Vacation mode: streaks are paused */}
         {onVacation && (
-          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider, borderRadius: radius.md }]}>
             <Text style={[styles.noticeText, { color: colors.text }]}>
               🏝 Vacation mode is on. Streaks are paused and reminders are off.
             </Text>
-            <TouchableOpacity onPress={() => dispatch({ type: 'SET_VACATION', payload: false })} accessibilityRole="button">
+            <TouchableScale onPress={() => dispatch({ type: 'SET_VACATION', payload: false })} accessibilityRole="button">
               <Text style={[styles.noticeAction, { color: colors.accent }]}>I'm back</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
         )}
 
         {/* A pet snack covered a missed day */}
         {state.lastSnackNote && (
-          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider, borderRadius: radius.md }]}>
             <Text style={[styles.noticeText, { color: colors.text }]}>
               🍪 {(state.petName || '').trim() || 'Your pet'} ate a snack to keep your {state.lastSnackNote.habitNames.join(' and ')} streak
               {state.lastSnackNote.habitNames.length > 1 ? 's' : ''} alive. {state.snacks ?? 0} left.
             </Text>
-            <TouchableOpacity onPress={() => dispatch({ type: 'DISMISS_SNACK_NOTE' })} accessibilityRole="button">
+            <TouchableScale onPress={() => dispatch({ type: 'DISMISS_SNACK_NOTE' })} accessibilityRole="button">
               <Text style={[styles.noticeAction, { color: colors.accent }]}>Nice</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           </View>
         )}
 
@@ -584,7 +613,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
               <TextInput
                 style={[
                   styles.quickAddInput,
-                  { backgroundColor: colors.card, borderColor: colors.divider, color: colors.text },
+                  { backgroundColor: colors.card, borderColor: colors.divider, color: colors.text, borderRadius: radius.md },
                 ]}
                 placeholder="Quick add a habit…"
                 placeholderTextColor={colors.muted}
@@ -593,28 +622,28 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                 onSubmitEditing={handleQuickAdd}
                 returnKeyType="done"
               />
-              <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: colors.accent }]}
+              <TouchableScale
+                style={[styles.addButton, { backgroundColor: colors.accent, borderRadius: radius.md }]}
                 onPress={handleQuickAdd}
               >
                 <Text style={[styles.addButtonText, { color: colors.textOnAccent }]}>Add</Text>
-              </TouchableOpacity>
+              </TouchableScale>
               {activeHabits.length > 1 && (
-                <TouchableOpacity
-                  style={[styles.addButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.divider }]}
+                <TouchableScale
+                  style={[styles.addButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.divider, borderRadius: radius.md }]}
                   onPress={() => setReorderMode(true)}
                 >
                   <Text style={[styles.addButtonText, { color: colors.text }]}>↕️</Text>
-                </TouchableOpacity>
+                </TouchableScale>
               )}
             </>
           ) : (
-            <TouchableOpacity
+            <TouchableScale
               style={[styles.addButton, { backgroundColor: colors.good, flex: 1 }]}
               onPress={() => setReorderMode(false)}
             >
               <Text style={[styles.addButtonText, { color: textOn(colors.good) }]}>Done Reordering</Text>
-            </TouchableOpacity>
+            </TouchableScale>
           )}
         </View>
 
@@ -622,9 +651,9 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         <View style={styles.habitList}>
           {activeHabits.length === 0 ? (
             <EmptyState
-              icon="✨"
-              title="Ready to build better habits?"
-              message="Tap the + button above to add your first habit and start your journey!"
+              illustration={<Pet species={petSpecies} mood="curious" hat={petHat} size={112} stage={petStage} onPress={handlePetTap} />}
+              title={`${(state.petName || '').trim() || 'Your pet'} is waiting for a first habit`}
+              message="Type one in the box above and tap Add. Every habit you finish is a treat for your pet."
             />
           ) : (
             activeHabits.map((habit, index) => {
@@ -641,12 +670,12 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       {reorderMode && (
                         <View style={{ gap: 4 }}>
-                          <TouchableOpacity
+                          <TouchableScale
                             onPress={() => handleReorderHabit(habit.id, 'up')}
                             style={{
                               width: 32,
                               height: 32,
-                              borderRadius: 8,
+                              borderRadius: radii.sm,
                               backgroundColor: colors.card,
                               borderWidth: 1,
                               borderColor: colors.divider,
@@ -655,14 +684,14 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                             }}
                             disabled={index === 0}
                           >
-                            <Text style={{ color: index === 0 ? colors.muted : colors.text, fontSize: 16 }}>↑</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
+                            <Text style={{ color: index === 0 ? colors.muted : colors.text, fontSize: fontSizes.md }}>↑</Text>
+                          </TouchableScale>
+                          <TouchableScale
                             onPress={() => handleReorderHabit(habit.id, 'down')}
                             style={{
                               width: 32,
                               height: 32,
-                              borderRadius: 8,
+                              borderRadius: radii.sm,
                               backgroundColor: colors.card,
                               borderWidth: 1,
                               borderColor: colors.divider,
@@ -671,8 +700,8 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                             }}
                             disabled={index === activeHabits.length - 1}
                           >
-                            <Text style={{ color: index === activeHabits.length - 1 ? colors.muted : colors.text, fontSize: 16 }}>↓</Text>
-                          </TouchableOpacity>
+                            <Text style={{ color: index === activeHabits.length - 1 ? colors.muted : colors.text, fontSize: fontSizes.md }}>↓</Text>
+                          </TouchableScale>
                         </View>
                       )}
                       <View
@@ -719,7 +748,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                                     height: 32,
                                     backgroundColor: colors.muted,
                                     opacity: opacity,
-                                    borderRadius: 4,
+                                    borderRadius: radii.xs,
                                     borderWidth: 1,
                                     borderColor: colors.divider,
                                     justifyContent: 'center',
@@ -730,7 +759,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                                   {isTopCard && (
                                     <Text
                                       style={{
-                                        fontSize: 12,
+                                        fontSize: fontSizes.xs,
                                         color: '#ffffff',
                                         fontWeight: '500',
                                       }}
@@ -743,7 +772,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                               );
                             })}
                           </View>
-                          <TouchableOpacity
+                          <TouchableScale
                             onPress={() => {
                               setExpandedRoutines(prev => {
                                 const next = new Set(prev);
@@ -755,21 +784,21 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                               width: 28,
                               height: 28,
                               backgroundColor: colors.card,
-                              borderRadius: 14,
+                              borderRadius: radii.lg,
                               borderWidth: 1,
                               borderColor: colors.divider,
                               alignItems: 'center',
                               justifyContent: 'center',
                             }}
                           >
-                            <Text style={{ fontSize: 14, color: colors.muted }}>↓</Text>
-                          </TouchableOpacity>
+                            <Text style={{ fontSize: fontSizes.sm, color: colors.muted }}>↓</Text>
+                          </TouchableScale>
                         </View>
                       ) : (
                         // Expanded view when steps incomplete or manually expanded
                         <View>
                           {allStepsComplete && (
-                            <TouchableOpacity
+                            <TouchableScale
                               onPress={() => {
                                 setExpandedRoutines(prev => {
                                   const next = new Set(prev);
@@ -783,18 +812,18 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                                 paddingVertical: 2,
                                 paddingHorizontal: 6,
                                 backgroundColor: colors.card,
-                                borderRadius: 12,
+                                borderRadius: radii.md,
                                 borderWidth: 1,
                                 borderColor: colors.divider,
                               }}
                             >
-                              <Text style={{ fontSize: 10, color: colors.muted, fontWeight: '600' }}>
+                              <Text style={{ fontSize: fontSizes.micro, color: colors.muted, fontWeight: '600' }}>
                                 Collapse ↑
                               </Text>
-                            </TouchableOpacity>
+                            </TouchableScale>
                           )}
                           {!allStepsComplete && (
-                            <TouchableOpacity
+                            <TouchableScale
                               onPress={() => setRunningRoutineId(habit.id)}
                               style={[styles.startRoutine, { backgroundColor: colors.accent }]}
                               accessibilityLabel={`Start ${habit.name}`}
@@ -802,12 +831,12 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                               <Text style={[styles.startRoutineText, { color: colors.textOnAccent }]}>
                                 {`▶  Start routine${habit.steps.some((st) => st.duration) ? ` · ${habit.steps.reduce((m, st) => m + (st.duration || 0), 0)} min` : ''}`}
                               </Text>
-                            </TouchableOpacity>
+                            </TouchableScale>
                           )}
                           {[...habit.steps].sort((a, b) => a.order - b.order).map((step, stepIndex) => {
                           const isStepComplete = completedSteps.includes(step.id);
                           return (
-                            <TouchableOpacity
+                            <TouchableScale
                               key={step.id}
                               style={[
                                 styles.routineStep,
@@ -846,7 +875,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                                   {step.duration}m
                                 </Text>
                               )}
-                            </TouchableOpacity>
+                            </TouchableScale>
                           );
                         })}
                         </View>
@@ -865,12 +894,12 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                   <View key={habit.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     {reorderMode && (
                       <View style={{ gap: 4 }}>
-                        <TouchableOpacity
+                        <TouchableScale
                           onPress={() => handleReorderHabit(habit.id, 'up')}
                           style={{
                             width: 32,
                             height: 32,
-                            borderRadius: 8,
+                            borderRadius: radii.sm,
                             backgroundColor: colors.card,
                             borderWidth: 1,
                             borderColor: colors.divider,
@@ -879,14 +908,14 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                           }}
                           disabled={index === 0}
                         >
-                          <Text style={{ color: index === 0 ? colors.muted : colors.text, fontSize: 16 }}>↑</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                          <Text style={{ color: index === 0 ? colors.muted : colors.text, fontSize: fontSizes.md }}>↑</Text>
+                        </TouchableScale>
+                        <TouchableScale
                           onPress={() => handleReorderHabit(habit.id, 'down')}
                           style={{
                             width: 32,
                             height: 32,
-                            borderRadius: 8,
+                            borderRadius: radii.sm,
                             backgroundColor: colors.card,
                             borderWidth: 1,
                             borderColor: colors.divider,
@@ -895,8 +924,8 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                           }}
                           disabled={index === activeHabits.length - 1}
                         >
-                          <Text style={{ color: index === activeHabits.length - 1 ? colors.muted : colors.text, fontSize: 16 }}>↓</Text>
-                        </TouchableOpacity>
+                          <Text style={{ color: index === activeHabits.length - 1 ? colors.muted : colors.text, fontSize: fontSizes.md }}>↓</Text>
+                        </TouchableScale>
                       </View>
                     )}
                     <View style={{ flex: 1 }}>
@@ -928,12 +957,12 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                 <View key={habit.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   {reorderMode && (
                     <View style={{ gap: 4 }}>
-                      <TouchableOpacity
+                      <TouchableScale
                         onPress={() => handleReorderHabit(habit.id, 'up')}
                         style={{
                           width: 32,
                           height: 32,
-                          borderRadius: 8,
+                          borderRadius: radii.sm,
                           backgroundColor: colors.card,
                           borderWidth: 1,
                           borderColor: colors.divider,
@@ -942,14 +971,14 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                         }}
                         disabled={index === 0}
                       >
-                        <Text style={{ color: index === 0 ? colors.muted : colors.text, fontSize: 16 }}>↑</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
+                        <Text style={{ color: index === 0 ? colors.muted : colors.text, fontSize: fontSizes.md }}>↑</Text>
+                      </TouchableScale>
+                      <TouchableScale
                         onPress={() => handleReorderHabit(habit.id, 'down')}
                         style={{
                           width: 32,
                           height: 32,
-                          borderRadius: 8,
+                          borderRadius: radii.sm,
                           backgroundColor: colors.card,
                           borderWidth: 1,
                           borderColor: colors.divider,
@@ -958,8 +987,8 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                         }}
                         disabled={index === activeHabits.length - 1}
                       >
-                        <Text style={{ color: index === activeHabits.length - 1 ? colors.muted : colors.text, fontSize: 16 }}>↓</Text>
-                      </TouchableOpacity>
+                        <Text style={{ color: index === activeHabits.length - 1 ? colors.muted : colors.text, fontSize: fontSizes.md }}>↓</Text>
+                      </TouchableScale>
                     </View>
                   )}
                   <View
@@ -982,6 +1011,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                       isSkipped={state.marks[today]?.skip?.includes(habit.id) || false}
                       progressAmount={getProgress(state, habit.id, today)}
                       onAddProgress={(delta) => handleAddProgress(habit.id, delta)}
+                      onSwipeActiveChange={setPetAttentive}
                     />
                   </View>
                 </View>
@@ -998,9 +1028,9 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
               const days = quitDays(habit);
               const best = quitBest(habit);
               return (
-                <TouchableOpacity
+                <TouchableScale
                   key={habit.id}
-                  style={[styles.quitCard, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                  style={[styles.quitCard, { backgroundColor: colors.card, borderColor: colors.divider, borderRadius: radius.md }]}
                   onPress={() => handleEditHabit(habit)}
                   activeOpacity={0.9}
                   accessibilityRole="button"
@@ -1016,7 +1046,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                       {days === 0 ? 'Day one starts now' : days >= best ? 'Your best run yet' : `Best run: ${best} days`}
                     </Text>
                   </View>
-                  <TouchableOpacity
+                  <TouchableScale
                     style={[styles.slipButton, { borderColor: colors.divider }]}
                     onPress={() => handleSlip(habit)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -1024,8 +1054,8 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                     accessibilityLabel={`I slipped on ${habit.name}`}
                   >
                     <Text style={[styles.slipButtonText, { color: colors.muted }]}>I slipped</Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
+                  </TouchableScale>
+                </TouchableScale>
               );
             })}
           </View>
@@ -1045,12 +1075,12 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
       </ScrollView>
 
       {/* Floating Action Button */}
-      <TouchableOpacity
+      <TouchableScale
         style={[styles.fab, { backgroundColor: colors.accent }]}
         onPress={handleAddHabit}
       >
         <Text style={[styles.fabText, { color: colors.textOnAccent }]}>+</Text>
-      </TouchableOpacity>
+      </TouchableScale>
 
       {/* Edit Modal */}
       <EditHabitModal
@@ -1136,24 +1166,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radii.md,
     padding: 12,
     marginBottom: 12,
   },
+  speechBubble: {
+    marginTop: -spacing.xs,
+  },
+  speechTail: {
+    position: 'absolute',
+    top: -SPEECH_TAIL / 2 - 1,
+    width: SPEECH_TAIL,
+    height: SPEECH_TAIL,
+    borderLeftWidth: 1,
+    borderTopWidth: 1,
+    transform: [{ rotate: '45deg' }],
+  },
   noticeText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     lineHeight: 19,
   },
   noticeAction: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   quitSection: {
     marginTop: 18,
   },
   quitHeading: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
     letterSpacing: 0.6,
     marginBottom: 8,
@@ -1163,41 +1205,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radii.md,
     padding: 10,
     marginBottom: 10,
   },
   quitDays: {
     width: 54,
     height: 54,
-    borderRadius: 12,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   quitDaysNumber: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '800',
   },
   quitDaysLabel: {
-    fontSize: 10,
+    fontSize: fontSizes.micro,
     fontWeight: '700',
   },
   quitName: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
   },
   quitMeta: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     marginTop: 2,
   },
   slipButton: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   slipButtonText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
   },
   container: {
@@ -1227,26 +1269,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '900',
   },
   datePill: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
   dateText: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
   },
   countPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radii.pill,
   },
   countText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
   },
   quickAddRow: {
@@ -1258,20 +1300,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   addButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: radii.md,
     justifyContent: 'center',
   },
   addButtonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   habitList: {
     gap: 0,
@@ -1279,11 +1321,11 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     marginTop: 40,
-    fontSize: 16,
+    fontSize: fontSizes.md,
   },
   tipText: {
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     marginTop: 16,
   },
   fab: {
@@ -1303,17 +1345,17 @@ const styles = StyleSheet.create({
   },
   fabText: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '700',
     marginTop: -2,
   },
-  startRoutine: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, marginBottom: 8 },
-  startRoutineText: { fontSize: 13, fontWeight: '700' },
+  startRoutine: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, borderRadius: radii.pill, marginBottom: 8 },
+  startRoutineText: { fontSize: fontSizes.sm, fontWeight: '700' },
   routineStep: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
     marginBottom: 6,
     gap: 12,
@@ -1321,23 +1363,23 @@ const styles = StyleSheet.create({
   stepCheckbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: radii.sm,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepCheckmark: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   stepText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '500',
   },
   stepDurationBadge: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '600',
   },
 });

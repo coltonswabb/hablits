@@ -11,15 +11,16 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import { TouchableScale } from '../components/TouchableScale';
 import Svg, { Circle, Rect, Line, Text as SvgText, Path } from 'react-native-svg';
 import { useTheme } from '../theme';
 import { useApp } from '../state';
 import { dateStr, startOfWeek } from '../utils/dates';
 import { getActiveHabits, getDayCompletionPercent, calculateStreak, liveHabits } from '../utils/habits';
 import { EmptyState, HeatmapCalendar } from '../components';
+import { radii, fontSizes } from '../theme/tokens';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CHART_WIDTH = SCREEN_WIDTH - 48; // Extra padding to prevent overflow
@@ -28,7 +29,7 @@ const CHART_HEIGHT = 200;
 type TimeRange = '7d' | '30d' | '90d';
 
 export function StatsScreen() {
-  const { colors } = useTheme();
+  const { colors, headingFont } = useTheme();
   const { state } = useApp();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
@@ -224,7 +225,7 @@ export function StatsScreen() {
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
-        <Text style={[styles.title, { color: colors.text }]}>Statistics</Text>
+        <Text style={[styles.title, { color: colors.text }, headingFont]}>Statistics</Text>
 
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
@@ -249,7 +250,7 @@ export function StatsScreen() {
         {/* Time Range Selector */}
         <View style={styles.timeRangeRow}>
           {(['7d', '30d', '90d'] as TimeRange[]).map(range => (
-            <TouchableOpacity
+            <TouchableScale
               key={range}
               style={[
                 styles.timeRangeButton,
@@ -268,7 +269,7 @@ export function StatsScreen() {
               >
                 {range}
               </Text>
-            </TouchableOpacity>
+            </TouchableScale>
           ))}
         </View>
 
@@ -536,7 +537,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: fontSizes.display,
     fontWeight: '900',
     marginBottom: 16,
   },
@@ -548,16 +549,16 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
   },
   summaryValue: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '900',
   },
   summaryLabel: {
-    fontSize: 10,
+    fontSize: fontSizes.micro,
     marginTop: 2,
   },
   timeRangeRow: {
@@ -568,28 +569,28 @@ const styles = StyleSheet.create({
   timeRangeButton: {
     flex: 1,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 1,
     alignItems: 'center',
   },
   timeRangeText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '700',
   },
   chartCard: {
     padding: 16,
-    borderRadius: 10,
+    borderRadius: radii.md,
     borderWidth: 1,
     marginBottom: 16,
   },
   chartTitle: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '700',
     marginBottom: 12,
   },
   emptyText: {
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     paddingVertical: 40,
   },
   insightRow: {
@@ -597,7 +598,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   insightText: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     lineHeight: 20,
   },
   habitStatRow: {
@@ -614,12 +615,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   habitStatRank: {
-    fontSize: 12,
+    fontSize: fontSizes.xs,
     fontWeight: '700',
     width: 24,
   },
   habitStatName: {
-    fontSize: 14,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
     flex: 1,
   },
@@ -627,11 +628,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   habitStatPercent: {
-    fontSize: 16,
+    fontSize: fontSizes.md,
     fontWeight: '900',
   },
   habitStatDetail: {
-    fontSize: 11,
+    fontSize: fontSizes.xs,
     marginTop: 2,
   },
 });

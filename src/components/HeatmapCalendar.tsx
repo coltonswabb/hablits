@@ -9,6 +9,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../theme';
 import { dateStr } from '../utils';
+import { fontSizes } from '../theme/tokens';
 
 interface HeatmapCalendarProps {
   logs: Record<string, string[]>;
@@ -175,6 +176,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   legendText: {
-    fontSize: 10,
+    fontSize: fontSizes.micro,
   },
 });
