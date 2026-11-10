@@ -15,6 +15,7 @@ import { Pet } from './Pet';
 import { lightTap, successTap } from '../utils/haptics';
 import { playSound } from '../utils/sounds';
 import { petDisplayName } from '../utils/petName';
+import { endRoutineActivity, showRoutineStep } from '../utils/routineActivity';
 
 interface Props {
   visible: boolean;
@@ -94,6 +95,34 @@ export function RoutineRunnerModal({ visible, habit, completedStepIds, onToggleS
       playSound('pop');
     }
   }, [secondsLeft, timeUp]);
+
+  // ---- Lock Screen / Dynamic Island ----
+  // Mirror the current step while the runner is open. Runs after the timer
+  // effects above, so the refs already describe this step and pause state.
+  useEffect(() => {
+    if (!visible || !habit || !current) {
+      endRoutineActivity();
+      return;
+    }
+    const pausedNow = pausedAt.current ? Date.now() - pausedAt.current : 0;
+    const startMs = startedAt.current + pausedTotal.current + pausedNow;
+    const elapsedNow = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+    showRoutineStep({
+      routineName: habit.name,
+      stepName: current.name,
+      stepNumber: doneCount + 1,
+      stepCount: total,
+      startMs,
+      endMs: current.duration ? startMs + current.duration * 60 * 1000 : 0,
+      paused,
+      frozen: fmt(current.duration ? current.duration * 60 - elapsedNow : elapsedNow),
+      accent: colors.accent,
+      text: colors.text,
+      muted: colors.muted,
+    });
+  }, [visible, habit?.id, currentId, paused]);
+  // Closing the app's runner any other way (unmount) ends it too
+  useEffect(() => () => void endRoutineActivity(), []);
 
   // ---- progress ring (plain Animated width bar; keeps it simple) ----
   const progress = useRef(new Animated.Value(0)).current;
