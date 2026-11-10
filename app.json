@@ -13,7 +13,6 @@
       "bundleIdentifier": "com.hablits.app",
       "buildNumber": "4",
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "This app does not track you.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSUbiquitousContainers": {
           "iCloud.com.hablits.app": {
