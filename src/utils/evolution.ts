@@ -13,7 +13,7 @@
 
 import { Habit } from '../types';
 import { dateStr } from './dates';
-import { isHabitActiveOn } from './habits';
+import { isExemptDay, isHabitActiveOn, isWeeklyGoalCovered } from './habits';
 
 export const STAGE_THRESHOLDS = [7, 30, 100] as const;
 export const STAGE_NAMES = ['Hatchling', 'Companion', 'Veteran', 'Legend'] as const;
@@ -56,6 +56,8 @@ export function longestStreakEver(
       if (current > best) best = current;
     } else if (ds === today) {
       continue; // today isn't over
+    } else if (isExemptDay(ds, habitId) || (habit && isWeeklyGoalCovered(logs, habit, d, referenceDate))) {
+      continue; // vacation, snack-saved, or weekly goal covered
     } else {
       misses++;
       if (misses > MAX_CONSECUTIVE_MISSES) {

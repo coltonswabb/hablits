@@ -5,8 +5,63 @@
 // streaks, and progress calculations.
 // ============================================
 
-import { Habit, AppState } from '../types';
+import { Habit, AppState, VacationPeriod } from '../types';
 import { dateStr, startOfWeek } from './dates';
+
+// ---- Streak exemptions ----
+// Days that are neither a hit nor a miss for streaks: vacation days (all
+// habits) and missed days a pet snack covered (one habit). AppProvider keeps
+// this current on every render, so the streak functions below don't need
+// the whole state threaded through every call site.
+type Exemptions = { vacations: VacationPeriod[]; saves: Record<string, string[]> };
+let exemptions: Exemptions = { vacations: [], saves: {} };
+
+export function setStreakExemptions(state: Pick<AppState, 'vacations' | 'streakSaves'>): void {
+  exemptions = { vacations: state.vacations || [], saves: state.streakSaves || {} };
+}
+
+/** True if `ds` (YYYY-MM-DD) falls inside a vacation period. */
+export function isVacationDay(ds: string, vacations: VacationPeriod[] = exemptions.vacations): boolean {
+  return vacations.some((v) => ds >= v.from && (!v.to || ds <= v.to));
+}
+
+/** True if a missed `ds` should not count against this habit's streak. */
+export function isExemptDay(ds: string, habitId: string): boolean {
+  return isVacationDay(ds) || (exemptions.saves[ds] || []).includes(habitId);
+}
+
+/** How many days a week the habit is scheduled on. */
+function scheduledDaysPerWeek(habit: Habit): number {
+  return Array.isArray(habit.days) ? habit.days.filter(Boolean).length : 7;
+}
+
+/**
+ * "X times a week" habits: when the weekly goal is lower than the number of
+ * scheduled days, a missed day isn't a miss if that week's goal was met, or
+ * (this week) can still be met with the days that are left.
+ */
+export function isWeeklyGoalCovered(
+  logs: Record<string, string[]>,
+  habit: Habit,
+  date: Date,
+  referenceDate: Date = new Date()
+): boolean {
+  const goal = habit.weeklyGoal || 7;
+  if (goal >= scheduledDaysPerWeek(habit)) return false;
+
+  const weekStart = startOfWeek(date);
+  const today = dateStr(referenceDate);
+  let count = 0;
+  let remaining = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    const ds = dateStr(d);
+    if ((logs[ds] || []).includes(habit.id)) count++;
+    else if (ds >= today && isHabitActiveOn(habit, d)) remaining++;
+  }
+  return count >= goal || count + remaining >= goal;
+}
 
 /**
  * Check if a habit is active on a specific day of the week
@@ -60,8 +115,8 @@ export function getActiveHabits(
     filtered = habits.filter((h) => h.identityId === identityFilter);
   }
 
-  // Filter by active day
-  filtered = filtered.filter((h) => isHabitActiveOn(h, date));
+  // Filter by active day. Quit habits aren't daily to-dos; they have their own section.
+  filtered = filtered.filter((h) => !h.quit && isHabitActiveOn(h, date));
 
   return sortByOrder(filtered);
 }
@@ -122,13 +177,17 @@ export function calculateStreak(
     // Unscheduled days are neutral — neither hit nor miss
     if (habit && !isHabitActiveOn(habit, d)) continue;
 
-    const done = (logs[dateStr(d)] || []).includes(habitId);
+    const ds = dateStr(d);
+    const done = (logs[ds] || []).includes(habitId);
 
     if (done) {
       streak++;
       consecutiveMisses = 0;
     } else if (i === 0) {
       // Today, not done yet: don't penalize, keep looking back
+      continue;
+    } else if (isExemptDay(ds, habitId) || (habit && isWeeklyGoalCovered(logs, habit, d, referenceDate))) {
+      // Vacation, a snack-saved day, or a week whose goal is covered: neutral
       continue;
     } else {
       consecutiveMisses++;

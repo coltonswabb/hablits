@@ -26,6 +26,27 @@ export interface Habit {
   isRoutine?: boolean;          // Whether this is a routine habit
   steps?: RoutineStep[];        // Steps for routine habits
   archivedAt?: string;          // YYYY-MM-DD the habit was retired. History before this date still counts.
+  target?: HabitTarget;         // Daily amount to reach ("8 glasses", "20 min"). Absent = a simple tick.
+  quit?: QuitTracker;           // Present = a "quit" habit: counts days since the last slip instead of daily ticks.
+}
+
+// A daily amount for count / timed habits. Reaching it marks the day done in `logs`.
+export interface HabitTarget {
+  amount: number;               // e.g. 8
+  unit: string;                 // e.g. "glasses", "pages"; "min" makes it a timed habit
+}
+
+// State for a quit habit ("no soda"). No daily ticking: the streak is days since `since`.
+export interface QuitTracker {
+  since: string;                // YYYY-MM-DD the current clean run started (reset on a slip)
+  best: number;                 // Longest clean run so far, in days
+  slips: string[];              // YYYY-MM-DD of each slip, oldest first
+}
+
+// A stretch of days when streaks are paused. `to` is absent while it is still on.
+export interface VacationPeriod {
+  from: string;                 // YYYY-MM-DD, inclusive
+  to?: string;                  // YYYY-MM-DD, inclusive
 }
 
 // An identity (grouping for habits)
@@ -82,6 +103,12 @@ export interface AppState {
   lastLetterDismissed?: string;        // weekStart (YYYY-MM-DD) of the last weekly pet letter dismissed
   petName?: string;                    // What the user calls their pet ('' = unnamed)
   lastCloudBackupAt?: string;          // ISO time of the last successful iCloud backup
+  progress?: Record<string, Record<string, number>>; // { "2024-01-15": { "habit-id": 3 } } amounts for habits with a target
+  vacations?: VacationPeriod[];        // Streak-paused stretches, oldest first; the last may be open
+  snacks?: number;                     // Pet snacks in hand; each can save one missed day
+  snackMilestones?: Record<string, number>; // { "habit-id": 14 } highest 7-day multiple already rewarded in the current run
+  streakSaves?: Record<string, string[]>;   // { "2024-01-15": ["habit-id"] } missed days a snack covered
+  lastSnackNote?: { date: string; habitNames: string[] }; // Shown once on Today after snacks were used
 }
 
 // Available theme names

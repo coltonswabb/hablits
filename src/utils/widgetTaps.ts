@@ -14,6 +14,7 @@
 
 import { AppState } from '../types';
 import { dateStr } from './dates';
+import { syncProgressWithDone } from './smartHabits';
 
 export type WidgetTap = {
   /** Habit id */
@@ -97,5 +98,6 @@ export function applyHabitDoneChanges(state: AppState, changes: HabitDoneChange[
       };
     }
   }
-  return { ...state, logs, marks };
+  // Count/timed habits: a tick from the widget fills the target, an untick clears it
+  return changes.reduce<AppState>((s, c) => syncProgressWithDone(s, c.habitId, c.date), { ...state, logs, marks });
 }

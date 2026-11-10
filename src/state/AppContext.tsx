@@ -17,6 +17,8 @@ import { AppState, Habit, Identity, DayMarks, HabitSchedule, PetSpecies, HatType
 import { generateId, todayStr } from '../utils';
 import { migrateState, SCHEMA_VERSION } from './migrations';
 import { applyHabitDoneChanges } from '../utils/widgetTaps';
+import { setStreakExemptions } from '../utils/habits';
+import { endVacation, recordSlip, runSnacks, setHabitProgress, startVacation, syncProgressWithDone } from '../utils/smartHabits';
 
 // Storage key for AsyncStorage
 const STORAGE_KEY = 'hablits_state_v1';
@@ -60,6 +62,11 @@ type Action =
   | { type: 'REORDER_HABITS'; payload: Habit[] }
   | { type: 'TOGGLE_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'SET_HABITS_DONE'; payload: { habitId: string; date: string; done: boolean }[] }
+  | { type: 'SET_PROGRESS'; payload: { habitId: string; date: string; amount: number } }
+  | { type: 'RECORD_SLIP'; payload: string }
+  | { type: 'SET_VACATION'; payload: boolean }
+  | { type: 'RUN_SNACKS' }
+  | { type: 'DISMISS_SNACK_NOTE' }
   | { type: 'SKIP_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'FAIL_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'CLEAR_DAY'; payload: string }
@@ -211,8 +218,25 @@ function appReducer(state: AppState, action: Action): AppState {
         };
       }
 
-      return { ...state, logs, marks };
+      // Count/timed habits: ticking fills the target, unticking clears it
+      return syncProgressWithDone({ ...state, logs, marks }, habitId, date);
     }
+
+    case 'SET_PROGRESS':
+      return setHabitProgress(state, action.payload.habitId, action.payload.date, action.payload.amount);
+
+    case 'RECORD_SLIP':
+      return recordSlip(state, action.payload);
+
+    case 'SET_VACATION':
+      return action.payload ? startVacation(state) : endVacation(state);
+
+    // Earn pet snacks for streak milestones and spend them on missed days
+    case 'RUN_SNACKS':
+      return runSnacks(state);
+
+    case 'DISMISS_SNACK_NOTE':
+      return state.lastSnackNote ? { ...state, lastSnackNote: undefined } : state;
 
     // Absolute (not toggling) so replaying the same widget taps is harmless
     case 'SET_HABITS_DONE':
@@ -469,6 +493,8 @@ interface AppProviderProps {
 
 export function AppProvider({ children }: AppProviderProps) {
   const [state, dispatch] = useReducer(appReducer, defaultState);
+  // Streak functions read vacation days and snack-saved days from here
+  setStreakExemptions(state);
 
   // Guard: we must NOT write to storage until the saved state has been read.
   // Without this, the first render's defaultState was being written to disk
