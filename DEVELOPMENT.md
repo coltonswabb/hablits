@@ -130,3 +130,21 @@ old binary can't run.
   `usePanGesture` + `GestureDetector` with RN Animated (`useAnimated`), same
   thresholds and animations as before. Needs a feel check on a phone before
   release.
+
+## 1.4 additions
+
+- **Launch screen** (`src/components/LaunchScreen.tsx`): an in-app copy of the
+  native splash that covers the app until saved state and theme have loaded,
+  then animates away. Colours/size must match the `expo-splash-screen` config.
+- **Habit types** (`src/utils/smartHabits.ts`): `Habit.target` + `state.progress`
+  (count/timed; done-ness still lives in `logs`), `Habit.quit` (days since the
+  last slip; excluded from `getActiveHabits`/`liveHabits`), `state.vacations`,
+  and pet snacks (`state.snacks`, `streakSaves`).
+- **Streak exemptions**: `setStreakExemptions(state)` is called on every
+  AppProvider render; `calculateStreak`/`longestStreakEver` treat vacation
+  days, snack-saved days and covered weekly-goal days as neutral.
+- **Streak nudge** (`src/utils/streakNudge.ts`), **routine Live Activity**
+  (`src/widgets/RoutineLiveActivity.tsx`), **pet voice** (`src/utils/petVoice.ts`).
+- Not built yet: Siri / Shortcuts. It needs a native App Intent in Swift and
+  a shared store the intent can write to; do it with EAS builds to test against.
+- All of 1.4 needs an on-device pass; none of it has run on a phone yet.
