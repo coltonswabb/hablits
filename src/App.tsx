@@ -17,7 +17,7 @@ import { ThemeProvider, useTheme } from './theme';
 import { AppProvider, useApp } from './state';
 
 // Components
-import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary, PetSnapshot, EvolutionModal, getMoodFromProgress } from './components';
+import { Header, TabBar, IdentitiesModal, IdentityFilterModal, OnboardingModal, ThemePickerModal, SettingsModal, HatClosetModal, ErrorBoundary, PetSnapshot, EvolutionModal, LaunchScreen, getMoodFromProgress } from './components';
 
 // Screens
 import { TodayScreen, WeekScreen, CalendarScreen, DayPlanScreen, StatsScreen } from './screens';
@@ -36,12 +36,18 @@ import { migrateState } from './state/migrations';
 import { backupToICloud, readICloudBackup, shouldBackup, cloudHasMore } from './utils/cloudBackup';
 import { syncFastActivities } from './utils/fastActivity';
 import Constants from 'expo-constants';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the native splash up until LaunchScreen (an identical frame) has drawn
+SplashScreen.preventAutoHideAsync().catch(() => {});
+// Safety net: if something fails before LaunchScreen mounts, don't strand the user on the splash
+setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 6000);
 
 // ============================================
 // MAIN CONTENT (inside providers)
 // ============================================
 function AppContent() {
-  const { colors, themeName, setTheme, customAccentColor, setCustomAccentColor } = useTheme();
+  const { colors, themeName, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded } = useTheme();
   const { state, dispatch, isLoaded } = useApp();
   const [activeTab, setActiveTab] = useState<TabName>('today');
   const [identitiesModalVisible, setIdentitiesModalVisible] = useState(false);
@@ -538,6 +544,16 @@ function AppContent() {
           }}
         />
       </SafeAreaView>
+
+      {/* Covers the app until data + theme are in, then animates away */}
+      <LaunchScreen
+        ready={isLoaded && isThemeLoaded}
+        showPet={state.hasCompletedOnboarding}
+        species={state.petSpecies}
+        hat={state.petHat}
+        stage={petStage}
+        petName={state.petName}
+      />
     </GestureHandlerRootView>
   );
 }

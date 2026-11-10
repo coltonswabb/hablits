@@ -38,3 +38,4 @@ export {
   useBounceOnChange,
   staggerDelay,
 } from './Animations';
+export { LaunchScreen } from './LaunchScreen';

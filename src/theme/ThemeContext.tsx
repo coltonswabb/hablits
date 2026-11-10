@@ -23,6 +23,7 @@ interface ThemeContextType {
   setTheme: (theme: ThemeName) => void;      // Function to change theme
   customAccentColor: string | undefined;     // Custom accent color override
   setCustomAccentColor: (color: string | undefined) => void; // Set custom accent
+  isThemeLoaded: boolean;                    // true once the saved theme has been read
 }
 
 // Create the context (starts undefined until Provider wraps the app)
@@ -38,6 +39,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [themeName, setThemeName] = useState<ThemeName>('light');
   const [customAccentColor, setCustomAccentColor] = useState<string | undefined>(undefined);
   const loadedRef = useRef(false);
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
   // Restore the saved theme on launch
   useEffect(() => {
@@ -53,6 +55,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         console.error('Failed to load theme:', error);
       } finally {
         loadedRef.current = true;
+        setIsThemeLoaded(true);
       }
     })();
   }, []);
@@ -89,7 +92,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   };
 
   return (
-    <ThemeContext.Provider value={{ themeName, colors, setTheme, customAccentColor, setCustomAccentColor }}>
+    <ThemeContext.Provider value={{ themeName, colors, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded }}>
       {children}
     </ThemeContext.Provider>
   );
