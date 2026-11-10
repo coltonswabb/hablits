@@ -16,10 +16,12 @@ import {
   Animated,
   PanResponder,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useTheme, themeConfetti } from '../theme';
 import { textOn } from '../theme/colors';
 import { allDoneCelebration, miniCelebration } from '../utils/celebrate';
+import { getProgress, isOnVacation, quitBest, quitDays } from '../utils/smartHabits';
 import { currentLetter } from '../utils/petLetter';
 import { PetStage } from '../utils/evolution';
 import { PetLetterCard } from '../components/PetLetterCard';
@@ -88,6 +90,11 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
     new Date(),
     state.currentIdentityFilter
   );
+  const quitHabits = state.habits.filter(
+    (h) => h.quit && !h.archivedAt && (state.currentIdentityFilter === 'all' || h.identityId === state.currentIdentityFilter)
+  );
+  const onVacation = isOnVacation(state);
+
 
   // Count completed habits
   const completedCount = activeHabits.filter(
@@ -146,6 +153,27 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
     }
     setPrevCompletedCount(completedCount);
   }, [completedCount, activeHabits.length, lastToggledHabitId]);
+
+  // Count/timed habits: add to (or take from) today's amount
+  const handleAddProgress = (habitId: string, delta: number) => {
+    setLastToggledHabitId(habitId);
+    dispatch({
+      type: 'SET_PROGRESS',
+      payload: { habitId, date: today, amount: getProgress(state, habitId, today) + delta },
+    });
+  };
+
+  // Quit habits: a slip restarts the count
+  const handleSlip = (habit: Habit) => {
+    Alert.alert(
+      `Slipped on "${habit.name}"?`,
+      `Your count restarts today. Your best run (${quitBest(habit)} day${quitBest(habit) === 1 ? '' : 's'}) is kept.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Restart count', style: 'destructive', onPress: () => dispatch({ type: 'RECORD_SLIP', payload: habit.id }) },
+      ]
+    );
+  };
 
   // Handle toggle (cycles: none → done → skip → fail → none)
   const handleToggle = (habitId: string) => {
@@ -276,6 +304,8 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
           order: habitData.order || state.habits.length + 1,
           isRoutine: habitData.isRoutine,
           steps: habitData.steps,
+          target: habitData.target,
+          quit: habitData.quit,
         },
       });
     }
@@ -456,6 +486,31 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
             weekStat={letter.stat}
             onDismiss={() => dispatch({ type: 'DISMISS_LETTER', payload: letter.weekStart })}
           />
+        )}
+
+        {/* Vacation mode: streaks are paused */}
+        {onVacation && (
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            <Text style={[styles.noticeText, { color: colors.text }]}>
+              🏝 Vacation mode is on. Streaks are paused and reminders are off.
+            </Text>
+            <TouchableOpacity onPress={() => dispatch({ type: 'SET_VACATION', payload: false })} accessibilityRole="button">
+              <Text style={[styles.noticeAction, { color: colors.accent }]}>I'm back</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* A pet snack covered a missed day */}
+        {state.lastSnackNote && (
+          <View style={[styles.noticeCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            <Text style={[styles.noticeText, { color: colors.text }]}>
+              🍪 {(state.petName || '').trim() || 'Your pet'} ate a snack to keep your {state.lastSnackNote.habitNames.join(' and ')} streak
+              {state.lastSnackNote.habitNames.length > 1 ? 's' : ''} alive. {state.snacks ?? 0} left.
+            </Text>
+            <TouchableOpacity onPress={() => dispatch({ type: 'DISMISS_SNACK_NOTE' })} accessibilityRole="button">
+              <Text style={[styles.noticeAction, { color: colors.accent }]}>Nice</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         <View style={styles.quickAddRow}>
@@ -860,6 +915,8 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                       hasNote={!!state.notes[today]?.[habit.id]}
                       isComplete={state.logs[today]?.includes(habit.id) || false}
                       isSkipped={state.marks[today]?.skip?.includes(habit.id) || false}
+                      progressAmount={getProgress(state, habit.id, today)}
+                      onAddProgress={(delta) => handleAddProgress(habit.id, delta)}
                     />
                   </View>
                 </View>
@@ -867,6 +924,47 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
             })
           )}
         </View>
+
+        {/* Quit habits: days since the last slip, no daily ticking */}
+        {quitHabits.length > 0 && !reorderMode && (
+          <View style={styles.quitSection}>
+            <Text style={[styles.quitHeading, { color: colors.muted }]}>STAYING AWAY FROM</Text>
+            {quitHabits.map((habit) => {
+              const days = quitDays(habit);
+              const best = quitBest(habit);
+              return (
+                <TouchableOpacity
+                  key={habit.id}
+                  style={[styles.quitCard, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                  onPress={() => handleEditHabit(habit)}
+                  activeOpacity={0.9}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${habit.name}, ${days} day${days === 1 ? '' : 's'} clean, best ${best}`}
+                >
+                  <View style={[styles.quitDays, { backgroundColor: colors.good }]}>
+                    <Text style={[styles.quitDaysNumber, { color: textOn(colors.good) }]}>{days}</Text>
+                    <Text style={[styles.quitDaysLabel, { color: textOn(colors.good) }]}>{days === 1 ? 'day' : 'days'}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.quitName, { color: colors.text }]} numberOfLines={1}>{habit.name}</Text>
+                    <Text style={[styles.quitMeta, { color: colors.muted }]}>
+                      {days === 0 ? 'Day one starts now' : days >= best ? 'Your best run yet' : `Best run: ${best} days`}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.slipButton, { borderColor: colors.divider }]}
+                    onPress={() => handleSlip(habit)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`I slipped on ${habit.name}`}
+                  >
+                    <Text style={[styles.slipButtonText, { color: colors.muted }]}>I slipped</Text>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         {/* Tip for skip/fail and swipe */}
         {activeHabits.length > 0 && !reorderMode && (
@@ -968,6 +1066,75 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
 }
 
 const styles = StyleSheet.create({
+  noticeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  noticeText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 19,
+  },
+  noticeAction: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  quitSection: {
+    marginTop: 18,
+  },
+  quitHeading: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+  quitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+  quitDays: {
+    width: 54,
+    height: 54,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quitDaysNumber: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  quitDaysLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  quitName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  quitMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  slipButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  slipButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   container: {
     flex: 1,
   },

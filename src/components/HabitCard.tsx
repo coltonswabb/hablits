@@ -24,6 +24,8 @@ import { calculateStreak, countThisWeek } from '../utils';
 import { ProgressRing } from './ProgressRing';
 import { AnimatedNumber } from './AnimatedNumber';
 import { completionFeedback } from '../utils/celebrate';
+import { formatProgress, progressStep } from '../utils/smartHabits';
+import { lightTap } from '../utils/haptics';
 
 interface HabitCardProps {
   habit: Habit;
@@ -38,6 +40,10 @@ interface HabitCardProps {
   hasNote?: boolean;
   isComplete?: boolean;
   isSkipped?: boolean;
+  /** Count/timed habits: today's amount so far */
+  progressAmount?: number;
+  /** Count/timed habits: add (or with a negative number, take away) from today's amount */
+  onAddProgress?: (delta: number) => void;
 }
 
 export function HabitCard({
@@ -53,6 +59,8 @@ export function HabitCard({
   hasNote = false,
   isComplete: isCompleteProp,
   isSkipped: isSkippedProp,
+  progressAmount = 0,
+  onAddProgress,
 }: HabitCardProps) {
   const { colors } = useTheme();
 
@@ -367,7 +375,9 @@ export function HabitCard({
         </View>
 
         <Text style={[styles.meta, { color: colors.muted }]}>
-          Weekly goal {habit.weeklyGoal} · {thisWeek} this week
+          {habit.target
+            ? `${formatProgress(habit, progressAmount)} today · ${thisWeek}/${habit.weeklyGoal} this week`
+            : `Weekly goal ${habit.weeklyGoal} · ${thisWeek} this week`}
         </Text>
 
         <View style={styles.bottomRow}>
@@ -378,6 +388,32 @@ export function HabitCard({
             <View style={[styles.identityDot, { backgroundColor: identity.color }]} />
             <Text style={[styles.identityName, { color: colors.text }]}>{identity.name}</Text>
           </View>
+
+          {/* Count/timed habits: add to today's amount (hold to take one back) */}
+          {habit.target && onAddProgress && !isComplete && (
+            <TouchableOpacity
+              style={[styles.addButton, { backgroundColor: colors.accent }]}
+              onPress={() => {
+                const step = progressStep(habit);
+                if (progressAmount + step >= habit.target!.amount) completionFeedback('complete');
+                else lightTap();
+                onAddProgress(step);
+              }}
+              onLongPress={() => {
+                if (progressAmount <= 0) return;
+                lightTap();
+                onAddProgress(-progressStep(habit));
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${progressStep(habit)} ${habit.target.unit} to ${habit.name}`}
+              accessibilityHint="Hold to take one back"
+            >
+              <Text style={[styles.addButtonText, { color: colors.textOnAccent }]}>
+                +{progressStep(habit)}{habit.target.unit === 'min' ? ' min' : ''}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* Note button - only show when complete */}
           {isComplete && onNotePress && (
@@ -519,5 +555,18 @@ const styles = StyleSheet.create({
   },
   noteIcon: {
     fontSize: 12,
+  },
+  addButton: {
+    minWidth: 44,
+    height: 26,
+    paddingHorizontal: 10,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 'auto',
+  },
+  addButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

@@ -29,6 +29,7 @@ import { TabName, Identity } from './types';
 import { initializeAudio, setSoundsEnabled } from './utils/sounds';
 import { syncWidget, readWidgetTaps, forceNextWidgetSync } from './utils/widgetSync';
 import { planWidgetTaps } from './utils/widgetTaps';
+import { isOnVacation } from './utils/smartHabits';
 import { useReduceMotion } from './utils/motion';
 import { getDayCompletionPercent } from './utils/habits';
 import { bestStreakEver, stageForStreak } from './utils/evolution';
@@ -171,7 +172,7 @@ function AppContent() {
       syncHabitReminders(state);
     }, 800);
     return () => clearTimeout(t);
-  }, [isLoaded, state.notificationsEnabled, state.notificationTime, state.habits, state.dayPlanSchedules]);
+  }, [isLoaded, state.notificationsEnabled, state.notificationTime, state.habits, state.dayPlanSchedules, state.vacations]);
 
   // ---- Home screen widget ----
   // The pet is rasterized off-screen (PetSnapshot) so WidgetKit can show it;
@@ -183,7 +184,7 @@ function AppContent() {
   const petMood = getMoodFromProgress(todayPct);
 
   // ---- Pet evolution ----
-  const bestStreak = useMemo(() => bestStreakEver(state.habits, state.logs), [state.habits, state.logs]);
+  const bestStreak = useMemo(() => bestStreakEver(state.habits, state.logs), [state.habits, state.logs, state.vacations, state.streakSaves]);
   const petStage = stageForStreak(bestStreak);
   // A new species / hat / stage invalidates both widget snapshots
   useEffect(() => {
@@ -237,6 +238,15 @@ function AppContent() {
     if (!isLoaded || !widgetTapsRead) return;
     syncWidget(state, colors, petImages);
   }, [isLoaded, widgetTapsRead, widgetRefresh, state.habits, state.logs, colors, petImages]);
+
+  // ---- Pet snacks ----
+  // Earn for streak milestones and cover missed days. Runs when a day's data
+  // changes and on foreground (a new day may have started while we were away).
+  useEffect(() => {
+    if (!isLoaded || !widgetTapsRead) return;
+    dispatch({ type: 'RUN_SNACKS' });
+  }, [isLoaded, widgetTapsRead, state.logs, state.habits, state.vacations, foregroundTick]);
+
 
   // Animate screen transitions (a plain cross-fade when Reduce Motion is on)
   const reduceMotion = useReduceMotion();
@@ -441,6 +451,7 @@ function AppContent() {
           onClose={() => setSettingsModalVisible(false)}
           sfxEnabled={state.sfxEnabled}
           onToggleSfx={() => dispatch({ type: 'SET_SFX_ENABLED', payload: !state.sfxEnabled })}
+          onToggleVacation={() => dispatch({ type: 'SET_VACATION', payload: !isOnVacation(state) })}
           hapticsEnabled={state.hapticsEnabled}
           onToggleHaptics={async () => {
             const { setHapticsEnabled } = await import('./utils/haptics');

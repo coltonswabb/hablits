@@ -20,6 +20,16 @@ import {
 import { Habit, Identity, RoutineStep } from '../types';
 import { useTheme } from '../theme';
 import { generateId } from '../utils';
+import { newQuitTracker } from '../utils/smartHabits';
+
+type HabitKind = 'check' | 'count' | 'timed' | 'quit';
+
+const KIND_OPTIONS: { kind: HabitKind; label: string; hint: string }[] = [
+  { kind: 'check', label: 'Check', hint: 'Tick it off once a day.' },
+  { kind: 'count', label: 'Count', hint: 'Add up to a daily amount, like 8 glasses of water.' },
+  { kind: 'timed', label: 'Time', hint: 'Add up minutes toward a daily total.' },
+  { kind: 'quit', label: 'Quit', hint: 'Something to stay away from. Counts the days since your last slip.' },
+];
 
 interface EditHabitModalProps {
   visible: boolean;
@@ -57,6 +67,10 @@ export function EditHabitModal({
   const [steps, setSteps] = useState<RoutineStep[]>([]);
   const [newStepName, setNewStepName] = useState('');
   const [newStepDuration, setNewStepDuration] = useState('');
+  // How the habit is tracked: a simple tick, an amount, minutes, or a quit counter
+  const [kind, setKind] = useState<HabitKind>('check');
+  const [targetAmount, setTargetAmount] = useState('');
+  const [targetUnit, setTargetUnit] = useState('');
 
   // Reset form when modal opens/habit changes
   useEffect(() => {
@@ -69,6 +83,9 @@ export function EditHabitModal({
         setOrder(habit.order || 1);
         setIsRoutine(habit.isRoutine || false);
         setSteps(habit.steps || []);
+        setKind(habit.quit ? 'quit' : habit.target ? (habit.target.unit === 'min' ? 'timed' : 'count') : 'check');
+        setTargetAmount(habit.target ? String(habit.target.amount) : '');
+        setTargetUnit(habit.target && habit.target.unit !== 'min' ? habit.target.unit : '');
       } else {
         // New habit defaults
         setName('');
@@ -78,6 +95,9 @@ export function EditHabitModal({
         setOrder(totalHabits + 1);
         setIsRoutine(false);
         setSteps([]);
+        setKind('check');
+        setTargetAmount('');
+        setTargetUnit('');
       }
       setNewStepName('');
       setNewStepDuration('');
@@ -146,15 +166,30 @@ export function EditHabitModal({
       return;
     }
 
+    const trackAs: HabitKind = isRoutine ? 'check' : kind;
+    const amount = Math.round(Number(targetAmount));
+    if ((trackAs === 'count' || trackAs === 'timed') && !(amount >= 1 && amount <= 9999)) {
+      Alert.alert('Error', trackAs === 'timed' ? 'Please enter how many minutes a day' : 'Please enter a daily amount');
+      return;
+    }
+
     const habitData = {
       id: habit?.id,
       name: name.trim(),
-      weeklyGoal,
+      weeklyGoal: trackAs === 'quit' ? 7 : weeklyGoal,
       identityId,
-      days,
+      days: trackAs === 'quit' ? [true, true, true, true, true, true, true] : days,
       order,
       isRoutine,
       steps: isRoutine ? steps : undefined,
+      target:
+        trackAs === 'timed'
+          ? { amount, unit: 'min' }
+          : trackAs === 'count'
+            ? { amount, unit: targetUnit.trim().toLowerCase() || 'times' }
+            : undefined,
+      // Keep an existing counter running; start a new one from today otherwise
+      quit: trackAs === 'quit' ? habit?.quit ?? newQuitTracker() : undefined,
     };
     onSave(habitData);
     onClose();
@@ -349,7 +384,66 @@ export function EditHabitModal({
               </View>
             )}
 
+            {/* How it's tracked */}
+            {!isRoutine && (
+              <View style={styles.field}>
+                <Text style={[styles.label, { color: colors.muted }]}>Track as</Text>
+                <View style={styles.goalRow}>
+                  {KIND_OPTIONS.map((opt) => (
+                    <TouchableOpacity
+                      key={opt.kind}
+                      style={[
+                        styles.kindButton,
+                        {
+                          backgroundColor: kind === opt.kind ? colors.accent : colors.bg,
+                          borderColor: kind === opt.kind ? colors.accent : colors.divider,
+                        },
+                      ]}
+                      onPress={() => setKind(opt.kind)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: kind === opt.kind }}
+                    >
+                      <Text style={[styles.kindButtonText, { color: kind === opt.kind ? colors.textOnAccent : colors.text }]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={[styles.kindHint, { color: colors.muted }]}>{KIND_OPTIONS.find((o) => o.kind === kind)?.hint}</Text>
+
+                {(kind === 'count' || kind === 'timed') && (
+                  <View style={styles.targetRow}>
+                    <TextInput
+                      style={[styles.input, styles.targetAmount, { backgroundColor: colors.bg, borderColor: colors.divider, color: colors.text }]}
+                      value={targetAmount}
+                      onChangeText={(t) => setTargetAmount(t.replace(/[^0-9]/g, ''))}
+                      placeholder={kind === 'timed' ? '20' : '8'}
+                      placeholderTextColor={colors.muted}
+                      keyboardType="number-pad"
+                      maxLength={4}
+                      accessibilityLabel={kind === 'timed' ? 'Minutes a day' : 'Amount a day'}
+                    />
+                    {kind === 'timed' ? (
+                      <Text style={[styles.targetSuffix, { color: colors.text }]}>minutes a day</Text>
+                    ) : (
+                      <TextInput
+                        style={[styles.input, styles.targetUnit, { backgroundColor: colors.bg, borderColor: colors.divider, color: colors.text }]}
+                        value={targetUnit}
+                        onChangeText={setTargetUnit}
+                        placeholder="glasses, pages, reps…"
+                        placeholderTextColor={colors.muted}
+                        autoCapitalize="none"
+                        maxLength={14}
+                        accessibilityLabel="Unit"
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+
             {/* Weekly Goal */}
+            {(isRoutine || kind !== 'quit') && (
             <View style={styles.field}>
               <Text style={[styles.label, { color: colors.muted }]}>Weekly goal (1-7)</Text>
               <View style={styles.goalRow}>
@@ -377,6 +471,7 @@ export function EditHabitModal({
                 ))}
               </View>
             </View>
+            )}
 
             {/* Identity */}
             <View style={styles.field}>
@@ -549,6 +644,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     padding: 12,
+    fontSize: 16,
+  },
+  kindButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kindButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  kindHint: {
+    fontSize: 13,
+    marginTop: 8,
+  },
+  targetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  targetAmount: {
+    width: 84,
+    textAlign: 'center',
+  },
+  targetUnit: {
+    flex: 1,
+  },
+  targetSuffix: {
     fontSize: 16,
   },
   goalRow: {

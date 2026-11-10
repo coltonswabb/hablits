@@ -29,6 +29,8 @@ interface SwipeableHabitCardProps {
   hasNote?: boolean;
   isComplete: boolean;
   isSkipped: boolean;
+  progressAmount?: number;
+  onAddProgress?: (delta: number) => void;
 }
 
 export function SwipeableHabitCard({
@@ -44,6 +46,8 @@ export function SwipeableHabitCard({
   hasNote = false,
   isComplete,
   isSkipped,
+  progressAmount,
+  onAddProgress,
 }: SwipeableHabitCardProps) {
   const translateX = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
@@ -200,6 +204,8 @@ export function SwipeableHabitCard({
             hasNote={hasNote}
             isComplete={isComplete}
             isSkipped={isSkipped}
+            progressAmount={progressAmount}
+            onAddProgress={onAddProgress}
           />
         </Animated.View>
       </GestureDetector>

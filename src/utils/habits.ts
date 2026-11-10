@@ -79,9 +79,12 @@ export function isHabitActiveOn(habit: Habit, date: Date): boolean {
   return habit.days[dayOfWeek];
 }
 
-/** Habits that are not archived — what lists, pickers and reminders should show. */
+/**
+ * Habits that are ticked off day by day and not archived — what lists,
+ * pickers and reminders should show. Quit habits have their own section.
+ */
 export function liveHabits(habits: Habit[]): Habit[] {
-  return habits.filter((h) => !h.archivedAt);
+  return habits.filter((h) => !h.archivedAt && !h.quit);
 }
 
 /** Archived habits, most recently archived first. */

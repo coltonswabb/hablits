@@ -172,8 +172,11 @@ function reminderDays(habit: Habit, schedule: HabitSchedule): boolean[] {
 export function planHabitReminders(state: AppState): ReminderPlan {
   const plan: ReminderPlan = { triggers: [], generalHabitNames: [] };
   if (!state.notificationsEnabled) return plan;
+  // Vacation mode: no reminders until the user is back
+  const lastVacation = (state.vacations || []).slice(-1)[0];
+  if (lastVacation && !lastVacation.to) return plan;
 
-  const habits = state.habits.filter((h) => !h.archivedAt).sort((a, b) => (a.order || 999) - (b.order || 999));
+  const habits = state.habits.filter((h) => !h.archivedAt && !h.quit).sort((a, b) => (a.order || 999) - (b.order || 999));
   const perHabit: ReminderPlan['triggers'] = [];
 
   for (const habit of habits) {

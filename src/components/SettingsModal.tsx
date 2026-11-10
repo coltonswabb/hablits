@@ -17,6 +17,7 @@ import {
   Animated,
   TextInput,
 } from 'react-native';
+import { isOnVacation, MAX_SNACKS } from '../utils/smartHabits';
 import { useTheme } from '../theme';
 import { textOn } from '../theme/colors';
 import { archivedHabits } from '../utils/habits';
@@ -38,6 +39,7 @@ interface SettingsModalProps {
   onToggleNotifications: () => void;
   onSetNotificationTime: (hour: number, minute: number) => void;
   appState: AppState;
+  onToggleVacation?: () => void;
   onRestoreHabit?: (habitId: string) => void;
   lastCloudBackupAt?: string;
   onBackupNow?: () => Promise<boolean>;
@@ -111,6 +113,7 @@ export function SettingsModal({
   notificationsEnabled,
   notificationTime,
   onToggleNotifications,
+  onToggleVacation,
   onSetNotificationTime,
   appState,
   onRestoreHabit,
@@ -379,6 +382,40 @@ export function SettingsModal({
                 </View>
               )}
             </View>
+
+            {/* Vacation mode + pet snacks */}
+            {onToggleVacation && (
+              <View style={[styles.section, { borderBottomColor: colors.divider }]}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Streaks</Text>
+                <TouchableOpacity
+                  style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                  onPress={onToggleVacation}
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: isOnVacation(appState) }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.settingLabel, { color: colors.text }]}>Vacation Mode</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                      Pauses every streak and turns reminders off until you're back.
+                    </Text>
+                  </View>
+                  <View style={[styles.toggle, { backgroundColor: isOnVacation(appState) ? colors.good : colors.muted }]}>
+                    <Text style={[styles.toggleText, { color: textOn(isOnVacation(appState) ? colors.good : colors.muted) }]}>
+                      {isOnVacation(appState) ? 'ON' : 'OFF'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.settingLabel, { color: colors.text }]}>Pet Snacks</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                      Earn one for every 7 days of a streak. A snack saves a streak of 7+ when you miss two days in a row.
+                    </Text>
+                  </View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>🍪 {appState.snacks ?? 0}/{MAX_SNACKS}</Text>
+                </View>
+              </View>
+            )}
 
             {/* Archived habits */}
             {archivedHabits(appState.habits).length > 0 && (
