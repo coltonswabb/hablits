@@ -2,16 +2,19 @@
 // LAUNCH SCREEN
 // ============================================
 // Covers the app while saved data and the theme load, so the first thing
-// seen is never the default (Light, empty) screen. The native splash is plain
-// black (no logo; see the expo-splash-screen config in app.json) and this
-// starts as the same plain black, so the handoff is invisible. Then:
+// seen is never the default (Light, empty) screen. The native splash is the
+// app icon's pet on black (see the expo-splash-screen config in app.json:
+// assets/splash-pet.png, 150pt wide, centred). This starts as that same
+// frame, with the same pet at the same size in the same place, so the
+// handoff is invisible. Then:
 //
-//   the white pixel pet from the app icon fades in straight away →
-//   once data is loaded it cross-fades into your own pet, and "Hablits"
-//   and a greeting rise in → the cover fades to reveal the app.
+//   once data is loaded the icon's pet cross-fades into your own pet, and
+//   "Hablits" and a greeting rise in below → the cover fades to reveal the app.
 //
 // This plays on every open, so it is short (about 0.6s after loading) and
 // never overshoots. Reduce Motion: fades only.
+//
+// If you change PET_SIZE or the pet's position, change the splash config to match.
 // ============================================
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -23,9 +26,10 @@ import { HatType, PetSpecies } from '../types';
 import { useReduceMotion } from '../utils/motion';
 import { fontSizes } from '../theme/tokens';
 
-// Must match the expo-splash-screen plugin config in app.json, and the app icon
+// These must match the expo-splash-screen plugin config in app.json (backgroundColor, imageWidth)
 const SPLASH_BG = '#000000';
 const PET_SIZE = 150;
+const TITLE_GAP = 18;
 
 // Strong ease-out: quick to arrive, no overshoot
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
@@ -53,8 +57,8 @@ export function LaunchScreen({ ready, hasPet, species, hat, stage, petName }: La
   const started = useRef(false);
 
   const cover = useRef(new Animated.Value(1)).current;
-  const iconPetOpacity = useRef(new Animated.Value(0)).current;
-  const iconPetScale = useRef(new Animated.Value(0.95)).current;
+  // Already showing: the native splash drew this same pet
+  const iconPetOpacity = useRef(new Animated.Value(1)).current;
   const ownPetOpacity = useRef(new Animated.Value(0)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
   const titleRise = useRef(new Animated.Value(10)).current;
@@ -63,10 +67,7 @@ export function LaunchScreen({ ready, hasPet, species, hat, stage, petName }: La
   const timing = (v: Animated.Value, toValue: number, duration: number) =>
     Animated.timing(v, { toValue, duration, easing: EASE_OUT, useNativeDriver: true });
 
-  // The icon's pet appears at once, before anything has loaded
   useEffect(() => {
-    if (reduceMotion) iconPetScale.setValue(1);
-    Animated.parallel([timing(iconPetOpacity, 1, 200), timing(iconPetScale, 1, 240)]).start();
     const t = setTimeout(() => setTimedOut(true), MAX_WAIT_MS);
     return () => clearTimeout(t);
   }, []);
@@ -116,7 +117,7 @@ export function LaunchScreen({ ready, hasPet, species, hat, stage, petName }: La
       importantForAccessibility="no-hide-descendants"
     >
       <View style={styles.petStage}>
-        <Animated.View style={[styles.petLayer, { opacity: iconPetOpacity, transform: [{ scale: iconPetScale }] }]}>
+        <Animated.View style={[styles.petLayer, { opacity: iconPetOpacity }]}>
           {/* The same pet as the app icon, in the icon's colours */}
           <Logo size={PET_SIZE} body="#ffffff" face="#000000" cheek="#cfcfcf" shadow="#3a3a3a" />
         </Animated.View>
@@ -126,12 +127,15 @@ export function LaunchScreen({ ready, hasPet, species, hat, stage, petName }: La
           </Animated.View>
         ) : null}
       </View>
-      <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleRise }] }}>
-        <Text style={styles.title}>Hablits</Text>
-      </Animated.View>
-      <Animated.View style={{ opacity: subOpacity }}>
-        <Text style={styles.sub}>{greeting}</Text>
-      </Animated.View>
+      {/* The pet stays dead centre, where the native splash drew it; the text hangs below */}
+      <View style={styles.textBlock}>
+        <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleRise }] }}>
+          <Text style={styles.title}>Hablits</Text>
+        </Animated.View>
+        <Animated.View style={{ opacity: subOpacity }}>
+          <Text style={styles.sub}>{greeting}</Text>
+        </Animated.View>
+      </View>
     </Animated.View>
   );
 }
@@ -154,8 +158,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  textBlock: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    marginTop: PET_SIZE / 2 + TITLE_GAP,
+    alignItems: 'center',
+  },
   title: {
-    marginTop: 18,
     fontSize: 34,
     fontWeight: '800',
     color: '#ffffff',
