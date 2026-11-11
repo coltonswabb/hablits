@@ -14,6 +14,7 @@ import {
   Modal,
   ScrollView,
   Animated,
+  Easing,
   TextInput,
 } from 'react-native';
 import { PetSpecies, HatType } from '../types';
@@ -85,7 +86,7 @@ export function HatClosetModal({
   onSelectHat,
   onClose,
 }: HatClosetModalProps) {
-  const { colors } = useTheme();
+  const { colors, radius } = useTheme();
   const [nameDraft, setNameDraft] = useState(petName);
   useEffect(() => setNameDraft(petName), [petName, visible]);
   const unlockedHats = getUnlockedHats(totalCompletions);
@@ -93,7 +94,7 @@ export function HatClosetModal({
 
   // Entrance animations
   const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const modalScale = useRef(new Animated.Value(0.9)).current;
+  const modalScale = useRef(new Animated.Value(0.96)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
 
   // Celebration animation for newly unlocked hat
@@ -148,22 +149,23 @@ export function HatClosetModal({
           duration: 200,
           useNativeDriver: true,
         }),
-        Animated.spring(modalScale, {
-          toValue: 1,
-          tension: 200,
-          friction: 20,
-          useNativeDriver: true,
-        }),
-        Animated.timing(modalOpacity, {
+        Animated.timing(modalScale, {
           toValue: 1,
           duration: 200,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        // Solid almost at once: a slow fade is what let the app show through
+        Animated.timing(modalOpacity, {
+          toValue: 1,
+          duration: 80,
           useNativeDriver: true,
         }),
       ]).start();
     } else {
       // Reset for next opening
       backdropOpacity.setValue(0);
-      modalScale.setValue(0.9);
+      modalScale.setValue(0.96);
       modalOpacity.setValue(0);
     }
   }, [visible]);
@@ -175,13 +177,17 @@ export function HatClosetModal({
       transparent={true}
       onRequestClose={onClose}
     >
-      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+      <View style={styles.container}>
+        {/* The dim fades in on its own layer. The card sits above it and is
+            solid from its first frame, so the app never shows through it. */}
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
         <Animated.View
           style={[
             styles.modal,
             {
               backgroundColor: colors.card,
               borderColor: colors.divider,
+              borderRadius: radius.lg,
               opacity: modalOpacity,
               transform: [{ scale: modalScale }],
             }
@@ -320,19 +326,22 @@ export function HatClosetModal({
             </Text>
           </Animated.View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   nameInput: { fontSize: fontSizes.xl, fontWeight: '800', textAlign: 'center', borderBottomWidth: 1, paddingVertical: 4, paddingHorizontal: 12, minWidth: 160, marginTop: 6 },
-  backdrop: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   modal: {
     width: '100%',

@@ -15,6 +15,7 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, useSta
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Habit, Identity, DayMarks, HabitSchedule, PetSpecies, HatType } from '../types';
 import { generateId, todayStr } from '../utils';
+import { addStarterHabits } from '../utils/starterHabits';
 import { migrateState, SCHEMA_VERSION } from './migrations';
 import { applyHabitDoneChanges } from '../utils/widgetTaps';
 import { setStreakExemptions } from '../utils/habits';
@@ -55,6 +56,7 @@ const defaultState: AppState = {
 type Action =
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'ADD_HABIT'; payload: Omit<Habit, 'id' | 'createdAt'> }
+  | { type: 'ADD_STARTER_HABITS'; payload: string[] } // starter habit keys (see utils/starterHabits)
   | { type: 'UPDATE_HABIT'; payload: Habit }
   | { type: 'DELETE_HABIT'; payload: string }
   | { type: 'ARCHIVE_HABIT'; payload: string }
@@ -119,6 +121,9 @@ function appReducer(state: AppState, action: Action): AppState {
         habits: [...state.habits, newHabit],
       };
     }
+
+    case 'ADD_STARTER_HABITS':
+      return addStarterHabits(state, action.payload, generateId);
 
     case 'UPDATE_HABIT': {
       return {

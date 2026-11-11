@@ -1,226 +1,333 @@
 // ============================================
 // ONBOARDING MODAL COMPONENT
 // ============================================
-// First-time user guide explaining app features
+// First-time guide. The pages sit side by side in a pager, so you can swipe
+// between them as the dots suggest, or use Next. The order is:
+//
+//   what Hablits is → a real habit card to practise swiping on →
+//   themes and pets → name your pet → pick some starter habits
 // ============================================
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   Modal,
   StyleSheet,
   ScrollView,
-  Dimensions,
   TextInput,
+  Keyboard,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  useWindowDimensions,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TouchableScale } from './TouchableScale';
-import { useTheme } from '../theme';
+import { useTheme, themes } from '../theme';
 import { Pet } from './Pet';
-import { PetSpecies, HatType } from '../types';
+import { SwipeableHabitCard } from './SwipeableHabitCard';
+import { StarterHabitsPicker } from './StarterHabitsPicker';
+import { Habit, Identity, PetSpecies, HatType } from '../types';
 import { NAME_SUGGESTIONS, MAX_PET_NAME } from '../utils/petName';
+import { todayStr } from '../utils';
+import { useReduceMotion } from '../utils/motion';
 import { radii, fontSizes } from '../theme/tokens';
 
 interface OnboardingModalProps {
   visible: boolean;
   species: PetSpecies;
   hat: HatType;
-  /** Called with the chosen pet name ('' if skipped) */
-  onComplete: (petName: string) => void;
+  /** Called with the chosen pet name ('' if skipped) and the starter habits picked (maybe none) */
+  onComplete: (petName: string, starterKeys: string[]) => void;
 }
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+type Page =
+  | { kind: 'info'; title: string; description: string; details: string[]; art: 'pet' | 'emoji'; emoji?: string }
+  | { kind: 'swipe'; title: string; description: string; details: string[] }
+  | { kind: 'naming'; title: string; description: string }
+  | { kind: 'starters'; title: string; description: string };
 
-const slides = [
+const PAGES: Page[] = [
   {
-    title: '👋 Welcome to Hablits!',
-    description: 'Build better habits through identity-based tracking.',
+    kind: 'info',
+    title: '👋 Welcome to Hablits',
+    description: 'Small habits, looked after by a pet.',
     details: [
-      'Track habits daily',
-      'Organize by identity (e.g., "Athlete", "Artist")',
-      'Set weekly goals',
-      'Build streaks',
+      'Add the habits you want to keep',
+      'Tick them off each day',
+      'Your pet gets a treat for every one',
+      'Streaks build as you go',
     ],
+    art: 'pet',
   },
   {
-    title: '✅ Track Your Progress',
-    description: 'Simple, powerful completion tracking.',
-    details: [
-      'Tap checkbox to mark complete ✓',
-      'Tap again to skip –',
-      'Tap again to mark failed ×',
-      'Add notes to completed habits 📝',
-    ],
+    kind: 'swipe',
+    title: '👉 Swipe to tick',
+    description: 'The fastest way to mark a habit.',
+    details: ['Swipe right to complete', 'Swipe left to skip', 'Or tap the box to cycle ✓ → – → ×'],
   },
   {
-    title: '📊 View Your Stats',
-    description: 'See your progress over time.',
+    kind: 'info',
+    title: '🎨 Make it yours',
+    description: 'Themes, pets and hats.',
     details: [
-      'Completion trends and patterns',
-      'Weekly performance breakdown',
-      'Identity-based analytics',
-      'Best streaks and averages',
+      `${Object.keys(themes).length} themes, each with its own look`,
+      'Earn hats for your pet as you go',
+      'Group habits by identity, like "Reader" or "Athlete"',
+      'See streaks and trends in Stats',
     ],
+    art: 'emoji',
+    emoji: '🎨',
   },
   {
-    title: '🎨 Customize Everything',
-    description: 'Make it yours with themes and identities.',
-    details: [
-      'Choose from 18 themes, each with its own pet',
-      'Create custom identities',
-      'Earn pet hats by completing habits',
-      'Plan your day with scheduled habits',
-    ],
-  },
-  {
+    kind: 'naming',
     title: 'Meet your pet',
     description: 'It gets happier as you complete habits, and it grows for good when your streaks do. Give it a name?',
-    details: [],
-    isNaming: true,
+  },
+  {
+    kind: 'starters',
+    title: 'Pick a few to start',
+    description: 'Tap any that fit, or skip. You can rename, change or remove them later.',
   },
 ];
 
+const NAMING_PAGE = PAGES.findIndex((p) => p.kind === 'naming');
+const LAST_PAGE = PAGES.length - 1;
+
+// The practice card on the "Swipe to tick" page. It is the real habit card,
+// fed a made-up habit, so it behaves exactly like the ones on Today.
+const DEMO_HABIT: Habit = {
+  id: 'onboarding-demo',
+  name: 'Try me',
+  weeklyGoal: 7,
+  identityId: 'general',
+  createdAt: '2000-01-01T00:00:00.000Z',
+  days: [true, true, true, true, true, true, true],
+  order: 1,
+};
+const DEMO_IDENTITY: Identity = { id: 'general', name: 'Practice', color: '#3ddc97' };
+type DemoStatus = 'empty' | 'done' | 'skipped';
+const NEXT_DEMO_STATUS: Record<DemoStatus, DemoStatus> = { empty: 'done', done: 'skipped', skipped: 'empty' };
+
 export function OnboardingModal({ visible, species, hat, onComplete }: OnboardingModalProps) {
   const { colors } = useTheme();
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const { width } = useWindowDimensions();
+  const reduceMotion = useReduceMotion();
+  const pager = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const [currentPage, setCurrentPage] = useState(0);
   const [petName, setPetName] = useState('');
+  const [starterKeys, setStarterKeys] = useState<string[]>([]);
+  const [demoStatus, setDemoStatus] = useState<DemoStatus>('empty');
+  // While a finger is on the practice card, the pager must not scroll with it
+  const [pagerLocked, setPagerLocked] = useState(false);
+
+  const today = todayStr();
+
+  const goTo = (page: number) => {
+    Keyboard.dismiss();
+    pager.current?.scrollTo({ x: page * width, animated: !reduceMotion });
+    setCurrentPage(page);
+  };
 
   const handleNext = () => {
-    if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      onComplete(petName);
+    if (currentPage < LAST_PAGE) goTo(currentPage + 1);
+    else onComplete(petName, starterKeys);
+  };
+
+  // Skip the tour but still offer the name and the starter habits
+  const handleSkip = () => goTo(NAMING_PAGE);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const page = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (page !== currentPage && page >= 0 && page <= LAST_PAGE) {
+      Keyboard.dismiss();
+      setCurrentPage(page);
     }
   };
 
-  const handleSkip = () => {
-    // Skip the tour but still offer the name
-    setCurrentSlide(slides.length - 1);
-  };
+  const toggleStarter = (key: string) =>
+    setStarterKeys((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]));
 
-  const slide = slides[currentSlide];
-  const naming = 'isNaming' in slide && slide.isNaming;
+  const page = PAGES[currentPage];
+  const primaryLabel =
+    page.kind === 'naming'
+      ? petName.trim()
+        ? `Meet ${petName.trim()}`
+        : 'Maybe later'
+      : page.kind === 'starters'
+        ? starterKeys.length
+          ? `Add ${starterKeys.length} and start`
+          : 'Pick a habit'
+        : 'Next';
+  const onStarters = page.kind === 'starters';
+  // On the last page the main button needs at least one habit picked; Skip finishes without any
+  const primaryDisabled = onStarters && starterKeys.length === 0;
+
+  const renderHeading = (p: Page) => (
+    <View style={styles.slideContent}>
+      <Text style={[styles.title, { color: colors.text }]}>{p.title}</Text>
+      <Text style={[styles.description, { color: colors.muted }]}>{p.description}</Text>
+      {'details' in p && (
+        <View style={styles.detailsList}>
+          {p.details.map((detail) => (
+            <View key={detail} style={styles.detailItem}>
+              <View style={[styles.bullet, { backgroundColor: colors.accent }]} />
+              <Text style={[styles.detailText, { color: colors.text }]}>{detail}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
+  const renderBody = (p: Page) => {
+    switch (p.kind) {
+      case 'info':
+        return (
+          <View style={[styles.illustration, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            {p.art === 'pet' ? (
+              <Pet species={species} mood="happy" hat={hat} size={120} />
+            ) : (
+              <Text style={styles.illustrationEmoji}>{p.emoji}</Text>
+            )}
+          </View>
+        );
+      case 'swipe':
+        return (
+          <View
+            style={styles.demo}
+            onTouchStart={() => setPagerLocked(true)}
+            onTouchEnd={() => setPagerLocked(false)}
+            onTouchCancel={() => setPagerLocked(false)}
+          >
+            <SwipeableHabitCard
+              habit={DEMO_HABIT}
+              identity={DEMO_IDENTITY}
+              logs={demoStatus === 'done' ? { [today]: [DEMO_HABIT.id] } : {}}
+              marks={demoStatus === 'skipped' ? { [today]: { skip: [DEMO_HABIT.id], fail: [] } } : {}}
+              today={today}
+              onToggle={() => setDemoStatus((status) => NEXT_DEMO_STATUS[status])}
+              onPress={() => {}}
+              isComplete={demoStatus === 'done'}
+              isSkipped={demoStatus === 'skipped'}
+            />
+            <Text style={[styles.demoCaption, { color: colors.muted }]}>
+              {demoStatus === 'empty'
+                ? 'Try it: swipe this card to the right'
+                : demoStatus === 'done'
+                  ? 'Done! Now try swiping it left to skip'
+                  : 'Skipped. That is all there is to it.'}
+            </Text>
+          </View>
+        );
+      case 'naming':
+        return (
+          <View style={[styles.illustration, { backgroundColor: colors.card, borderColor: colors.divider, height: undefined, paddingVertical: 24 }]}>
+            <Pet species={species} mood={petName.trim() ? 'excited' : 'curious'} hat={hat} size={120} />
+            <TextInput
+              style={[styles.nameInput, { color: colors.text, borderColor: colors.divider, backgroundColor: colors.bg }]}
+              placeholder="Name your pet"
+              placeholderTextColor={colors.muted}
+              value={petName}
+              onChangeText={(t) => setPetName(t.slice(0, MAX_PET_NAME))}
+              maxLength={MAX_PET_NAME}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleNext}
+              accessibilityLabel="Pet name"
+            />
+            <View style={styles.suggestions}>
+              {NAME_SUGGESTIONS[species].map((n) => (
+                <TouchableScale
+                  key={n}
+                  onPress={() => setPetName(n)}
+                  style={[styles.chip, { borderColor: colors.divider, backgroundColor: petName === n ? colors.accent : 'transparent' }]}
+                >
+                  <Text style={[styles.chipText, { color: petName === n ? colors.textOnAccent : colors.text }]}>{n}</Text>
+                </TouchableScale>
+              ))}
+            </View>
+            <Text style={[styles.hint, { color: colors.muted }]}>You can change this any time from the Hat Closet.</Text>
+          </View>
+        );
+      case 'starters':
+        return (
+          <View style={styles.starters}>
+            <StarterHabitsPicker selected={starterKeys} onToggle={toggleStarter} />
+          </View>
+        );
+    }
+  };
 
   return (
     <Modal visible={visible} animationType="fade">
-      <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <GestureHandlerRootView style={[styles.container, { backgroundColor: colors.bg }]}>
+        {/* Page dots */}
+        <View style={styles.indicators}>
+          {PAGES.map((p, index) => (
+            <View
+              key={p.title}
+              style={[styles.indicator, { backgroundColor: index === currentPage ? colors.accent : colors.divider }]}
+            />
+          ))}
+        </View>
+
+        {/* Pages side by side: swipe between them, or use the buttons */}
         <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
+          ref={pager}
+          style={styles.pager}
+          horizontal
+          pagingEnabled
+          scrollEnabled={!pagerLocked}
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Slide indicator */}
-          <View style={styles.indicators}>
-            {slides.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.indicator,
-                  {
-                    backgroundColor:
-                      index === currentSlide ? colors.accent : colors.divider,
-                  },
-                ]}
-              />
-            ))}
-          </View>
-
-          {/* Content */}
-          <View style={styles.slideContent}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              {slide.title}
-            </Text>
-
-            <Text style={[styles.description, { color: colors.muted }]}>
-              {slide.description}
-            </Text>
-
-            <View style={styles.detailsList}>
-              {slide.details.map((detail, index) => (
-                <View key={index} style={styles.detailItem}>
-                  <View
-                    style={[styles.bullet, { backgroundColor: colors.accent }]}
-                  />
-                  <Text style={[styles.detailText, { color: colors.text }]}>
-                    {detail}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {naming ? (
-            <View style={[styles.illustration, { backgroundColor: colors.card, borderColor: colors.divider, paddingVertical: 24 }]}>
-              <Pet species={species} mood={petName.trim() ? 'excited' : 'curious'} hat={hat} size={120} />
-              <TextInput
-                style={[styles.nameInput, { color: colors.text, borderColor: colors.divider, backgroundColor: colors.bg }]}
-                placeholder="Name your pet"
-                placeholderTextColor={colors.muted}
-                value={petName}
-                onChangeText={(t) => setPetName(t.slice(0, MAX_PET_NAME))}
-                maxLength={MAX_PET_NAME}
-                autoCapitalize="words"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleNext}
-                accessibilityLabel="Pet name"
-              />
-              <View style={styles.suggestions}>
-                {NAME_SUGGESTIONS[species].map((n) => (
-                  <TouchableScale key={n} onPress={() => setPetName(n)} style={[styles.chip, { borderColor: colors.divider, backgroundColor: petName === n ? colors.accent : 'transparent' }]}>
-                    <Text style={[styles.chipText, { color: petName === n ? colors.textOnAccent : colors.text }]}>{n}</Text>
-                  </TouchableScale>
-                ))}
-              </View>
-              <Text style={[styles.hint, { color: colors.muted }]}>You can change this any time from the Hat Closet.</Text>
-            </View>
-          ) : (
-            <View
-              style={[
-                styles.illustration,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.divider,
-                },
-              ]}
+          {PAGES.map((p) => (
+            <ScrollView
+              key={p.title}
+              style={{ width }}
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              <Text style={styles.illustrationEmoji}>
-                {currentSlide === 0 && '🎯'}
-                {currentSlide === 1 && '✅'}
-                {currentSlide === 2 && '📈'}
-                {currentSlide === 3 && '🎨'}
-              </Text>
-            </View>
-          )}
+              {renderHeading(p)}
+              {renderBody(p)}
+            </ScrollView>
+          ))}
         </ScrollView>
 
         {/* Bottom buttons */}
-        <View style={styles.footer}>
-          {currentSlide < slides.length - 1 && (
+        <View style={[styles.footer, { backgroundColor: colors.bg }]}>
+          {/* Skip the tour (early pages), or start without any starter habits (last page) */}
+          {(currentPage < NAMING_PAGE || onStarters) && (
             <TouchableScale
-              style={[styles.skipButton]}
-              onPress={handleSkip}
+              style={styles.skipButton}
+              onPress={onStarters ? () => onComplete(petName, []) : handleSkip}
+              accessibilityRole="button"
+              accessibilityLabel={onStarters ? 'Skip starter habits' : 'Skip the tour'}
             >
-              <Text style={[styles.skipText, { color: colors.muted }]}>
-                Skip
-              </Text>
+              <Text style={[styles.skipText, { color: colors.muted }]}>Skip</Text>
             </TouchableScale>
           )}
 
           <TouchableScale
             style={[
               styles.nextButton,
-              { backgroundColor: colors.accent },
-              currentSlide === slides.length - 1 && { flex: 1 },
+              { backgroundColor: primaryDisabled ? colors.divider : colors.accent },
+              page.kind === 'naming' && { flex: 1 },
             ]}
             onPress={handleNext}
+            disabled={primaryDisabled}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: primaryDisabled }}
           >
-            <Text style={[styles.nextText, { color: colors.textOnAccent }]}>
-              {naming ? (petName.trim() ? `Meet ${petName.trim()}` : 'Maybe later') : 'Next'}
-            </Text>
+            <Text style={[styles.nextText, { color: primaryDisabled ? colors.muted : colors.textOnAccent }]}>{primaryLabel}</Text>
           </TouchableScale>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
@@ -244,9 +351,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  pager: {
+    flex: 1,
+  },
+  demo: {
+    marginTop: 'auto',
+  },
+  demoCaption: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  starters: {
+    marginTop: 8,
+  },
   content: {
     flexGrow: 1,
     padding: 24,
+    paddingTop: 0,
     paddingBottom: 120,
   },
   indicators: {
@@ -254,7 +377,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     marginBottom: 32,
-    marginTop: 40,
+    marginTop: 64,
   },
   indicator: {
     width: 8,

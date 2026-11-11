@@ -13,6 +13,7 @@
 
 import { Habit } from '../types';
 import { dateStr } from './dates';
+import { quitBest } from './smartHabits';
 import { isExemptDay, isHabitActiveOn, isWeeklyGoalCovered } from './habits';
 
 export const STAGE_THRESHOLDS = [7, 30, 100] as const;
@@ -69,9 +70,15 @@ export function longestStreakEver(
   return best;
 }
 
-/** The best streak ever reached by any habit. */
+/**
+ * The best streak ever reached by any habit. For a quit habit the streak is
+ * its longest clean run, so staying away from something grows the pet too.
+ */
 export function bestStreakEver(habits: Habit[], logs: Record<string, string[]>, referenceDate: Date = new Date()): number {
-  return habits.reduce((best, h) => Math.max(best, longestStreakEver(logs, h.id, h, referenceDate)), 0);
+  return habits.reduce(
+    (best, h) => Math.max(best, h.quit ? quitBest(h, referenceDate) : longestStreakEver(logs, h.id, h, referenceDate)),
+    0
+  );
 }
 
 export function stageForStreak(streak: number): PetStage {

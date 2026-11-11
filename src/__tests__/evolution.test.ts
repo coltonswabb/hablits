@@ -97,3 +97,25 @@ describe('migration v2', () => {
     expect(migrateState({ habits: [] }, defaults).petStageSeen).toBe(0); // v0 walks through both
   });
 });
+
+describe('quit habits and the pet', () => {
+  const { bestStreakEver: best } = require('../utils/evolution');
+  const quitHabit = (since: string, bestRun: number) => ({
+    id: 'q1',
+    name: 'No soda',
+    weeklyGoal: 7,
+    identityId: 'general',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    days: [true, true, true, true, true, true, true],
+    order: 1,
+    quit: { since, best: bestRun, slips: [] },
+  });
+
+  it('counts the current clean run as a streak', () => {
+    expect(best([quitHabit('2026-11-01', 0)], {}, new Date(2026, 10, 11))).toBe(10);
+  });
+
+  it('keeps the longest past clean run after a slip', () => {
+    expect(best([quitHabit('2026-11-10', 40)], {}, new Date(2026, 10, 11))).toBe(40);
+  });
+});

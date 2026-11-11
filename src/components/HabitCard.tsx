@@ -30,6 +30,11 @@ import { lightTap } from '../utils/haptics';
 import { useReduceMotion } from '../utils/motion';
 import { radii, fontSizes } from '../theme/tokens';
 
+const CHECKBOX_SIZE = 44;
+const SQUARE_CHECKBOX_SIZE = 34;
+// Themes whose corner radius is at or under this count as square
+const SQUARE_RADIUS_MAX = 4;
+
 interface HabitCardProps {
   habit: Habit;
   identity: Identity;
@@ -88,6 +93,12 @@ export function HabitCard({
   const streak = calculateStreak(logs, habit.id, habit);
   const thisWeek = countThisWeek(logs, habit.id);
   const progress = Math.min(1, thisWeek / habit.weeklyGoal);
+
+  // A square box looks heavier than a rounded one the same size, so the
+  // square themes get a smaller box. The tap area stays 44pt (see hitSlop).
+  const isSquareTheme = radius.md <= SQUARE_RADIUS_MAX;
+  const checkboxSize = isSquareTheme ? SQUARE_CHECKBOX_SIZE : CHECKBOX_SIZE;
+  const checkboxHitSlop = (CHECKBOX_SIZE - checkboxSize) / 2;
 
   // Count/timed habits: how much of today's target is done, and a small pop when it is reached
   const todayFraction = habit.target ? Math.min(1, progressAmount / habit.target.amount) : 0;
@@ -311,6 +322,7 @@ export function HabitCard({
       <TouchableOpacity
         onPress={handleToggle}
         activeOpacity={0.7}
+        hitSlop={checkboxHitSlop}
         accessibilityLabel={`${habit.name} checkbox`}
         accessibilityHint={isComplete ? 'Tap to mark incomplete' : 'Tap to mark complete'}
         accessibilityRole="checkbox"
@@ -323,6 +335,8 @@ export function HabitCard({
               backgroundColor: checkboxBg,
               borderColor: checkboxBorder,
               borderRadius: radius.md,
+              width: checkboxSize,
+              height: checkboxSize,
               transform: [
                 { scale: checkboxScale },
                 {

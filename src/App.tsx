@@ -9,7 +9,7 @@
 // ============================================
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Alert, Platform, AppState as RNAppState } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Alert, Linking, Platform, AppState as RNAppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Providers
@@ -28,7 +28,7 @@ import { TabName, Identity } from './types';
 
 // Utils
 import { initializeAudio, setSoundsEnabled } from './utils/sounds';
-import { syncWidget, readWidgetTaps, forceNextWidgetSync } from './utils/widgetSync';
+import { syncWidget, readWidgetTaps, forceNextWidgetSync, WIDGET_DEEP_LINK } from './utils/widgetSync';
 import { planWidgetTaps } from './utils/widgetTaps';
 import { isOnVacation } from './utils/smartHabits';
 import { getDayCompletionPercent } from './utils/habits';
@@ -148,6 +148,17 @@ function AppContent() {
   // ---- Fasting Live Activity ----
   // Also re-sync on foreground: the system may have ended the activity.
   const [foregroundTick, setForegroundTick] = useState(0);
+
+  // The widget opens the app with hablits://today. Go to the Today tab, whichever
+  // tab was showing last, whether the app was closed or already running.
+  useEffect(() => {
+    const openFromLink = (url?: string | null) => {
+      if (url && url.startsWith(WIDGET_DEEP_LINK)) setActiveTab('today');
+    };
+    Linking.getInitialURL().then(openFromLink).catch(() => {});
+    const subscription = Linking.addEventListener('url', ({ url }) => openFromLink(url));
+    return () => subscription.remove();
+  }, []);
   useEffect(() => {
     const sub = RNAppState.addEventListener('change', (s) => s === 'active' && setForegroundTick((t) => t + 1));
     return () => sub.remove();
@@ -385,8 +396,9 @@ function AppContent() {
           visible={isLoaded && restoreChecked && !state.hasCompletedOnboarding}
           species={state.petSpecies}
           hat={state.petHat}
-          onComplete={(name) => {
+          onComplete={(name, starterKeys) => {
             if (name.trim()) dispatch({ type: 'SET_PET_NAME', payload: name });
+            if (starterKeys.length) dispatch({ type: 'ADD_STARTER_HABITS', payload: starterKeys });
             dispatch({ type: 'COMPLETE_ONBOARDING' });
           }}
         />

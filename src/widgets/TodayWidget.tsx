@@ -37,6 +37,8 @@ export type WidgetHabit = {
   id?: string;
   name: string;
   done: boolean;
+  /** Count/timed habits: today's amount so far, e.g. "3/8 glasses". Absent for plain ticks and in older timelines. */
+  detail?: string;
 };
 
 /** A tick made on the widget, waiting for the app to apply it (see utils/widgetTaps.ts) */
@@ -143,6 +145,11 @@ const TodayWidget = (props: TodayWidgetProps, environment: { widgetFamily?: stri
         {h.name}
       </Text>
       <Spacer />
+      {h.detail && !h.done ? (
+        <Text modifiers={[font({ size: 12, weight: 'medium', design: 'rounded' }), foregroundStyle(props.muted), lineLimit(1)]}>
+          {h.detail}
+        </Text>
+      ) : null}
     </HStack>
   );
 

@@ -19,6 +19,7 @@ import { calculateStreak, getActiveHabits, getDayCompletionPercent } from './hab
 import { dateStr, getWeekDays } from './dates';
 import { getPetStage, STAGE_NAMES } from './evolution';
 import { collectWidgetTaps, WidgetTap } from './widgetTaps';
+import { formatProgress, getProgress } from './smartHabits';
 import type { TodayWidgetProps, WidgetHabit, WidgetDay } from '../widgets/TodayWidget';
 
 const MOOD_WORDS: Record<PetMood, string> = {
@@ -43,6 +44,9 @@ const MAX_HABITS = 12;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 /** Mon..Sun of the week containing `date`, with each day's completion ratio. */
+/** The link the widget opens the app with. Must match `link` in widgets/TodayWidget.tsx. */
+export const WIDGET_DEEP_LINK = 'hablits://today';
+
 export function buildWeek(state: AppState, date: Date): WidgetDay[] {
   const today = dateStr(date);
   return getWeekDays(date).map((d) => {
@@ -61,7 +65,13 @@ export function buildWidgetProps(state: AppState, colors: ThemeColors, date: Dat
   const active = getActiveHabits(state.habits, date, 'all');
   const doneIds = new Set(state.logs[ds] || []);
 
-  const habits: WidgetHabit[] = active.map((h) => ({ id: h.id, name: h.name, done: doneIds.has(h.id) }));
+  const habits: WidgetHabit[] = active.map((h) => ({
+    id: h.id,
+    name: h.name,
+    done: doneIds.has(h.id),
+    // Count/timed habits also show how far along today is
+    ...(h.target ? { detail: formatProgress(h, getProgress(state, h.id, ds)) } : {}),
+  }));
   // Undone first so the widget surfaces what's left; keep app order within each group
   habits.sort((a, b) => Number(a.done) - Number(b.done));
 

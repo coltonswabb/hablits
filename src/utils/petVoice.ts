@@ -9,7 +9,7 @@
 import { AppState } from '../types';
 import { dateStr } from './dates';
 import { calculateStreak, getActiveHabits, liveHabits } from './habits';
-import { isOnVacation } from './smartHabits';
+import { isOnVacation, quitDays } from './smartHabits';
 
 /** Days since the user last completed anything, or null with no history. Today counts as 0. */
 export function daysSinceLastCompletion(state: Pick<AppState, 'logs'>, now: Date = new Date()): number | null {
@@ -34,9 +34,14 @@ export function comebackLine(state: AppState, now: Date = new Date()): string | 
     : `${who} missed you! Pick one easy habit and you're back.`;
 }
 
-/** The pet gets one treat for every habit ever completed. */
-export function totalTreats(state: AppState): number {
-  return Object.values(state.logs).reduce((count, ids) => count + ids.length, 0);
+/**
+ * The pet gets one treat for every habit ever completed, and one for each
+ * clean day in the current run of every quit habit.
+ */
+export function totalTreats(state: AppState, now: Date = new Date()): number {
+  const completions = Object.values(state.logs).reduce((count, ids) => count + ids.length, 0);
+  const cleanDays = state.habits.reduce((days, h) => (h.quit && !h.archivedAt ? days + quitDays(h, now) : days), 0);
+  return completions + cleanDays;
 }
 
 /**
@@ -51,7 +56,8 @@ export function petTapLine(state: AppState, tap: number, now: Date = new Date())
   const best = liveHabits(state.habits).reduce((b, h) => Math.max(b, calculateStreak(state.logs, h.id, h, now)), 0);
   const hour = now.getHours();
   const snacks = state.snacks ?? 0;
-  const treats = totalTreats(state);
+  const treats = totalTreats(state, now);
+  const cleanRun = state.habits.reduce((best, h) => (h.quit && !h.archivedAt ? Math.max(best, quitDays(h, now)) : best), 0);
 
   const lines: string[] = [];
 
@@ -71,7 +77,8 @@ export function petTapLine(state: AppState, tap: number, now: Date = new Date())
 
   if (best >= 7) lines.push(`${best} days in a row on your best streak. I'm counting!`);
   if (snacks > 0) lines.push(`I've got ${snacks} snack${snacks === 1 ? '' : 's'} saved in case you ever miss a day.`);
-  if (treats > 0) lines.push(`I've had ${treats} treat${treats === 1 ? '' : 's'} so far. One for every habit you finish. Yum.`);
+  if (cleanRun >= 2) lines.push(`${cleanRun} clean days. I get a treat for each one, so keep going!`);
+  if (treats > 0) lines.push(`I've had ${treats} treat${treats === 1 ? '' : 's'} so far. One for every habit you finish and every clean day. Yum.`);
   lines.push('That tickles!');
 
   return lines[Math.abs(tap) % lines.length];

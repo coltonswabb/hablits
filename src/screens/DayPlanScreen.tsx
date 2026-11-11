@@ -15,18 +15,25 @@ import {
   TextInput,
   Modal,
   Animated,
-  PanResponder,
 } from 'react-native';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { TouchableScale } from '../components/TouchableScale';
 import { useTheme } from '../theme';
 import { useApp } from '../state';
 import { getActiveHabits, todayStr, dateStr } from '../utils';
 import { EmptyState } from '../components';
 import { radii, fontSizes } from '../theme/tokens';
+import { lightTap, selectionTap, successTap } from '../utils/haptics';
+import { autoScrollSpeed } from '../utils/autoScroll';
 
 const START_HOUR = 5;  // 5am
 const END_HOUR = 23;   // 11pm
 const TOTAL_HOURS = END_HOUR - START_HOUR;
+// Drag to assign: how long to hold a habit before it lifts, and the chip that follows the finger
+const DRAG_HOLD_MS = 180;
+const GHOST_WIDTH = 150;
+const GHOST_HEIGHT = 40;
+const DEFAULT_DRAG_DURATION = 30;
 
 export function DayPlanScreen() {
   const { colors, headingFont } = useTheme();
@@ -46,6 +53,98 @@ export function DayPlanScreen() {
   // Ref for ScrollView
   const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
+  // ---- Drag a habit from "Assign Times" onto the timeline ----
+  // Hold a habit, drag it over the timeline, and let go at the time you want.
+  const screenRef = useRef<React.ComponentRef<typeof View>>(null);
+  const timelineBoxRef = useRef<React.ComponentRef<typeof View>>(null);
+  // Where the screen and the timeline sit in the window, measured when a drag starts
+  const frames = useRef({ screenX: 0, screenY: 0, timelineX: 0, timelineY: 0, timelineW: 0, timelineH: 0 });
+  const timelineScrollY = useRef(0);
+  const ghostPosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const [dragHabit, setDragHabit] = useState<{ id: string; name: string; color: string } | null>(null);
+  // The time the habit would land on if dropped now; null while off the timeline
+  const [dropTime, setDropTime] = useState<string | null>(null);
+  const dropTimeRef = useRef<string | null>(null);
+
+  // The finger's last position, and the loop that scrolls the timeline while
+  // the finger is held near its top or bottom edge
+  const lastFinger = useRef({ x: 0, y: 0 });
+  const autoScrollFrame = useRef<number | null>(null);
+
+  const stopAutoScroll = () => {
+    if (autoScrollFrame.current !== null) cancelAnimationFrame(autoScrollFrame.current);
+    autoScrollFrame.current = null;
+  };
+
+  const autoScrollTick = () => {
+    autoScrollFrame.current = null;
+    const f = frames.current;
+    const { x, y } = lastFinger.current;
+    const overTimelineX = x >= f.timelineX && x <= f.timelineX + f.timelineW;
+    const speed = overTimelineX ? autoScrollSpeed(y, f.timelineY, f.timelineY + f.timelineH) : 0;
+    if (speed === 0) return;
+    const maxScroll = Math.max(0, TOTAL_HOURS * 60 - f.timelineH);
+    const nextY = Math.max(0, Math.min(maxScroll, timelineScrollY.current + speed));
+    if (nextY === timelineScrollY.current) return; // already at the end
+    timelineScrollY.current = nextY;
+    scrollViewRef.current?.scrollTo({ y: nextY, animated: false });
+    // The time under the finger changed even though the finger did not move
+    moveGhost(x, y);
+  };
+
+  const moveGhost = (absoluteX: number, absoluteY: number) => {
+    lastFinger.current = { x: absoluteX, y: absoluteY };
+    if (autoScrollFrame.current === null) autoScrollFrame.current = requestAnimationFrame(autoScrollTick);
+    const f = frames.current;
+    ghostPosition.setValue({ x: absoluteX - f.screenX - GHOST_WIDTH / 2, y: absoluteY - f.screenY - GHOST_HEIGHT - 12 });
+
+    const overTimeline =
+      absoluteX >= f.timelineX && absoluteX <= f.timelineX + f.timelineW && absoluteY >= f.timelineY && absoluteY <= f.timelineY + f.timelineH;
+    const next = overTimeline ? getTimeFromY(absoluteY - f.timelineY + timelineScrollY.current) : null;
+    if (next !== dropTimeRef.current) {
+      dropTimeRef.current = next;
+      setDropTime(next);
+      if (next) selectionTap();
+    }
+  };
+
+  const handleDragStart = (habit: { id: string; name: string; color: string }, absoluteX: number, absoluteY: number) => {
+    lightTap();
+    dropTimeRef.current = null;
+    setDropTime(null);
+    setDragHabit(habit);
+    // Measure, then place the chip. The first move event arrives after this.
+    screenRef.current?.measureInWindow((screenX, screenY) => {
+      timelineBoxRef.current?.measureInWindow((timelineX, timelineY, timelineW, timelineH) => {
+        frames.current = { screenX, screenY, timelineX, timelineY, timelineW, timelineH };
+        moveGhost(absoluteX, absoluteY);
+      });
+    });
+  };
+
+  const handleDragEnd = (habitId: string) => {
+    stopAutoScroll();
+    const time = dropTimeRef.current;
+    if (time) {
+      successTap();
+      dispatch({
+        type: 'SET_DAY_PLAN_SCHEDULE',
+        payload: {
+          habitId,
+          schedule: {
+            time,
+            duration: DEFAULT_DRAG_DURATION,
+            recurring: 'daily',
+            recurringDays: [true, true, true, true, true, true, true],
+          },
+        },
+      });
+    }
+    dropTimeRef.current = null;
+    setDropTime(null);
+    setDragHabit(null);
+  };
+
   // Quick schedule modal state
   const [quickScheduleVisible, setQuickScheduleVisible] = useState(false);
   const [quickScheduleHabitId, setQuickScheduleHabitId] = useState<string | null>(null);
@@ -55,6 +154,9 @@ export function DayPlanScreen() {
 
   const timeScrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const durationScrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+
+  // Stop any drag scrolling if the screen goes away mid-drag
+  useEffect(() => stopAutoScroll, []);
 
   // Update current time every minute
   useEffect(() => {
@@ -265,7 +367,7 @@ export function DayPlanScreen() {
   }, []); // Only run on mount
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View ref={screenRef} collapsable={false} style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }, headingFont]}>Day Plan</Text>
@@ -276,12 +378,20 @@ export function DayPlanScreen() {
 
       <View style={styles.content}>
         {/* Timeline */}
-        <View style={[styles.timelineContainer, { borderColor: colors.divider }]}>
+        <View
+          ref={timelineBoxRef}
+          collapsable={false}
+          style={[styles.timelineContainer, { borderColor: dropTime ? colors.accent : colors.divider }]}
+        >
           <ScrollView
             ref={scrollViewRef}
             style={styles.timelineScroll}
             showsVerticalScrollIndicator={true}
             bounces={true}
+            onScroll={(e) => {
+              timelineScrollY.current = e.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={16}
           >
             <View style={styles.timeline}>
               {/* Hour markers */}
@@ -297,6 +407,18 @@ export function DayPlanScreen() {
                   </View>
                 );
               })}
+
+              {/* Where a dragged habit would land */}
+              {dragHabit && dropTime && (
+                <View
+                  pointerEvents="none"
+                  style={[styles.dropSlot, { top: (getYPosition(dropTime) / 100) * (TOTAL_HOURS * 60), height: DEFAULT_DRAG_DURATION, borderColor: colors.accent, backgroundColor: colors.accent + '22' }]}
+                >
+                  <Text style={[styles.dropSlotText, { color: colors.accent }]} numberOfLines={1}>
+                    {formatDropTime(dropTime)} · {dragHabit.name}
+                  </Text>
+                </View>
+              )}
 
               {/* Past time overlay */}
               <View
@@ -490,6 +612,9 @@ export function DayPlanScreen() {
           <Text style={[styles.unscheduledTitle, { color: colors.text }]}>
             Assign Times
           </Text>
+          {unscheduledHabits.length > 0 && (
+            <Text style={[styles.unscheduledHint, { color: colors.muted }]}>Hold and drag onto the timeline, or tap to pick a time</Text>
+          )}
           <ScrollView style={styles.unscheduledList} showsVerticalScrollIndicator={false}>
             {unscheduledHabits.length === 0 ? (
               <EmptyState
@@ -525,7 +650,13 @@ export function DayPlanScreen() {
                 }
 
                 return (
-                  <View key={habit.id}>
+                  <DragToSchedule
+                    key={habit.id}
+                    onStart={(x, y) => handleDragStart({ id: habit.id, name: habit.name, color: getIdentityColor(habit.identityId) }, x, y)}
+                    onMove={moveGhost}
+                    onEnd={() => handleDragEnd(habit.id)}
+                    dimmed={dragHabit?.id === habit.id}
+                  >
                     <TouchableScale
                       style={[styles.unscheduledItem, { borderColor: colors.divider }]}
                       onPress={() => openQuickSchedule(habit.id)}
@@ -552,13 +683,29 @@ export function DayPlanScreen() {
                         </Text>
                       </TouchableScale>
                     </TouchableScale>
-                  </View>
+                  </DragToSchedule>
                 );
               })
             )}
           </ScrollView>
         </View>
       </View>
+
+      {/* The chip that follows the finger while a habit is dragged */}
+      {dragHabit && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.dragGhost,
+            { backgroundColor: colors.card, borderColor: colors.accent, transform: ghostPosition.getTranslateTransform() },
+          ]}
+        >
+          <View style={[styles.unscheduledDot, { backgroundColor: dragHabit.color }]} />
+          <Text style={[styles.dragGhostText, { color: colors.text }]} numberOfLines={1}>
+            {dropTime ? formatDropTime(dropTime) : dragHabit.name}
+          </Text>
+        </Animated.View>
+      )}
 
       {/* Schedule Editor Modal */}
       <Modal
@@ -837,7 +984,99 @@ export function DayPlanScreen() {
   );
 }
 
+/** "14:30" → "2:30 PM" */
+function formatDropTime(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+interface DragToScheduleProps {
+  children: React.ReactNode;
+  /** Finger position in window coordinates */
+  onStart: (absoluteX: number, absoluteY: number) => void;
+  onMove: (absoluteX: number, absoluteY: number) => void;
+  onEnd: () => void;
+  /** Fade the row while its habit is in the air */
+  dimmed: boolean;
+}
+
+/**
+ * Makes a row in "Assign Times" draggable after a short hold. A quick tap
+ * still reaches the row underneath, and a plain scroll of the list still works.
+ */
+function DragToSchedule({ children, onStart, onMove, onEnd, dimmed }: DragToScheduleProps) {
+  // The latest handlers, so the gesture never calls a stale one
+  const handlers = useRef({ onStart, onMove, onEnd });
+  handlers.current = { onStart, onMove, onEnd };
+  const isDragging = useRef(false);
+
+  const pan = usePanGesture({
+    activateAfterLongPress: DRAG_HOLD_MS,
+    onActivate: (event) => {
+      isDragging.current = true;
+      handlers.current.onStart(event.absoluteX, event.absoluteY);
+    },
+    onUpdate: (event) => handlers.current.onMove(event.absoluteX, event.absoluteY),
+    onFinalize: () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      handlers.current.onEnd();
+    },
+  });
+
+  return (
+    <GestureDetector gesture={pan}>
+      <View style={{ opacity: dimmed ? 0.35 : 1 }}>{children}</View>
+    </GestureDetector>
+  );
+}
+
 const styles = StyleSheet.create({
+  dropSlot: {
+    position: 'absolute',
+    left: 56,
+    right: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: radii.sm,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    zIndex: 5,
+  },
+  dropSlotText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '700',
+  },
+  dragGhost: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: GHOST_WIDTH,
+    height: GHOST_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    borderWidth: 2,
+    borderRadius: radii.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 50,
+  },
+  dragGhostText: {
+    flex: 1,
+    fontSize: fontSizes.sm,
+    fontWeight: '700',
+  },
+  unscheduledHint: {
+    fontSize: fontSizes.micro,
+    marginBottom: 8,
+  },
   container: {
     flex: 1,
   },

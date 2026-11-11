@@ -1,4 +1,17 @@
-import { swipeDirection, SWIPE_THRESHOLD as THRESHOLD } from '../utils/swipe';
+import { swipeDirection as direction, swipeThreshold } from '../utils/swipe';
+
+const THRESHOLD = swipeThreshold(400);
+const swipeDirection = (distance: number, velocity: number) => direction(distance, velocity, THRESHOLD);
+
+describe('swipeThreshold', () => {
+  it('is a quarter of the screen width', () => {
+    expect(swipeThreshold(400)).toBe(100);
+  });
+
+  it('never drops to zero when the width is unknown', () => {
+    expect(swipeThreshold(0)).toBeGreaterThan(0);
+  });
+});
 
 describe('swipeDirection', () => {
   it('snaps back on a small, slow drag', () => {

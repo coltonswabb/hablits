@@ -7,15 +7,19 @@
 // ============================================
 
 import React, { useRef, useEffect } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { HabitCard } from './HabitCard';
 import { Habit, Identity } from '../types';
 import { useReduceMotion } from '../utils/motion';
-import { SCREEN_WIDTH, SWIPE_THRESHOLD, swipeDirection } from '../utils/swipe';
+import { selectionTap } from '../utils/haptics';
+import { swipeDirection, swipeThreshold } from '../utils/swipe';
 import { useTheme } from '../theme';
 import { radii, fontSizes } from '../theme/tokens';
 
+// Before the swipe counts, the colour behind the card is faint and its icon small
+const FAINT_REVEAL = 0.45;
+const UNARMED_ICON_SCALE = 0.7;
 const SWIPE_AWAY_MIN_MS = 120;
 const SWIPE_AWAY_MAX_MS = 250;
 
@@ -27,6 +31,11 @@ interface SwipeableHabitCardProps {
   today: string;
   index?: number;
   onToggle: () => void;
+  /**
+   * What a swipe does: 1 = swiped right (complete), -1 = swiped left (skip).
+   * Left out, a swipe just calls onToggle, which cycles the state like a tap.
+   */
+  onSwipe?: (direction: 1 | -1) => void;
   onPress: () => void;
   onNotePress?: () => void;
   hasNote?: boolean;
@@ -46,6 +55,7 @@ export function SwipeableHabitCard({
   today,
   index = 0,
   onToggle,
+  onSwipe,
   onPress,
   onNotePress,
   hasNote = false,
@@ -59,19 +69,53 @@ export function SwipeableHabitCard({
   const isAnimating = useRef(false);
   const reduceMotion = useReduceMotion();
   const { radius } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const threshold = swipeThreshold(screenWidth);
+  // The gesture and the haptic listener are set up once, so they read these through a ref
+  const layout = useRef({ screenWidth, threshold });
+  layout.current = { screenWidth, threshold };
 
-  // The reveal layers fade in with the swipe distance. Derived on the native
-  // side, so nothing has to listen to translateX on the JS thread.
+  // The reveal layers show how close the swipe is to counting. They stay
+  // faint until the card crosses the line, then go solid and the icon pops, so
+  // you can tell when letting go will count. All derived on the native side.
   const rightRevealOpacity = translateX.interpolate({
-    inputRange: [0, SWIPE_THRESHOLD],
-    outputRange: [0, 1],
+    inputRange: [0, threshold - 1, threshold],
+    outputRange: [0, FAINT_REVEAL, 1],
     extrapolate: 'clamp',
   });
   const leftRevealOpacity = translateX.interpolate({
-    inputRange: [-SWIPE_THRESHOLD, 0],
-    outputRange: [1, 0],
+    inputRange: [-threshold, -threshold + 1, 0],
+    outputRange: [1, FAINT_REVEAL, 0],
     extrapolate: 'clamp',
   });
+  const rightIconScale = translateX.interpolate({
+    inputRange: [threshold - 1, threshold],
+    outputRange: [UNARMED_ICON_SCALE, 1],
+    extrapolate: 'clamp',
+  });
+  const leftIconScale = translateX.interpolate({
+    inputRange: [-threshold, -threshold + 1],
+    outputRange: [1, UNARMED_ICON_SCALE],
+    extrapolate: 'clamp',
+  });
+
+  // One haptic tick each time a drag crosses the line, in either direction
+  // Where the card has actually been dragged to, as last reported by the animated value
+  const draggedTo = useRef(0);
+  const isDragging = useRef(false);
+  const wasArmed = useRef(false);
+  useEffect(() => {
+    const id = translateX.addListener(({ value }) => {
+      if (!isDragging.current) return;
+      draggedTo.current = value;
+      const armed = Math.abs(value) >= layout.current.threshold;
+      if (armed !== wasArmed.current) {
+        wasArmed.current = armed;
+        selectionTap();
+      }
+    });
+    return () => translateX.removeListener(id);
+  }, []);
 
   // Ensure card always returns to center on mount
   useEffect(() => {
@@ -96,25 +140,27 @@ export function SwipeableHabitCard({
     });
   };
 
-  // Carry the card off screen at the speed it was released, then toggle and reset
+  // The swipe counts the moment the finger lifts. The card then leaves at the
+  // speed it was released and comes back in its new state.
   const swipeAway = (direction: 1 | -1, swipeDistance: number, velocityX: number) => {
+    if (onSwipe) onSwipe(direction);
+    else onToggle();
     if (reduceMotion) {
-      // No fly-off: commit straight away and let the card settle back
-      onToggle(); // Right: complete. Left: cycles to skip.
+      // No fly-off: let the card settle back
       snapBack();
       return;
     }
     isAnimating.current = true;
-    const remaining = Math.max(0, SCREEN_WIDTH - Math.abs(swipeDistance));
+    const width = layout.current.screenWidth;
+    const remaining = Math.max(0, width - Math.abs(swipeDistance));
     const speed = Math.abs(velocityX); // points per second
     const duration = speed > 0 ? (remaining / speed) * 1000 : SWIPE_AWAY_MAX_MS;
     Animated.timing(translateX, {
-      toValue: direction * SCREEN_WIDTH,
+      toValue: direction * width,
       duration: Math.min(SWIPE_AWAY_MAX_MS, Math.max(SWIPE_AWAY_MIN_MS, duration)),
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start(() => {
-      onToggle(); // Right: complete. Left: cycles to skip.
       translateX.setValue(0);
       isAnimating.current = false;
     });
@@ -132,14 +178,29 @@ export function SwipeableHabitCard({
     // PanGestureHandler + Animated.event did
     useAnimated: true,
     onUpdate: onPanUpdate,
-    onActivate: () => onSwipeActiveChange?.(true),
-    onFinalize: () => onSwipeActiveChange?.(false),
+    onActivate: () => {
+      isDragging.current = true;
+      wasArmed.current = false;
+      draggedTo.current = 0;
+      onSwipeActiveChange?.(true);
+    },
+    onFinalize: () => {
+      isDragging.current = false;
+      onSwipeActiveChange?.(false);
+    },
     onDeactivate: (event) => {
+      isDragging.current = false;
       // Prevent multiple animations
       if (isAnimating.current) return;
 
-      const { translationX: swipeDistance, velocityX } = event;
-      const direction = swipeDirection(swipeDistance, velocityX);
+      // Trust whichever says the card went further: the gesture's own total, or
+      // where the card was last drawn. On iOS the gesture's total can come back
+      // short after a pause mid-drag, and then a swipe that looked far enough
+      // would not count.
+      const reported = Number.isFinite(event.translationX) ? event.translationX : 0;
+      const swipeDistance = Math.abs(draggedTo.current) > Math.abs(reported) ? draggedTo.current : reported;
+      const velocityX = Number.isFinite(event.velocityX) ? event.velocityX : 0;
+      const direction = swipeDirection(swipeDistance, velocityX, layout.current.threshold);
 
       if (direction === 1 && !isComplete) {
         swipeAway(1, swipeDistance, velocityX);
@@ -160,7 +221,7 @@ export function SwipeableHabitCard({
           { opacity: rightRevealOpacity, borderRadius: radius.md },
         ]}
       >
-        <Animated.Text style={styles.revealText}>✓</Animated.Text>
+        <Animated.Text style={[styles.revealText, { transform: [{ scale: rightIconScale }] }]}>✓</Animated.Text>
       </Animated.View>
 
       {/* Left reveal layer - Skip */}
@@ -170,7 +231,7 @@ export function SwipeableHabitCard({
           { opacity: leftRevealOpacity, borderRadius: radius.md },
         ]}
       >
-        <Animated.Text style={styles.revealText}>–</Animated.Text>
+        <Animated.Text style={[styles.revealText, { transform: [{ scale: leftIconScale }] }]}>–</Animated.Text>
       </Animated.View>
 
       {/* Card with gesture handler */}

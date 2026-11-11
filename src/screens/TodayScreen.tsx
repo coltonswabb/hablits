@@ -28,6 +28,10 @@ import { PetStage } from '../utils/evolution';
 import { PetLetterCard } from '../components/PetLetterCard';
 import { RoutineRunnerModal } from '../components/RoutineRunnerModal';
 import { EnterExit } from '../components/Animations';
+import { StarterHabitsModal } from '../components/StarterHabitsModal';
+import { ReorderList } from '../components/ReorderList';
+import { applyVisibleOrder } from '../utils/reorder';
+import { availableStarterKeys, STARTER_GROUPS } from '../utils/starterHabits';
 import { useApp } from '../state';
 import {
   HabitCard,
@@ -81,6 +85,44 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
 
   // Reorder mode state
   const [reorderMode, setReorderMode] = useState(false);
+  // True while a row is being dragged; the screen must not scroll under the finger
+  const [reorderDragging, setReorderDragging] = useState(false);
+  // The screen's scroll position, and where its visible area sits in the window,
+  // so a row held near the top or bottom can scroll the list along
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const scrollMetrics = useRef({ y: 0, max: 0, contentHeight: 0, top: 0, bottom: 0 });
+
+  const handleReorderDragActive = (active: boolean) => {
+    setReorderDragging(active);
+    if (!active) return;
+    scrollRef.current?.measureInWindow((_x, top, _width, height) => {
+      const m = scrollMetrics.current;
+      m.top = top;
+      m.bottom = top + height;
+      // Known even if the screen has not been scrolled yet
+      m.max = Math.max(m.max, m.contentHeight - height);
+    });
+  };
+
+  const reorderAutoScroll = useRef({
+    getViewport: () => ({ top: scrollMetrics.current.top, bottom: scrollMetrics.current.bottom }),
+    scrollBy: (delta: number) => {
+      const m = scrollMetrics.current;
+      const next = Math.max(0, Math.min(m.max, m.y + delta));
+      const moved = next - m.y;
+      if (moved === 0) return 0;
+      m.y = next;
+      scrollRef.current?.scrollTo({ y: next, animated: false });
+      return moved;
+    },
+  }).current;
+  const [starterHabitsVisible, setStarterHabitsVisible] = useState(false);
+  // Starter habits not added yet, and the ones already here (shown ticked in the picker)
+  const starterKeysLeft = useMemo(() => availableStarterKeys(state), [state.habits]);
+  const starterKeysOwned = useMemo(
+    () => new Set(STARTER_GROUPS.flatMap((g) => g.habits.map((h) => h.key)).filter((k) => !starterKeysLeft.has(k))),
+    [starterKeysLeft]
+  );
 
   // Track which routines are manually expanded (even when complete)
   const [expandedRoutines, setExpandedRoutines] = useState<Set<string>>(new Set());
@@ -275,6 +317,23 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
     }
   };
 
+  // A swipe always means the same thing, whatever state the habit is in:
+  // right = done, left = skipped. (A tap on the box cycles through the states.)
+  const handleSwipe = (habitId: string, direction: 1 | -1) => {
+    const isDone = state.logs[today]?.includes(habitId) || false;
+    const isSkipped = state.marks[today]?.skip?.includes(habitId) || false;
+    const isFailed = state.marks[today]?.fail?.includes(habitId) || false;
+    if (direction === 1) {
+      if (isDone) return;
+      // From nothing, the normal toggle also ticks a routine's steps. From
+      // skipped or failed, toggling clears the mark and marks it done.
+      if (!isSkipped && !isFailed) handleToggle(habitId);
+      else dispatch({ type: 'TOGGLE_HABIT', payload: { habitId, date: today } });
+      return;
+    }
+    if (!isSkipped) dispatch({ type: 'SKIP_HABIT', payload: { habitId, date: today } });
+  };
+
   // Handle routine step toggle
   const handleToggleRoutineStep = (habitId: string, stepId: string) => {
     dispatch({
@@ -352,6 +411,13 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
   // Delete habit
   const handleDeleteHabit = (habitId: string) => {
     dispatch({ type: 'DELETE_HABIT', payload: habitId });
+  };
+
+  // Reorder mode: the rows on screen were dragged into a new order. Habits not
+  // showing today keep their places in the full list.
+  const handleReorderDrop = (visibleIds: string[]) => {
+    const sortedHabits = [...state.habits].sort((a, b) => a.order - b.order);
+    dispatch({ type: 'REORDER_HABITS', payload: applyVisibleOrder(sortedHabits, visibleIds) });
   };
 
   // Reorder habit (move up or down)
@@ -464,8 +530,19 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
 
       
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        scrollEnabled={!reorderDragging}
+        onScroll={(e) => {
+          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+          scrollMetrics.current.y = contentOffset.y;
+          scrollMetrics.current.max = Math.max(0, contentSize.height - layoutMeasurement.height);
+        }}
+        onContentSizeChange={(_, height) => {
+          scrollMetrics.current.contentHeight = height;
+        }}
+        scrollEventThrottle={16}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -638,7 +715,16 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
             <EmptyState
               illustration={<Pet species={petSpecies} mood="curious" hat={petHat} size={112} stage={petStage} onPress={handlePetTap} />}
               title={`${(state.petName || '').trim() || 'Your pet'} is waiting for a first habit`}
-              message="Type one in the box above and tap Add. Every habit you finish is a treat for your pet."
+              message="Type one in the box above and tap Add, or pick from a list. Every habit you finish is a treat for your pet."
+              action={{ label: 'Browse starter habits', onPress: () => setStarterHabitsVisible(true) }}
+            />
+          ) : reorderMode ? (
+            // Reorder mode: compact rows you drag by the handle
+            <ReorderList
+              items={activeHabits.map((h) => ({ id: h.id, name: h.name, color: getIdentity(h.identityId).color }))}
+              onReorder={handleReorderDrop}
+              onDragActiveChange={handleReorderDragActive}
+              autoScroll={reorderAutoScroll}
             />
           ) : (
             activeHabits.map((habit, index) => {
@@ -701,6 +787,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                           today={today}
                           index={index}
                           onToggle={() => handleToggle(habit.id)}
+                          onSwipe={(direction) => handleSwipe(habit.id, direction)}
                           onPress={() => handleEditHabit(habit)}
                           onNotePress={() => handleNotePress(habit.id)}
                           hasNote={!!state.notes[today]?.[habit.id]}
@@ -987,6 +1074,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                       today={today}
                       index={index}
                       onToggle={() => handleToggle(habit.id)}
+                      onSwipe={(direction) => handleSwipe(habit.id, direction)}
                       onPress={() => handleEditHabit(habit)}
                       onNotePress={() => handleNotePress(habit.id)}
                       hasNote={!!state.notes[today]?.[habit.id]}
@@ -1050,9 +1138,20 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
             Tip: Swipe right to complete, left to skip, or tap checkbox to cycle ✓ → – → ×
           </Text>
         )}
+        {/* More ready-made habits, while there are any left to add */}
+        {activeHabits.length > 0 && !reorderMode && starterKeysLeft.size > 0 && (
+          <TouchableScale
+            style={styles.starterLink}
+            onPress={() => setStarterHabitsVisible(true)}
+            accessibilityRole="button"
+            hitSlop={8}
+          >
+            <Text style={[styles.starterLinkText, { color: colors.accent }]}>+ Starter habits</Text>
+          </TouchableScale>
+        )}
         {reorderMode && (
           <Text style={[styles.tipText, { color: colors.muted }]}>
-            Use ↑ ↓ arrows to reorder habits, then tap "Done Reordering"
+            Hold the ≡ handle and drag a habit up or down, then tap "Done Reordering"
           </Text>
         )}
       </ScrollView>
@@ -1075,6 +1174,14 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         onDelete={handleDeleteHabit}
         onArchive={(habitId) => dispatch({ type: 'ARCHIVE_HABIT', payload: habitId })}
         onClose={() => setModalVisible(false)}
+      />
+
+      {/* Ready-made habits to add */}
+      <StarterHabitsModal
+        visible={starterHabitsVisible}
+        alreadyAdded={starterKeysOwned}
+        onAdd={(keys) => dispatch({ type: 'ADD_STARTER_HABITS', payload: keys })}
+        onClose={() => setStarterHabitsVisible(false)}
       />
 
       {/* Routine runner */}
@@ -1305,6 +1412,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
     fontSize: fontSizes.md,
+  },
+  starterLink: {
+    alignSelf: 'center',
+    marginTop: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  starterLinkText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '700',
   },
   tipText: {
     textAlign: 'center',
