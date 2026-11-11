@@ -23,6 +23,13 @@ import { Orbitron_700Bold } from '@expo-google-fonts/orbitron';
 import { RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
 import { Lora_700Bold } from '@expo-google-fonts/lora';
 import { Cinzel_700Bold } from '@expo-google-fonts/cinzel';
+import { Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
+import { Comfortaa_700Bold } from '@expo-google-fonts/comfortaa';
+import { Righteous_400Regular } from '@expo-google-fonts/righteous';
+import { Exo2_700Bold } from '@expo-google-fonts/exo-2';
+import { Bitter_700Bold } from '@expo-google-fonts/bitter';
+import { ChakraPetch_700Bold } from '@expo-google-fonts/chakra-petch';
+import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { radiiForTheme, headingFontForTheme, ThemeRadii } from './tokens';
 
 const THEME_STORAGE_KEY = 'hablits_theme_v1';
@@ -114,6 +121,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     RacingSansOne_400Regular,
     Lora_700Bold,
     Cinzel_700Bold,
+    Nunito_800ExtraBold,
+    Comfortaa_700Bold,
+    Righteous_400Regular,
+    Exo2_700Bold,
+    Bitter_700Bold,
+    ChakraPetch_700Bold,
+    PlayfairDisplay_700Bold,
   });
   const areFontsReady = fontsLoaded || fontError !== null;
   const headingFont = useMemo(() => (fontsLoaded ? headingFontForTheme(themeName) : {}), [themeName, fontsLoaded]);

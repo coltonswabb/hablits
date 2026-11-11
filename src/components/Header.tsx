@@ -67,9 +67,17 @@ export function Header({
         android_ripple={{ color: colors.divider }}
       >
         {({ pressed }) => (
-          <Animated.View style={{ transform: [{ scale: pressed ? 0.96 : 1 }], flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Animated.View style={[styles.brandInner, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
             <Logo size={24} />
-            <Text style={[styles.brandText, { color: colors.text }, headingFont]}>Hablits</Text>
+            {/* Some theme fonts are wide: shrink the name to fit rather than run into the buttons */}
+            <Text
+              style={[styles.brandText, { color: colors.text }, headingFont]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+            >
+              Hablits
+            </Text>
           </Animated.View>
         )}
       </Pressable>
@@ -147,24 +155,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
+    // Always some air between the name and the buttons
+    gap: 12,
   },
+  // The name gives way; the buttons keep their size
   brand: {
+    flex: 1,
+    minWidth: 0,
+  },
+  brandInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
   brandText: {
+    flexShrink: 1,
     fontSize: fontSizes.xl,
     fontWeight: '900',
     letterSpacing: 0.3,
   },
   controls: {
     flexDirection: 'row',
-    gap: 8,
+    flexShrink: 0,
+    gap: 6,
   },
   button: {
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    // Kept tight so the name has room beside long theme names like "Game Boy"
+    paddingHorizontal: 10,
     borderRadius: radii.md,
     borderWidth: 1,
   },

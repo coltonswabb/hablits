@@ -75,7 +75,7 @@ export function radiiForTheme(theme: ThemeName): ThemeRadii {
 /**
  * Heading fonts for the themes with a clear typographic character. The names
  * are the ones the fonts are registered under in App.tsx. All are from Google
- * Fonts under the SIL Open Font License. Themes not listed use the system font.
+ * Fonts under the SIL Open Font License. Light and Dark are deliberately left on the system font.
  */
 const themeHeadingFonts: Partial<Record<ThemeName, { family: string; letterSpacing?: number }>> = {
   // Pixel art
@@ -96,6 +96,20 @@ const themeHeadingFonts: Partial<Record<ThemeName, { family: string; letterSpaci
   paper: { family: 'Lora_700Bold' },
   // Engraved capitals
   ladyhawke: { family: 'Cinzel_700Bold' },
+  // Warm and rounded
+  sunshine: { family: 'Nunito_800ExtraBold' },
+  // Soft, wave-like curves
+  ocean: { family: 'Comfortaa_700Bold' },
+  // Seventies poster lettering
+  sunset: { family: 'Righteous_400Regular' },
+  // Clean and spacey
+  cosmic: { family: 'Exo2_700Bold' },
+  // Earthy slab serif
+  forest: { family: 'Bitter_700Bold' },
+  // Angular, with a bite
+  bengal: { family: 'ChakraPetch_700Bold' },
+  // Regal high-contrast serif
+  lion: { family: 'PlayfairDisplay_700Bold' },
 };
 
 /**
