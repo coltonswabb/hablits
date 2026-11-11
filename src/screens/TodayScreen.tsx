@@ -20,7 +20,7 @@ import {
 import { TouchableScale } from '../components/TouchableScale';
 import { useTheme, themeConfetti, spacing } from '../theme';
 import { textOn } from '../theme/colors';
-import { allDoneCelebration, miniCelebration } from '../utils/celebrate';
+import { allDoneCelebration, habitDonePop } from '../utils/celebrate';
 import { getProgress, isOnVacation, quitBest, quitDays } from '../utils/smartHabits';
 import { comebackLine, petTapLine } from '../utils/petVoice';
 import { currentLetter } from '../utils/petLetter';
@@ -78,7 +78,6 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
   // Confetti - full screen for all habits complete
   const fullConfetti = useConfetti();
   // Mini confetti for individual completions
-  const miniConfetti = useConfetti();
 
   // Reorder mode state
   const [reorderMode, setReorderMode] = useState(false);
@@ -88,8 +87,6 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
   const [runningRoutineId, setRunningRoutineId] = useState<string | null>(null);
 
   // Refs for habit card positions (for confetti origin)
-  const habitRefs = useRef<Record<string, React.ComponentRef<typeof View> | null>>({});
-  const [lastToggledHabitId, setLastToggledHabitId] = useState<string | null>(null);
 
   const today = todayStr();
   const activeHabits = getActiveHabits(
@@ -165,19 +162,12 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         // Everything done: one orchestrated fanfare (haptics → sound → confetti)
         allDoneCelebration(() => fullConfetti.trigger());
       } else {
-        // Mini confetti next to the card, timed to land just after the chime
-        const card = lastToggledHabitId ? habitRefs.current[lastToggledHabitId] : null;
-        if (card) {
-          card.measureInWindow((x: number, y: number, width: number, height: number) => {
-            miniCelebration(() => miniConfetti.trigger(x + 40, y + height / 2));
-          });
-        } else {
-          miniCelebration(() => miniConfetti.trigger());
-        }
+        // One habit done: a soft pop. The pet's treat is the visual reward, so no confetti here.
+        habitDonePop();
       }
     }
     setPrevCompletedCount(completedCount);
-  }, [completedCount, activeHabits.length, lastToggledHabitId, isLoaded]);
+  }, [completedCount, activeHabits.length, isLoaded]);
 
   // ---- Pet ----
   // Tap the pet and it says something about right now; the line fades after a few seconds
@@ -207,7 +197,6 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
 
   // Count/timed habits: add to (or take from) today's amount
   const handleAddProgress = (habitId: string, delta: number) => {
-    setLastToggledHabitId(habitId);
     dispatch({
       type: 'SET_PROGRESS',
       payload: { habitId, date: today, amount: getProgress(state, habitId, today) + delta },
@@ -228,8 +217,6 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
 
   // Handle toggle (cycles: none → done → skip → fail → none)
   const handleToggle = (habitId: string) => {
-    // Track which habit was toggled for confetti positioning
-    setLastToggledHabitId(habitId);
 
     const habit = state.habits.find(h => h.id === habitId);
     const isDone = state.logs[today]?.includes(habitId) || false;
@@ -475,17 +462,6 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         count={60}
       />
 
-      {/* Mini confetti for individual completions */}
-      <Confetti
-        key={`mini-${miniConfetti.key}`}
-        active={miniConfetti.isActive}
-        onComplete={miniConfetti.onComplete}
-        colors={themeConfetti[themeName]}
-        mini={true}
-        count={15}
-        originX={miniConfetti.originX}
-        originY={miniConfetti.originY}
-      />
       
       <ScrollView
         style={styles.scrollView}
@@ -715,7 +691,6 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                       )}
                       <View
                         style={{ flex: 1 }}
-                        ref={(ref) => { habitRefs.current[habit.id] = ref; }}
                         collapsable={false}
                       >
                         <SwipeableHabitCard
@@ -1002,7 +977,6 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
                   )}
                   <View
                     style={{ flex: 1 }}
-                    ref={(ref) => { habitRefs.current[habit.id] = ref; }}
                     collapsable={false}
                   >
                     <SwipeableHabitCard

@@ -50,17 +50,37 @@ export function Logo({ size = 24, body, face, cheek, shadow }: LogoProps) {
     C: cheek ?? colors.muted,
   };
 
-  const cells: React.ReactNode[] = [];
+  // Each row is drawn as runs of same-coloured pixels. The body goes down first
+  // as solid rows that overlap their neighbours, so no hairline seams show
+  // between pixels at small sizes; the face and cheeks are drawn on top.
+  const BLEED = 0.12;
+  const shadows: React.ReactNode[] = [];
+  const bodyRuns: React.ReactNode[] = [];
+  const details: React.ReactNode[] = [];
   ICON_GRID.forEach((row, y) => {
-    row.split('').forEach((cell, x) => {
-      if (cell === '.') return;
-      if (shadow) {
-        cells.unshift(<Rect key={`s${x}-${y}`} x={x} y={y + SHADOW_OFFSET} width={1.02} height={1.02} fill={shadow} />);
+    let x = 0;
+    while (x < COLUMNS) {
+      if (row[x] === '.') {
+        x += 1;
+        continue;
       }
-      // Slightly over 1 wide so neighbouring pixels leave no hairline gaps
-      cells.push(<Rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={fills[cell as 'W' | 'K' | 'C']} />);
+      // A run of filled pixels (any colour) is one body rectangle
+      let end = x;
+      while (end < COLUMNS && row[end] !== '.') end += 1;
+      const width = end - x;
+      if (shadow) {
+        shadows.push(<Rect key={`s${x}-${y}`} x={x} y={y + SHADOW_OFFSET} width={width} height={1 + BLEED} fill={shadow} />);
+      }
+      bodyRuns.push(<Rect key={`b${x}-${y}`} x={x} y={y - BLEED / 2} width={width} height={1 + BLEED} fill={fills.W} />);
+      x = end;
+    }
+    row.split('').forEach((cell, cx) => {
+      if (cell !== 'K' && cell !== 'C') return;
+      // Face pixels sit next to each other in pairs; bleed sideways so pairs join
+      details.push(<Rect key={`d${cx}-${y}`} x={cx - BLEED / 2} y={y - BLEED / 2} width={1 + BLEED} height={1 + BLEED} fill={fills[cell]} />);
     });
   });
+  const cells = [...shadows, ...bodyRuns, ...details];
 
   return (
     <Svg width={size} height={size} viewBox={`0 ${(ROWS + SHADOW_OFFSET - COLUMNS) / 2} ${COLUMNS} ${COLUMNS}`}>

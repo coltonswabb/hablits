@@ -52,13 +52,10 @@ export async function completionFeedback(kind: CompletionKind): Promise<void> {
   }
 }
 
-/** The little burst next to a card after `completionFeedback('complete')`. */
-export async function miniCelebration(onConfetti: () => void): Promise<void> {
+/** The soft pop after `completionFeedback('complete')` when one habit is done. */
+export async function habitDonePop(): Promise<void> {
   await wait(120);
-  if (!isReduceMotion()) {
-    playSound('pop');
-    onConfetti();
-  }
+  if (!isReduceMotion()) playSound('pop');
 }
 
 /** The whole day is done. */
