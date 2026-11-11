@@ -55,7 +55,7 @@ export function ThemePickerModal({
   onSelectTheme,
   onClose,
 }: ThemePickerModalProps) {
-  const { colors } = useTheme();
+  const { colors, areFontsReady } = useTheme();
 
   // Slide-up animation
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -138,7 +138,7 @@ export function ThemePickerModal({
                   accessibilityLabel={`${themeLabels[themeName]} theme`}
                 >
                   <View style={styles.previewHeader}>
-                    <Text style={[styles.previewName, { color: t.text }, headingFontForTheme(themeName)]} numberOfLines={1}>
+                    <Text style={[styles.previewName, { color: t.text }, areFontsReady ? headingFontForTheme(themeName) : null]} numberOfLines={1}>
                       {themeLabels[themeName]}
                     </Text>
                     <Pet

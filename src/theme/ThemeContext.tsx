@@ -14,6 +14,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeName } from '../types';
 import { themes, ThemeColors, textOn } from './colors';
 import { TextStyle } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Silkscreen_700Bold } from '@expo-google-fonts/silkscreen';
+import { ZenMaruGothic_700Bold } from '@expo-google-fonts/zen-maru-gothic';
+import { Fredoka_700Bold } from '@expo-google-fonts/fredoka';
+import { SpaceMono_700Bold } from '@expo-google-fonts/space-mono';
+import { Orbitron_700Bold } from '@expo-google-fonts/orbitron';
+import { RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
+import { Lora_700Bold } from '@expo-google-fonts/lora';
+import { Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { radiiForTheme, headingFontForTheme, ThemeRadii } from './tokens';
 
 const THEME_STORAGE_KEY = 'hablits_theme_v1';
@@ -27,6 +36,7 @@ interface ThemeContextType {
   setTheme: (theme: ThemeName) => void;      // Function to change theme
   customAccentColor: string | undefined;     // Custom accent color override
   setCustomAccentColor: (color: string | undefined) => void; // Set custom accent
+  areFontsReady: boolean;                    // true once the heading fonts have loaded (or failed to)
   isThemeLoaded: boolean;                    // true once the saved theme has been read
 }
 
@@ -91,7 +101,22 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }
 
   const radius = useMemo(() => radiiForTheme(themeName), [themeName]);
-  const headingFont = useMemo(() => headingFontForTheme(themeName), [themeName]);
+  // Heading fonts for the themes that have one (see ./tokens). Text drawn
+  // before a font is registered stays on the system font on iOS, so the
+  // heading style is only handed out once loading has finished. If loading
+  // fails, headings stay on the system font.
+  const [fontsLoaded, fontError] = useFonts({
+    Silkscreen_700Bold,
+    ZenMaruGothic_700Bold,
+    Fredoka_700Bold,
+    SpaceMono_700Bold,
+    Orbitron_700Bold,
+    RacingSansOne_400Regular,
+    Lora_700Bold,
+    Cinzel_700Bold,
+  });
+  const areFontsReady = fontsLoaded || fontError !== null;
+  const headingFont = useMemo(() => (fontsLoaded ? headingFontForTheme(themeName) : {}), [themeName, fontsLoaded]);
 
   // Function to change theme
   const setTheme = (newTheme: ThemeName) => {
@@ -99,7 +124,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   };
 
   return (
-    <ThemeContext.Provider value={{ themeName, colors, radius, headingFont, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded }}>
+    <ThemeContext.Provider value={{ themeName, colors, radius, headingFont, areFontsReady, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded }}>
       {children}
     </ThemeContext.Provider>
   );

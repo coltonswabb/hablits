@@ -145,7 +145,16 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
   // Where the pet sits in the header, so its speech bubble can point at it
   const [petCenterX, setPetCenterX] = useState<number | null>(null);
 
+  // Saved data arrives after the first render, which makes the count jump from
+  // 0 to today's total. That jump is not something the user just did.
+  const countSettled = useRef(false);
+
   useEffect(() => {
+    if (!countSettled.current) {
+      countSettled.current = isLoaded;
+      setPrevCompletedCount(completedCount);
+      return;
+    }
     // Trigger celebrations when a habit is completed
     if (completedCount > prevCompletedCount && activeHabits.length > 0) {
       // The pet gets a treat for every finished habit, and a big one for finishing the day
@@ -168,7 +177,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
       }
     }
     setPrevCompletedCount(completedCount);
-  }, [completedCount, activeHabits.length, lastToggledHabitId]);
+  }, [completedCount, activeHabits.length, lastToggledHabitId, isLoaded]);
 
   // ---- Pet ----
   // Tap the pet and it says something about right now; the line fades after a few seconds

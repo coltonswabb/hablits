@@ -18,6 +18,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { Pet } from './Pet';
+import { Logo } from './Logo';
 import { HatType, PetSpecies } from '../types';
 import { useReduceMotion } from '../utils/motion';
 import { fontSizes } from '../theme/tokens';
@@ -116,7 +117,8 @@ export function LaunchScreen({ ready, hasPet, species, hat, stage, petName }: La
     >
       <View style={styles.petStage}>
         <Animated.View style={[styles.petLayer, { opacity: iconPetOpacity, transform: [{ scale: iconPetScale }] }]}>
-          <Pet species="pixel" mono hat="none" mood="happy" size={PET_SIZE} isStatic />
+          {/* The same pet as the app icon, in the icon's colours */}
+          <Logo size={PET_SIZE} body="#ffffff" face="#000000" cheek="#cfcfcf" shadow="#3a3a3a" />
         </Animated.View>
         {showOwnPet ? (
           <Animated.View style={[styles.petLayer, { opacity: ownPetOpacity }]}>

@@ -15,15 +15,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // Providers
 import { ThemeProvider, useTheme } from './theme';
 import { textOn } from './theme/colors';
-import { useFonts } from 'expo-font';
-import { Silkscreen_700Bold } from '@expo-google-fonts/silkscreen';
-import { ZenMaruGothic_700Bold } from '@expo-google-fonts/zen-maru-gothic';
-import { Fredoka_700Bold } from '@expo-google-fonts/fredoka';
-import { SpaceMono_700Bold } from '@expo-google-fonts/space-mono';
-import { Orbitron_700Bold } from '@expo-google-fonts/orbitron';
-import { RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
-import { Lora_700Bold } from '@expo-google-fonts/lora';
-import { Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { AppProvider, useApp } from './state';
 
 // Components
@@ -57,21 +48,8 @@ setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 6000);
 // MAIN CONTENT (inside providers)
 // ============================================
 function AppContent() {
-  const { colors, themeName, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded } = useTheme();
+  const { colors, themeName, setTheme, customAccentColor, setCustomAccentColor, isThemeLoaded, areFontsReady } = useTheme();
   const { state, dispatch, isLoaded } = useApp();
-  // Heading fonts for the themes that have one (see theme/tokens). If loading
-  // fails, text falls back to the system font.
-  const [fontsLoaded, fontError] = useFonts({
-    Silkscreen_700Bold,
-    ZenMaruGothic_700Bold,
-    Fredoka_700Bold,
-    SpaceMono_700Bold,
-    Orbitron_700Bold,
-    RacingSansOne_400Regular,
-    Lora_700Bold,
-    Cinzel_700Bold,
-  });
-  const fontsReady = fontsLoaded || fontError !== null;
   const [activeTab, setActiveTab] = useState<TabName>('today');
   const [identitiesModalVisible, setIdentitiesModalVisible] = useState(false);
   const [identityFilterModalVisible, setIdentityFilterModalVisible] = useState(false);
@@ -530,7 +508,7 @@ function AppContent() {
 
       {/* Covers the app until data + theme are in, then animates away */}
       <LaunchScreen
-        ready={isLoaded && isThemeLoaded && fontsReady}
+        ready={isLoaded && isThemeLoaded && areFontsReady}
         hasPet={state.hasCompletedOnboarding}
         species={state.petSpecies}
         hat={state.petHat}
