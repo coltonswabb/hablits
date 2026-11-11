@@ -99,6 +99,7 @@ export interface AppState {
   petSpecies: PetSpecies;              // Selected pet species
   petHat: HatType;                     // Selected pet hat
   activeFasts: Record<string, ActiveFast>; // { "habit-id": { startTime, duration, targetTime } } - Secret fasting timers
+  petBranch?: 'body' | 'mind' | 'heart'; // Which way the pet evolved at the adult stage; chosen once from the habits kept, then fixed
   petStageSeen: number;                // Highest evolution stage the user has been congratulated for
   lastLetterDismissed?: string;        // weekStart (YYYY-MM-DD) of the last weekly pet letter dismissed
   petName?: string;                    // What the user calls their pet ('' = unnamed)

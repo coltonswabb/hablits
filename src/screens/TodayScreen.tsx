@@ -28,6 +28,7 @@ import { PetStage } from '../utils/evolution';
 import { PetLetterCard } from '../components/PetLetterCard';
 import { RoutineRunnerModal } from '../components/RoutineRunnerModal';
 import { EnterExit } from '../components/Animations';
+import type { ConfettiShape } from '../components/Confetti';
 import { StarterHabitsModal } from '../components/StarterHabitsModal';
 import { ReorderList } from '../components/ReorderList';
 import { applyVisibleOrder } from '../utils/reorder';
@@ -176,6 +177,9 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
   const letter = useMemo(() => currentLetter(state, petStage as PetStage), [state.logs, state.habits, state.lastLetterDismissed, state.petName, petStage]);
 
   // Track previous completion count to detect new completions
+  // Pieces that suit the theme: pixels for the pixel-art themes, petals for Sakura
+  const confettiShape: ConfettiShape =
+    themeName === 'pixel' || themeName === 'gameboy' || themeName === 'retro' ? 'pixel' : themeName === 'sakura' ? 'petal' : 'mixed';
   const [prevCompletedCount, setPrevCompletedCount] = useState(completedCount);
   const [treatKey, setTreatKey] = useState(0);
   const [bigTreat, setBigTreat] = useState(false);
@@ -525,7 +529,8 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
         active={fullConfetti.isActive}
         onComplete={fullConfetti.onComplete}
         colors={themeConfetti[themeName]}
-        count={60}
+        shape={confettiShape}
+        count={70}
       />
 
       

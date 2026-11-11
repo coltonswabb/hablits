@@ -15,6 +15,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // Providers
 import { ThemeProvider, useTheme } from './theme';
 import { textOn } from './theme/colors';
+import { PetBranchProvider } from './pets/BranchContext';
+import { BRANCH_STAGE } from './pets/forms';
+import { decideBranch } from './utils/petBranch';
 import { AppProvider, useApp } from './state';
 
 // Components
@@ -207,6 +210,14 @@ function AppContent() {
   useEffect(() => {
     setPetImages({});
   }, [state.petSpecies, state.petHat, petStage]);
+  // The adult stage is where a pet's path splits. Decide it once, from the
+  // habits kept lately, the first time the pet is seen at that stage. Existing
+  // users who are already past it get theirs decided the same way.
+  useEffect(() => {
+    if (isLoaded && petStage >= BRANCH_STAGE && !state.petBranch) {
+      dispatch({ type: 'SET_PET_BRANCH', payload: decideBranch(state) });
+    }
+  }, [isLoaded, petStage, state.petBranch]);
   const [evolutionVisible, setEvolutionVisible] = useState(false);
   useEffect(() => {
     if (isLoaded && petStage > state.petStageSeen) {
@@ -331,6 +342,7 @@ function AppContent() {
   const isDarkTheme = textOn(colors.bg) === '#ffffff';
 
   return (
+    <PetBranchProvider value={state.petBranch ?? null}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bg }]}>
         <StatusBar barStyle={isDarkTheme ? 'light-content' : 'dark-content'} />
@@ -510,6 +522,7 @@ function AppContent() {
           species={state.petSpecies}
           hat={state.petHat}
           stage={petStage}
+          branch={state.petBranch ?? null}
           petName={state.petName}
           onClose={() => {
             setEvolutionVisible(false);
@@ -528,6 +541,7 @@ function AppContent() {
         petName={state.petName}
       />
     </GestureHandlerRootView>
+    </PetBranchProvider>
   );
 }
 

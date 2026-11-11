@@ -14,6 +14,10 @@ import Svg, { Path, Circle, Rect, Ellipse, G } from 'react-native-svg';
 import { PetSpecies, PetMood, HatType } from '../types';
 import { useTheme } from '../theme';
 import { useReduceMotion } from '../utils/motion';
+import { petForm, PetBranch } from '../pets/forms';
+import { usePetBranch } from '../pets/BranchContext';
+import { MOTIONS, MOTION_INPUT_RANGE, Keyframes } from '../pets/motions';
+import { SPRITE_SIZE, spriteFace, SpriteExpression, SpritePalette } from '../pets/sprites';
 
 // Create animated SVG components
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -40,7 +44,24 @@ interface PetProps {
   treatKey?: number;
   /** The next treat is the big end-of-day one: bigger treat, a hop, a bigger heart */
   bigTreat?: boolean;
+  /** Which way the pet evolved (see pets/forms). Only matters from the adult stage on. */
+  branch?: PetBranch | null;
 }
+
+// Pixel sprites are drawn on a 16-cell grid inside the pet's 64-unit canvas
+const SPRITE_CELL = 64 / SPRITE_SIZE;
+// Cells overlap by this much so no hairline seams show between them
+const SPRITE_BLEED = 0.08;
+
+const MONO_SPRITE_PALETTE: SpritePalette = { O: '#000000', B: '#FFFFFF', H: '#FFFFFF', S: '#CFCFCF', A: '#9A9A9A', W: '#FFFFFF', C: '#CFCFCF' };
+
+const EXPRESSION_FOR_MOOD: Record<PetMood, SpriteExpression> = {
+  idle: 'idle',
+  curious: 'idle',
+  happy: 'happy',
+  excited: 'excited',
+  celebrate: 'excited',
+};
 
 // The black-and-white pet from the app icon
 const MONO_PALETTE = {
@@ -72,9 +93,30 @@ export function Pet({
   attentive = false,
   treatKey,
   bigTreat = false,
+  branch,
 }: PetProps) {
   const { colors, themeName } = useTheme();
   const reduceMotion = useReduceMotion() || isStatic;
+
+  // The drawing for this pet at this stage. An explicit branch (a preview, the
+  // evolution screen) wins over the saved one.
+  const savedBranch = usePetBranch();
+  const sprite = petForm(species, stage, branch === undefined ? savedBranch : branch);
+  const motionKind = sprite ? sprite.motion ?? 'breathe' : null;
+  const motion = motionKind ? MOTIONS[motionKind] : null;
+  // One endless loop from 0 to 1 that the pet's own idle motion is read from
+  const motionProgress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!motion || reduceMotion) {
+      motionProgress.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.timing(motionProgress, { toValue: 1, duration: motion.duration, easing: Easing.linear, useNativeDriver: true })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [motionKind, reduceMotion]);
 
   // Animation values
   const bobY = useRef(new Animated.Value(0)).current;
@@ -136,9 +178,9 @@ export function Pet({
     }).start();
   }, [attentive, reduceMotion]);
 
-  // Idle animation - gentle bob
+  // Idle animation - gentle bob (pets with their own idle motion skip it)
   useEffect(() => {
-    if (reduceMotion) { bobY.setValue(0); return; }
+    if (reduceMotion || motion) { bobY.setValue(0); return; }
     const bobAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(bobY, {
@@ -157,11 +199,11 @@ export function Pet({
     );
     bobAnimation.start();
     return () => bobAnimation.stop();
-  }, [reduceMotion]);
+  }, [reduceMotion, motionKind]);
 
   // Breathing animation
   useEffect(() => {
-    if (reduceMotion) { breatheScale.setValue(1); return; }
+    if (reduceMotion || motion) { breatheScale.setValue(1); return; }
     const breatheAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(breatheScale, {
@@ -180,7 +222,7 @@ export function Pet({
     );
     breatheAnimation.start();
     return () => breatheAnimation.stop();
-  }, [reduceMotion]);
+  }, [reduceMotion, motionKind]);
 
   // Occasional blink animation
   useEffect(() => {
@@ -515,6 +557,55 @@ export function Pet({
   // The Pixel theme is black and white, so every pet is drawn that way in it
   // (a preview of another theme can pass mono={false} to opt out)
   const pal = (mono ?? themeName === 'pixel') ? MONO_PALETTE : palettes[species];
+
+  // Pets that have been redrawn as pixel sprites use those; the rest are
+  // drawn the old way by the functions below.
+  const isMono = mono ?? themeName === 'pixel';
+
+  const renderSprite = () => {
+    if (!sprite) return null;
+    const palette = isMono ? MONO_SPRITE_PALETTE : sprite.palette;
+    // Each row is drawn as runs of one colour, so a pet is a few dozen
+    // rectangles rather than 256
+    const runs: React.ReactNode[] = [];
+    sprite.grid.forEach((row, y) => {
+      let x = 0;
+      while (x < row.length) {
+        const cell = row[x];
+        if (cell === '.') {
+          x += 1;
+          continue;
+        }
+        let end = x;
+        while (end < row.length && row[end] === cell) end += 1;
+        runs.push(
+          <Rect
+            key={`${x}-${y}`}
+            x={x - SPRITE_BLEED / 2}
+            y={y - SPRITE_BLEED / 2}
+            width={end - x + SPRITE_BLEED}
+            height={1 + SPRITE_BLEED}
+            fill={palette[cell as keyof SpritePalette]}
+          />
+        );
+        x = end;
+      }
+    });
+    const face = spriteFace(sprite, EXPRESSION_FOR_MOOD[mood], isMono ? '#000000' : undefined);
+    const faceRect = (c: { x: number; y: number; color: string }, i: number) => (
+      <Rect key={i} x={c.x} y={c.y} width={1} height={1} fill={c.color} />
+    );
+    return (
+      <G transform={`scale(${SPRITE_CELL})`}>
+        {runs}
+        <AnimatedG opacity={blinkOpacity}>
+          {/* Eyes drop a cell's worth when the pet is watching a card below it */}
+          <G transform={attentive ? 'translate(0, 0.4)' : undefined}>{face.eyes.map(faceRect)}</G>
+        </AnimatedG>
+        {face.mouth.map(faceRect)}
+      </G>
+    );
+  };
 
   // Render detailed pixel art body for each species
   const renderBody = () => {
@@ -1493,7 +1584,7 @@ export function Pet({
     let hatY = 14; // Default for blob, slime, paper
     let hatScale = 1; // Scale multiplier for hat size
 
-    switch (species) {
+    switch (sprite ? null : species) {
       case 'droplet':
         hatY = 8; // Top of droplet
         break;
@@ -1543,6 +1634,8 @@ export function Pet({
         hatScale = 0.85;
         break;
     }
+    // Pixel sprites say where the top of their head is
+    if (sprite) hatY = sprite.headTop * SPRITE_CELL + 6;
 
     switch (hat) {
       case 'cap':
@@ -1683,6 +1776,22 @@ export function Pet({
     outputRange: ['0deg', '5deg'],
   });
 
+  // This pet's own idle motion, as extra transforms on top of everything else
+  const unit = size / 64;
+  const frames = (values: Keyframes, scale = 1) =>
+    motionProgress.interpolate({ inputRange: MOTION_INPUT_RANGE, outputRange: values.map((v) => v * scale) });
+  const idleTransforms = motion
+    ? [
+        ...(motion.translateX ? [{ translateX: frames(motion.translateX, unit) }] : []),
+        ...(motion.translateY ? [{ translateY: frames(motion.translateY, unit) }] : []),
+        ...(motion.rotate
+          ? [{ rotate: motionProgress.interpolate({ inputRange: MOTION_INPUT_RANGE, outputRange: motion.rotate.map((d) => `${d}deg`) }) }]
+          : []),
+        ...(motion.scaleX ? [{ scaleX: frames(motion.scaleX) }] : []),
+        ...(motion.scaleY ? [{ scaleY: frames(motion.scaleY) }] : []),
+      ]
+    : [];
+
   // Handle tap interaction
   const handleTap = () => {
     // Bounce animation
@@ -1732,18 +1841,25 @@ export function Pet({
           { rotate: Animated.add(wiggleInterpolate as any, headTiltInterpolate as any) },
           { rotate: attentiveTilt.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '6deg'] }) },
           { scaleY: munchScaleY },
+          ...idleTransforms,
         ],
       }}
     >
       <Svg ref={svgRef} width={size} height={size} viewBox="0 0 64 64">
         {renderAura()}
-        {renderBody()}
-        <AnimatedG opacity={blinkOpacity}>
-          {/* Eyes drop a little when the pet is watching a card below it */}
-          <G transform={attentive ? 'translate(0, 1.5)' : undefined}>{renderEyes()}</G>
-        </AnimatedG>
-        {renderMouth()}
-        {renderCheeks()}
+        {sprite ? (
+          renderSprite()
+        ) : (
+          <>
+            {renderBody()}
+            <AnimatedG opacity={blinkOpacity}>
+              {/* Eyes drop a little when the pet is watching a card below it */}
+              <G transform={attentive ? 'translate(0, 1.5)' : undefined}>{renderEyes()}</G>
+            </AnimatedG>
+            {renderMouth()}
+            {renderCheeks()}
+          </>
+        )}
         {renderHat()}
         {renderSparkles()}
         {renderStageSparkles()}

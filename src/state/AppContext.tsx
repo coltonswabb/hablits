@@ -70,6 +70,7 @@ type Action =
   | { type: 'RUN_SNACKS' }
   | { type: 'DISMISS_SNACK_NOTE' }
   | { type: 'SET_HATS_SEEN'; payload: number }
+  | { type: 'SET_PET_BRANCH'; payload: 'body' | 'mind' | 'heart' }
   | { type: 'SKIP_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'FAIL_HABIT'; payload: { habitId: string; date: string } }
   | { type: 'CLEAR_DAY'; payload: string }
@@ -240,6 +241,10 @@ function appReducer(state: AppState, action: Action): AppState {
     // Earn pet snacks for streak milestones and spend them on missed days
     case 'RUN_SNACKS':
       return runSnacks(state);
+
+    // Decided once, when the pet reaches the adult stage, and never changed after
+    case 'SET_PET_BRANCH':
+      return state.petBranch ? state : { ...state, petBranch: action.payload };
 
     case 'SET_HATS_SEEN':
       return state.hatsSeen === action.payload ? state : { ...state, hatsSeen: action.payload };
