@@ -76,11 +76,13 @@ describe('petForm', () => {
     expect(petForm('blob', 3, null)?.name).toBe('Evergrow');
   });
 
-  it('keeps single-form pets the same at every stage', () => {
-    expect(petForm('pixel', 0)?.name).toBe('Pixel');
-    expect(petForm('pixel', 3, 'body')?.name).toBe('Pixel');
-    expect(petForm('robot', 1)?.name).toBe('Robot');
+  it('gives every other pet its own line too', () => {
+    expect(petForm('pixel', 0)?.name).toBe('Bit');
+    expect(petForm('pixel', 1)?.name).toBe('Pixel');
+    expect(petForm('pixel', 2, 'mind')?.name).toBe('Glitch');
+    expect(petForm('pixel', 3, 'body')?.name).toBe('Bastion');
+    expect(petForm('hawk', 3, 'heart')?.name).toBe('Phoenix');
     expect(hasEvolutionLine('blob')).toBe(true);
-    expect(hasEvolutionLine('pixel')).toBe(false);
+    expect(hasEvolutionLine('pixel')).toBe(true);
   });
 });

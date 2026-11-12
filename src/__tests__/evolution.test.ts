@@ -52,26 +52,27 @@ describe('longestStreakEver', () => {
 });
 
 describe('stages', () => {
-  it('maps streaks to stages at 7/30/100', () => {
+  it('maps streaks to stages at 1/3/7', () => {
     expect(stageForStreak(0)).toBe(0);
-    expect(stageForStreak(6)).toBe(0);
-    expect(stageForStreak(7)).toBe(1);
-    expect(stageForStreak(29)).toBe(1);
-    expect(stageForStreak(30)).toBe(2);
-    expect(stageForStreak(100)).toBe(3);
+    expect(stageForStreak(1)).toBe(1);
+    expect(stageForStreak(2)).toBe(1);
+    expect(stageForStreak(3)).toBe(2);
+    expect(stageForStreak(6)).toBe(2);
+    expect(stageForStreak(7)).toBe(3);
     expect(stageForStreak(400)).toBe(3);
   });
 
   it('reports days to the next stage', () => {
-    expect(daysToNextStage(0)).toEqual({ needed: 7, nextStage: 1 });
-    expect(daysToNextStage(25)).toEqual({ needed: 5, nextStage: 2 });
+    expect(daysToNextStage(0)).toEqual({ needed: 1, nextStage: 1 });
+    expect(daysToNextStage(2)).toEqual({ needed: 1, nextStage: 2 });
+    expect(daysToNextStage(4)).toEqual({ needed: 3, nextStage: 3 });
     expect(daysToNextStage(100)).toBeNull();
   });
 
   it('getPetStage uses the best habit', () => {
     const logs = { ...run(TODAY, 3, 'a'), ...run(local(2026, 1, 31), 31, 'b') };
     expect(bestStreakEver([habit('a'), habit('b')], logs, TODAY)).toBe(31);
-    expect(getPetStage([habit('a'), habit('b')], logs, TODAY)).toBe(2);
+    expect(getPetStage([habit('a'), habit('b')], logs, TODAY)).toBe(3);
   });
 });
 

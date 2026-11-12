@@ -5,10 +5,13 @@
 // by the longest streak any habit has ever reached, so a broken streak
 // never demotes the pet — the history is the proof.
 //
-//   stage 0  Hatchling   < 7-day streak
-//   stage 1  Companion   7+
-//   stage 2  Veteran     30+
-//   stage 3  Legend      100+
+//   stage 0  Hatchling   nothing completed yet
+//   stage 1  Companion   1+ (the first day a habit is done)
+//   stage 2  Veteran     3+ (the pet picks a path)
+//   stage 3  Legend      7+
+//
+// The whole line fits in the first week on purpose: a new owner sees every
+// evolution before the habit has had time to lapse.
 // ============================================
 
 import { Habit } from '../types';
@@ -16,7 +19,7 @@ import { dateStr } from './dates';
 import { quitBest } from './smartHabits';
 import { isExemptDay, isHabitActiveOn, isWeeklyGoalCovered } from './habits';
 
-export const STAGE_THRESHOLDS = [7, 30, 100] as const;
+export const STAGE_THRESHOLDS = [1, 3, 7] as const;
 export const STAGE_NAMES = ['Hatchling', 'Companion', 'Veteran', 'Legend'] as const;
 export type PetStage = 0 | 1 | 2 | 3;
 

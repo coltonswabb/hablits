@@ -504,6 +504,8 @@ function AppContent() {
           onRenamePet={(name) => dispatch({ type: 'SET_PET_NAME', payload: name })}
           onSelectSpecies={(species) => dispatch({ type: 'SET_PET_SPECIES', payload: species })}
           onSelectHat={(hat) => dispatch({ type: 'SET_PET_HAT', payload: hat })}
+          petBranch={state.petBranch ?? null}
+          onSelectBranch={(branch) => dispatch({ type: 'CHOOSE_PET_BRANCH', payload: branch })}
           onClose={() => {
             setHatClosetVisible(false);
             // They've seen the closet, so nothing in it is news any more
@@ -524,6 +526,7 @@ function AppContent() {
           stage={petStage}
           branch={state.petBranch ?? null}
           petName={state.petName}
+          onChooseBranch={(branch) => dispatch({ type: 'CHOOSE_PET_BRANCH', payload: branch })}
           onClose={() => {
             setEvolutionVisible(false);
             dispatch({ type: 'SET_PET_STAGE_SEEN', payload: petStage });

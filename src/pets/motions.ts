@@ -13,6 +13,7 @@
 
 export type PetMotion =
   | 'breathe'
+  | 'wag'
   | 'step'
   | 'sway'
   | 'tick'
@@ -75,6 +76,8 @@ export const MOTIONS: Record<PetMotion, MotionSpec> = {
   puff: { duration: 2400, scaleX: [1, 1.05, 1, 1.05, 1], rotate: [0, -2, 0, 2, 0] },
   // Hawk: quick dips of the head
   bob: { duration: 1100, translateY: [0, 1.5, 0, 1.5, 0] },
+  // Delilah: a quick happy wiggle, like a wagging tail
+  wag: { duration: 800, rotate: [0, 3, 0, -3, 0], translateY: [0, -1, 0, -1, 0] },
   // Dragon: drifts and leans
   drift: { duration: 3400, translateY: [0, -2, -3, -2, 0], rotate: [0, 2, 0, -2, 0] },
 };

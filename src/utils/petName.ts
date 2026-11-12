@@ -40,4 +40,5 @@ export const NAME_SUGGESTIONS: Record<PetSpecies, string[]> = {
   lion: ['Leo', 'Sol', 'Mane'],
   hawk: ['Juniper', 'Sky', 'Talon'],
   dragon: ['Cinder', 'Pyre', 'Wyrm'],
+  delilah: ['Delilah', 'Lilah', 'Dee'],
 };

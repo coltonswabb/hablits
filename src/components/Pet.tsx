@@ -18,6 +18,7 @@ import { petForm, PetBranch } from '../pets/forms';
 import { usePetBranch } from '../pets/BranchContext';
 import { MOTIONS, MOTION_INPUT_RANGE, Keyframes } from '../pets/motions';
 import { SPRITE_SIZE, spriteFace, SpriteExpression, SpritePalette } from '../pets/sprites';
+import { placeHat, gridUnderHat, scaleToFitHat } from '../pets/hats';
 
 // Create animated SVG components
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -46,6 +47,8 @@ interface PetProps {
   bigTreat?: boolean;
   /** Which way the pet evolved (see pets/forms). Only matters from the adult stage on. */
   branch?: PetBranch | null;
+  /** Draw only the pet's outline shape, filled with this colour: no face, no colours, no sparkles */
+  silhouette?: string;
 }
 
 // Pixel sprites are drawn on a 16-cell grid inside the pet's 64-unit canvas
@@ -85,6 +88,7 @@ export function Pet({
   size = 64,
   svgRef,
   stage = 0,
+  silhouette,
   isStatic = false,
   completionsToday = 0,
   streak = 0,
@@ -543,6 +547,15 @@ export function Pet({
       cheek: '#D4A574',
       accent: '#8B5A99',
     },
+    delilah: {
+      body: '#2B2C36',
+      bodyLight: '#7F8CA3',
+      bodyDark: '#101016',
+      eye: '#F0A64A',
+      eyeShine: '#FFFFFF',
+      cheek: '#E0903A',
+      accent: '#3E8F5E',
+    },
     dragon: {
       body: '#48C9A5',
       bodyLight: '#7FE3C9',
@@ -562,13 +575,11 @@ export function Pet({
   // drawn the old way by the functions below.
   const isMono = mono ?? themeName === 'pixel';
 
-  const renderSprite = () => {
-    if (!sprite) return null;
-    const palette = isMono ? MONO_SPRITE_PALETTE : sprite.palette;
-    // Each row is drawn as runs of one colour, so a pet is a few dozen
-    // rectangles rather than 256
+  // Each row of a pixel drawing becomes runs of one colour, so a pet is a
+  // few dozen rectangles rather than 256
+  const pixelRuns = (grid: string[], palette: Partial<SpritePalette>, left: number, top: number, name: string) => {
     const runs: React.ReactNode[] = [];
-    sprite.grid.forEach((row, y) => {
+    grid.forEach((row, y) => {
       let x = 0;
       while (x < row.length) {
         const cell = row[x];
@@ -580,9 +591,9 @@ export function Pet({
         while (end < row.length && row[end] === cell) end += 1;
         runs.push(
           <Rect
-            key={`${x}-${y}`}
-            x={x - SPRITE_BLEED / 2}
-            y={y - SPRITE_BLEED / 2}
+            key={`${name}-${x}-${y}`}
+            x={left + x - SPRITE_BLEED / 2}
+            y={top + y - SPRITE_BLEED / 2}
             width={end - x + SPRITE_BLEED}
             height={1 + SPRITE_BLEED}
             fill={palette[cell as keyof SpritePalette]}
@@ -591,18 +602,35 @@ export function Pet({
         x = end;
       }
     });
-    const face = spriteFace(sprite, EXPRESSION_FOR_MOOD[mood], isMono ? '#000000' : undefined);
+    return runs;
+  };
+
+  const renderSprite = () => {
+    if (!sprite) return null;
+    const flat: SpritePalette | null = silhouette
+      ? { O: silhouette, B: silhouette, H: silhouette, S: silhouette, A: silhouette, W: silhouette, C: silhouette }
+      : null;
+    const palette = flat ?? (isMono ? MONO_SPRITE_PALETTE : sprite.palette);
+    const placedHat = placeHat(sprite, hat);
+    const runs = pixelRuns(gridUnderHat(sprite, hat), palette, 0, 0, 'pet');
+    // A tall hat reaches above the picture, so the pet shrinks towards its
+    // feet by just enough to keep the whole hat in view
+    const fit = scaleToFitHat(placedHat);
+    const cell = SPRITE_CELL * fit;
+    const face = flat ? { eyes: [], mouth: [] } : spriteFace(sprite, EXPRESSION_FOR_MOOD[mood], isMono ? '#000000' : undefined);
     const faceRect = (c: { x: number; y: number; color: string }, i: number) => (
       <Rect key={i} x={c.x} y={c.y} width={1} height={1} fill={c.color} />
     );
     return (
-      <G transform={`scale(${SPRITE_CELL})`}>
+      <G transform={`translate(${32 * (1 - fit)}, ${64 * (1 - fit)}) scale(${cell})`}>
         {runs}
         <AnimatedG opacity={blinkOpacity}>
           {/* Eyes drop a cell's worth when the pet is watching a card below it */}
           <G transform={attentive ? 'translate(0, 0.4)' : undefined}>{face.eyes.map(faceRect)}</G>
         </AnimatedG>
         {face.mouth.map(faceRect)}
+        {placedHat &&
+          pixelRuns(placedHat.grid, flat ?? (isMono ? MONO_SPRITE_PALETTE : placedHat.palette), placedHat.left, placedHat.top, 'hat')}
       </G>
     );
   };
@@ -1580,6 +1608,9 @@ export function Pet({
 
   // Render hat
   const renderHat = () => {
+    // Pixel pets wear pixel hats, drawn with the sprite itself
+    if (sprite) return null;
+
     // Adjust hat position based on pet species head position/size
     let hatY = 14; // Default for blob, slime, paper
     let hatScale = 1; // Scale multiplier for hat size
@@ -1635,7 +1666,6 @@ export function Pet({
         break;
     }
     // Pixel sprites say where the top of their head is
-    if (sprite) hatY = sprite.headTop * SPRITE_CELL + 6;
 
     switch (hat) {
       case 'cap':
@@ -1846,7 +1876,7 @@ export function Pet({
       }}
     >
       <Svg ref={svgRef} width={size} height={size} viewBox="0 0 64 64">
-        {renderAura()}
+        {!silhouette && renderAura()}
         {sprite ? (
           renderSprite()
         ) : (
@@ -1861,8 +1891,8 @@ export function Pet({
           </>
         )}
         {renderHat()}
-        {renderSparkles()}
-        {renderStageSparkles()}
+        {!silhouette && renderSparkles()}
+        {!silhouette && renderStageSparkles()}
       </Svg>
     </Animated.View>
   );

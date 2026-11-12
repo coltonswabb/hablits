@@ -16,6 +16,18 @@ import type { PetMotion } from './motions';
 export type SpriteCell = '.' | 'O' | 'B' | 'H' | 'S' | 'A' | 'W' | 'C';
 export type SpritePalette = Record<Exclude<SpriteCell, '.'>, string>;
 
+/** Where a hat sits on a pet */
+export type HatFit = {
+  /** The row of the head that the bottom of the hat lands on */
+  row: number;
+  /** The column the hat is centred on, when the head is off-centre. Left out, the middle. */
+  x?: number;
+  /** Small hats for small or pointed heads. Left out, medium. */
+  size?: 's' | 'm';
+  /** Columns of whatever sprouts above the head (a flame, an antenna) that a hat hides */
+  tuck?: [number, number];
+};
+
 export type SpriteDef = {
   /** The form's name, shown when the pet evolves */
   name: string;
@@ -27,8 +39,8 @@ export type SpriteDef = {
   eyeSize: 1 | 2;
   /** Left cell of the mouth */
   mouth: [number, number];
-  /** Where a hat sits: the row of the top of the head */
-  headTop: number;
+  /** How a hat fits this pet (see ./hats) */
+  hat: HatFit;
   /** Eyes get a white glint unless this is false (it would vanish on a white body) */
   eyeShine?: boolean;
   /** Colour of the eyes and mouth, for pets whose face is not drawn in dark ink (a robot's lit display) */
@@ -51,7 +63,7 @@ export const SPRITES = {
     eyes: [[6, 8], [9, 8]],
     eyeSize: 1,
     mouth: [7, 10],
-    headTop: 5,
+    hat: { row: 7, size: 's' },
     grid: [
       '................',
       '................',
@@ -77,7 +89,7 @@ export const SPRITES = {
     eyes: [[4, 7], [10, 7]],
     eyeSize: 2,
     mouth: [7, 10],
-    headTop: 2,
+    hat: { row: 3 },
     grid: [
       '................',
       '................',
@@ -103,7 +115,7 @@ export const SPRITES = {
     eyes: [[4, 7], [10, 7]],
     eyeSize: 2,
     mouth: [7, 10],
-    headTop: 3,
+    hat: { row: 3 },
     grid: [
       '................',
       '...OO......OO...',
@@ -129,7 +141,7 @@ export const SPRITES = {
     eyes: [[4, 8], [10, 8]],
     eyeSize: 2,
     mouth: [7, 11],
-    headTop: 4,
+    hat: { row: 5, tuck: [5, 10] },
     grid: [
       '.......OO.......',
       '......OAAO......',
@@ -155,7 +167,7 @@ export const SPRITES = {
     eyes: [[4, 8], [10, 8]],
     eyeSize: 2,
     mouth: [7, 10],
-    headTop: 4,
+    hat: { row: 5, tuck: [4, 11] },
     grid: [
       '.....OO..OO.....',
       '....OAAOOAAO....',
@@ -181,7 +193,7 @@ export const SPRITES = {
     eyes: [[4, 6], [10, 6]],
     eyeSize: 2,
     mouth: [7, 9],
-    headTop: 3,
+    hat: { row: 3 },
     grid: [
       '.OO..........OO.',
       'OAAO........OAAO',
@@ -207,7 +219,7 @@ export const SPRITES = {
     eyes: [[4, 8], [10, 8]],
     eyeSize: 2,
     mouth: [7, 10],
-    headTop: 5,
+    hat: { row: 6, tuck: [0, 15] },
     grid: [
       '...O...OO...O...',
       '..OHO.OAAO.OHO..',
@@ -233,7 +245,7 @@ export const SPRITES = {
     eyes: [[4, 8], [10, 8]],
     eyeSize: 2,
     mouth: [7, 10],
-    headTop: 4,
+    hat: { row: 5, tuck: [3, 12] },
     grid: [
       '....OO.OO.OO....',
       '...OAAOAAOAAO...',
@@ -263,7 +275,7 @@ export const SPRITES = {
     eyes: [[4, 6], [10, 6]],
     eyeSize: 2,
     mouth: [7, 8],
-    headTop: 3,
+    hat: { row: 3 },
     grid: [
       '................',
       '...OO......OO...',
@@ -291,7 +303,7 @@ export const SPRITES = {
     eyes: [[4, 5], [10, 5]],
     eyeSize: 2,
     mouth: [7, 8],
-    headTop: 3,
+    hat: { row: 3 },
     grid: [
       '...OO......OO...',
       '..OAAO....OAAO..',
@@ -321,7 +333,7 @@ export const SPRITES = {
     eyes: [[4, 6], [10, 6]],
     eyeSize: 2,
     mouth: [7, 8],
-    headTop: 1,
+    hat: { row: 3, x: 7 },
     grid: [
       '................',
       '..OOOOOOOOO.....',
@@ -351,7 +363,7 @@ export const SPRITES = {
     eyes: [[5, 6], [9, 6]],
     eyeSize: 2,
     mouth: [7, 8],
-    headTop: 3,
+    hat: { row: 3, tuck: [6, 9] },
     grid: [
       '.......OO.......',
       '.......AA.......',
@@ -379,7 +391,7 @@ export const SPRITES = {
     eyes: [[4, 8], [10, 8]],
     eyeSize: 2,
     mouth: [7, 10],
-    headTop: 1,
+    hat: { row: 4, size: 's', tuck: [6, 9] },
     grid: [
       '.......OO.......',
       '......OHBO......',
@@ -407,7 +419,7 @@ export const SPRITES = {
     eyes: [[4, 8], [10, 8]],
     eyeSize: 2,
     mouth: [7, 10],
-    headTop: 4,
+    hat: { row: 5 },
     grid: [
       '................',
       '................',
@@ -435,7 +447,7 @@ export const SPRITES = {
     eyes: [[4, 4], [10, 4]],
     eyeSize: 2,
     mouth: [7, 9],
-    headTop: 2,
+    hat: { row: 3 },
     grid: [
       '................',
       '................',
@@ -463,7 +475,7 @@ export const SPRITES = {
     eyes: [[5, 5], [9, 5]],
     eyeSize: 2,
     mouth: [7, 7],
-    headTop: 2,
+    hat: { row: 3 },
     grid: [
       '................',
       '................',
@@ -491,7 +503,7 @@ export const SPRITES = {
     eyes: [[3, 6]],
     eyeSize: 2,
     mouth: [2, 8],
-    headTop: 4,
+    hat: { row: 4, x: 7, tuck: [5, 9] },
     grid: [
       '................',
       '................',
@@ -520,7 +532,7 @@ export const SPRITES = {
     eyes: [[6, 4], [9, 4]],
     eyeSize: 1,
     mouth: [7, 6],
-    headTop: 2,
+    hat: { row: 3, size: 's', tuck: [4, 11] },
     grid: [
       '....O......O....',
       '.....O....O.....',
@@ -549,7 +561,7 @@ export const SPRITES = {
     eyes: [[5, 6], [9, 6]],
     eyeSize: 2,
     mouth: [7, 8],
-    headTop: 3,
+    hat: { row: 3, size: 's', tuck: [6, 9] },
     grid: [
       '.......OO.......',
       '......OHHO......',
@@ -577,7 +589,7 @@ export const SPRITES = {
     eyes: [[4, 6], [10, 6]],
     eyeSize: 2,
     mouth: [7, 9],
-    headTop: 4,
+    hat: { row: 3 },
     grid: [
       '..O.O......O.O..',
       '..OAO......OAO..',
@@ -605,7 +617,7 @@ export const SPRITES = {
     eyes: [[4, 6], [10, 6]],
     eyeSize: 2,
     mouth: [7, 9],
-    headTop: 3,
+    hat: { row: 3 },
     grid: [
       '................',
       '..OO........OO..',
@@ -633,7 +645,7 @@ export const SPRITES = {
     eyes: [[4, 6], [10, 6]],
     eyeSize: 2,
     mouth: [7, 9],
-    headTop: 1,
+    hat: { row: 3 },
     grid: [
       '..O..O.OO.O..O..',
       '.OSOOSOSSOSOOSO.',
@@ -661,7 +673,7 @@ export const SPRITES = {
     eyes: [[4, 4], [10, 4]],
     eyeSize: 2,
     mouth: [7, 7],
-    headTop: 1,
+    hat: { row: 2 },
     grid: [
       '................',
       '.....OOOOOO.....',

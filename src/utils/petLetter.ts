@@ -222,8 +222,8 @@ export function composeLetter(recap: WeeklyRecap, stage: PetStage, petName?: str
   const signoffs: Record<PetStage, string[]> = {
     0: ['See you tomorrow.', 'Same time tomorrow?', sig ? `${sig} (still new here)` : '— your pet (still new here)'],
     1: ['See you tomorrow. I know you\'ll be there.', sig ? `${sig}, your Companion` : '— your Companion', 'Proud of you. Tomorrow, then.'],
-    2: ['Thirty days taught me you come back. Tomorrow.', sig ? `${sig}, Veteran` : '— your Veteran', 'Steady as ever. See you tomorrow.'],
-    3: ['A Legend doesn\'t need a pep talk. But here\'s one anyway: tomorrow.', sig ? `${sig}, Legend` : '— your Legend', 'Hundred-day pets don\'t worry. See you tomorrow.'],
+    2: ['You keep coming back. I noticed. Tomorrow.', sig ? `${sig}, Veteran` : '— your Veteran', 'Steady as ever. See you tomorrow.'],
+    3: ['A Legend doesn\'t need a pep talk. But here\'s one anyway: tomorrow.', sig ? `${sig}, Legend` : '— your Legend', 'Legends don\'t worry. See you tomorrow.'],
   };
   const signoff = pick(signoffs[stage], seed, 5);
 

@@ -155,7 +155,8 @@ export type PetSpecies =
   | 'tiger'
   | 'lion'
   | 'hawk'
-  | 'dragon';
+  | 'dragon'
+  | 'delilah';
 
 // Pet mood based on habit completion
 export type PetMood = 'idle' | 'curious' | 'happy' | 'excited' | 'celebrate';

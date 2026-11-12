@@ -23,6 +23,8 @@ import { Pet, getUnlockedHats } from './Pet';
 import { STAGE_NAMES, daysToNextStage } from '../utils/evolution';
 import { MAX_PET_NAME } from '../utils/petName';
 import { radii, fontSizes } from '../theme/tokens';
+import { isReduceMotion } from '../utils/motion';
+import { BRANCH_HINT, BRANCH_STAGE, PET_BRANCHES, PetBranch, petForm } from '../pets/forms';
 
 interface HatClosetModalProps {
   visible: boolean;
@@ -36,10 +38,13 @@ interface HatClosetModalProps {
   onRenamePet?: (name: string) => void;
   onSelectSpecies: (species: PetSpecies) => void;
   onSelectHat: (hat: HatType) => void;
+  /** The path the pet is on, once it has reached the adult stage */
+  petBranch?: PetBranch | null;
+  onSelectBranch?: (branch: PetBranch) => void;
   onClose: () => void;
 }
 
-const ALL_SPECIES: PetSpecies[] = ['blob', 'pixel', 'paper', 'robot', 'droplet', 'slime', 'carmech', 'navi', 'fish', 'butterfly', 'star', 'deer', 'tiger', 'lion', 'hawk', 'dragon'];
+const ALL_SPECIES: PetSpecies[] = ['blob', 'pixel', 'paper', 'robot', 'droplet', 'slime', 'carmech', 'navi', 'fish', 'butterfly', 'star', 'deer', 'tiger', 'lion', 'hawk', 'dragon', 'delilah'];
 const ALL_HATS: HatType[] = ['none', 'cap', 'beanie', 'party', 'tophat', 'wizard', 'crown', 'halo', 'laurel', 'sombrero', 'viking', 'astronaut'];
 
 const HAT_UNLOCK_REQUIREMENTS: Record<HatType, number> = {
@@ -73,6 +78,29 @@ const HAT_UNLOCK_REQUIREMENTS: Record<HatType, number> = {
   sun: 999,
 };
 
+/**
+ * A pet in a picker tile. Touches pass straight through to the tile, so
+ * tapping the pet picks it, and the pet pops once when it becomes the choice.
+ */
+function TilePet({ selected, children }: { selected: boolean; children: React.ReactNode }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const wasSelected = useRef(selected);
+
+  useEffect(() => {
+    const justSelected = selected && !wasSelected.current;
+    wasSelected.current = selected;
+    if (!justSelected || isReduceMotion()) return;
+    scale.setValue(1.3);
+    Animated.spring(scale, { toValue: 1, stiffness: 320, damping: 14, mass: 1, useNativeDriver: true }).start();
+  }, [selected, scale]);
+
+  return (
+    <Animated.View pointerEvents="none" style={{ transform: [{ scale }] }}>
+      {children}
+    </Animated.View>
+  );
+}
+
 export function HatClosetModal({
   visible,
   currentSpecies,
@@ -84,13 +112,18 @@ export function HatClosetModal({
   onRenamePet,
   onSelectSpecies,
   onSelectHat,
+  petBranch = null,
+  onSelectBranch,
   onClose,
 }: HatClosetModalProps) {
   const { colors, radius } = useTheme();
   const [nameDraft, setNameDraft] = useState(petName);
   useEffect(() => setNameDraft(petName), [petName, visible]);
   const unlockedHats = getUnlockedHats(totalCompletions);
-  const previousUnlockedCount = useRef(unlockedHats.length);
+  // How many hats were unlocked the last time the closet was open. Unknown
+  // until it has been opened once: counting from before the saved data loads
+  // made every first open look like a new unlock.
+  const previousUnlockedCount = useRef<number | null>(null);
 
   // Entrance animations
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -104,7 +137,7 @@ export function HatClosetModal({
   useEffect(() => {
     if (visible) {
       // Check if new hat was unlocked
-      const hasNewUnlock = unlockedHats.length > previousUnlockedCount.current;
+      const hasNewUnlock = previousUnlockedCount.current !== null && unlockedHats.length > previousUnlockedCount.current;
 
       if (hasNewUnlock) {
         // Play celebration animation
@@ -243,13 +276,46 @@ export function HatClosetModal({
                   ]}
                   onPress={() => onSelectSpecies(species)}
                 >
-                  <Pet species={species} mood="idle" hat="none" size={40} />
+                  <TilePet selected={currentSpecies === species}>
+                    <Pet species={species} mood="idle" hat="none" size={40} stage={petStage} />
+                  </TilePet>
                   <Text style={[styles.gridItemLabel, { color: colors.text }]}>
                     {species.charAt(0).toUpperCase() + species.slice(1)}
                   </Text>
                 </Pressable>
               ))}
             </View>
+
+            {/* Path: which way the pet grew. Only once it has grown that far. */}
+            {petStage >= BRANCH_STAGE && onSelectBranch && (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Path</Text>
+                <View style={styles.grid}>
+                  {PET_BRANCHES.map((branch) => (
+                    <Pressable
+                      key={branch}
+                      style={({ pressed }) => [
+                        styles.gridItem,
+                        { backgroundColor: colors.bg, borderColor: colors.divider },
+                        petBranch === branch && { borderColor: colors.accent, borderWidth: 2 },
+                        { transform: [{ scale: pressed ? 0.92 : 1 }] },
+                      ]}
+                      onPress={() => onSelectBranch(branch)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: petBranch === branch }}
+                      accessibilityLabel={`${petForm(currentSpecies, petStage, branch)?.name}. ${BRANCH_HINT[branch]}`}
+                    >
+                      <TilePet selected={petBranch === branch}>
+                        <Pet species={currentSpecies} mood="idle" hat="none" size={40} stage={petStage} branch={branch} />
+                      </TilePet>
+                      <Text style={[styles.gridItemLabel, { color: colors.text }]}>
+                        {petForm(currentSpecies, petStage, branch)?.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            )}
 
             {/* Hat Selection */}
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Hats</Text>
@@ -272,7 +338,9 @@ export function HatClosetModal({
                     disabled={!isUnlocked}
                   >
                     {isUnlocked ? (
-                      <Pet species={currentSpecies} mood="idle" hat={hat} size={40} />
+                      <TilePet selected={currentHat === hat}>
+                        <Pet species={currentSpecies} mood="idle" hat={hat} size={40} stage={petStage} />
+                      </TilePet>
                     ) : (
                       <View style={styles.lockedIcon}>
                         <Text style={styles.lockedText}>🔒</Text>
