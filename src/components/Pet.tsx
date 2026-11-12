@@ -18,7 +18,7 @@ import { petForm, PetBranch } from '../pets/forms';
 import { usePetBranch } from '../pets/BranchContext';
 import { MOTIONS, MOTION_INPUT_RANGE, Keyframes } from '../pets/motions';
 import { SPRITE_SIZE, spriteFace, SpriteExpression, SpritePalette } from '../pets/sprites';
-import { placeHat, gridUnderHat, scaleToFitHat } from '../pets/hats';
+import { placeHat, gridUnderHat, scaleToFitHat, unlockedHats } from '../pets/hats';
 
 // Create animated SVG components
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -1952,29 +1952,8 @@ export function getMoodFromProgress(percent: number): PetMood {
   return 'idle';
 }
 
-// Helper to get unlocked hats based on total completions
-export function getUnlockedHats(totalCompletions: number): HatType[] {
-  const hats: HatType[] = ['none'];
-
-  // First week - unlock hats every 1-2 days to encourage engagement
-  if (totalCompletions >= 1) hats.push('cap');
-  if (totalCompletions >= 3) hats.push('beanie');
-  if (totalCompletions >= 5) hats.push('party');
-  if (totalCompletions >= 7) hats.push('tophat');
-
-  // Second week
-  if (totalCompletions >= 10) hats.push('wizard');
-  if (totalCompletions >= 14) hats.push('crown');
-
-  // Third week and beyond
-  if (totalCompletions >= 21) hats.push('halo');
-  if (totalCompletions >= 30) hats.push('laurel');
-  if (totalCompletions >= 45) hats.push('sombrero');
-  if (totalCompletions >= 60) hats.push('viking');
-  if (totalCompletions >= 100) hats.push('astronaut');
-
-  return hats;
-}
+// Hats unlocked by a number of completed habits (the list lives with the hat drawings)
+export const getUnlockedHats = unlockedHats;
 
 const styles = StyleSheet.create({
   container: {

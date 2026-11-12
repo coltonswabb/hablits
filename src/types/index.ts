@@ -190,4 +190,14 @@ export type HatType =
   | 'circlet'
   | 'sun'
   | 'viking'
-  | 'astronaut';
+  | 'astronaut'
+  | 'bow'
+  | 'propeller'
+  | 'cowboy'
+  | 'chef'
+  | 'flower'
+  | 'headphones'
+  | 'pirate'
+  | 'grad'
+  | 'bunny'
+  | 'santa';

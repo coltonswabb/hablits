@@ -576,7 +576,7 @@ const FISH: EvolutionLine = {
         '................',
         '................',
       ],
-      { palette: snapper, hat: { row: 4, x: 7, tuck: [3, 9] } }
+      { palette: snapper, hat: { row: 4, x: 7, tuck: [3, 9], per: { headphones: { size: 's', row: 5 } } } }
     ),
     mind: form(
       fish,
@@ -599,7 +599,7 @@ const FISH: EvolutionLine = {
         '................',
         '................',
       ],
-      { palette: angler, ...lit, hat: { row: 4, x: 7, tuck: [0, 15] } }
+      { palette: angler, ...lit, hat: { row: 4, x: 7, tuck: [0, 15], per: { headphones: { size: 's', row: 5 } } } }
     ),
     heart: form(
       fish,
@@ -622,7 +622,7 @@ const FISH: EvolutionLine = {
         '......OO........',
         '................',
       ],
-      { palette: koi, hat: { row: 4, x: 7, tuck: [4, 10] } }
+      { palette: koi, hat: { row: 4, x: 7, tuck: [4, 10], per: { headphones: { size: 's', row: 5 } } } }
     ),
   },
   final: {
@@ -647,7 +647,7 @@ const FISH: EvolutionLine = {
         '.....OOOO.......',
         '................',
       ],
-      { palette: snapper, hat: { row: 3, x: 7, tuck: [0, 15] } }
+      { palette: snapper, hat: { row: 3, x: 7, tuck: [0, 15], per: { headphones: { size: 's', row: 4 } } } }
     ),
     mind: form(
       fish,
@@ -670,7 +670,7 @@ const FISH: EvolutionLine = {
         '......OO........',
         '..A.......A.....',
       ],
-      { palette: angler, ...lit, hat: { row: 4, x: 7, tuck: [0, 15] } }
+      { palette: angler, ...lit, hat: { row: 4, x: 7, tuck: [0, 15], per: { headphones: { size: 's', row: 5 } } } }
     ),
     heart: form(
       fish,
@@ -693,7 +693,7 @@ const FISH: EvolutionLine = {
         '......OOO.......',
         '................',
       ],
-      { palette: betta, eyes: [[3, 5]], mouth: [2, 7], hat: { row: 3, x: 7, tuck: [0, 15] } }
+      { palette: betta, eyes: [[3, 5]], mouth: [2, 7], hat: { row: 3, x: 7, tuck: [0, 15], per: { headphones: { size: 's', row: 4 } } } }
     ),
   },
 };

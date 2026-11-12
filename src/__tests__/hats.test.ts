@@ -1,4 +1,4 @@
-import { HATS, HatDef, gridUnderHat, placeHat, scaleToFitHat } from '../pets/hats';
+import { HATS, HAT_UNLOCKS, HatDef, unlockedHats, gridUnderHat, placeHat, scaleToFitHat } from '../pets/hats';
 import { SPRITES, SPRITE_SIZE, SpriteDef } from '../pets/sprites';
 import { allForms } from '../pets/forms';
 import type { HatType } from '../types';
@@ -8,8 +8,8 @@ const sprites: [string, SpriteDef][] = allForms().map((sprite) => [sprite.name, 
 
 describe('pet hats', () => {
   it('has a pixel drawing for every hat that can be unlocked', () => {
-    // The hats in the closet (see getUnlockedHats in components/Pet)
-    const unlockable: HatType[] = ['cap', 'beanie', 'party', 'tophat', 'wizard', 'crown', 'halo', 'laurel', 'sombrero', 'viking', 'astronaut'];
+    const unlockable = HAT_UNLOCKS.map(([hat]) => hat).filter((hat) => hat !== 'none');
+    expect(unlockable.length).toBeGreaterThan(20);
     unlockable.forEach((hat) => expect(HATS).toHaveProperty(hat));
   });
 
@@ -38,6 +38,15 @@ describe('pet hats', () => {
       // Shrinking to fit never makes the pet tiny
       expect(scaleToFitHat(placed)).toBeGreaterThan(0.7);
     });
+  });
+
+  it('unlocks hats in order as completions grow', () => {
+    const needed = HAT_UNLOCKS.map(([, n]) => n);
+    expect([...needed].sort((a, b) => a - b)).toEqual(needed);
+    expect(new Set(HAT_UNLOCKS.map(([hat]) => hat)).size).toBe(HAT_UNLOCKS.length);
+    expect(unlockedHats(0)).toEqual(['none']);
+    expect(unlockedHats(3)).toEqual(['none', 'cap', 'bow', 'beanie']);
+    expect(unlockedHats(1000)).toHaveLength(HAT_UNLOCKS.length);
   });
 
   it('has no hat to place for "none"', () => {

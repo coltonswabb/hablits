@@ -11,6 +11,7 @@
 // drawing covers every mood.
 // ============================================
 
+import type { HatType } from '../types';
 import type { PetMotion } from './motions';
 
 export type SpriteCell = '.' | 'O' | 'B' | 'H' | 'S' | 'A' | 'W' | 'C';
@@ -26,6 +27,8 @@ export type HatFit = {
   size?: 's' | 'm';
   /** Columns of whatever sprouts above the head (a flame, an antenna) that a hat hides */
   tuck?: [number, number];
+  /** A different fit for particular hats that sit badly on this pet otherwise */
+  per?: Partial<Record<HatType, { row?: number; x?: number; size?: 's' | 'm' }>>;
 };
 
 export type SpriteDef = {
@@ -503,7 +506,8 @@ export const SPRITES = {
     eyes: [[3, 6]],
     eyeSize: 2,
     mouth: [2, 8],
-    hat: { row: 4, x: 7, tuck: [5, 9] },
+    // Seen side-on, so headphones are worn small and low or the cups hang in the water
+    hat: { row: 4, x: 7, tuck: [5, 9], per: { headphones: { size: 's', row: 5 } } },
     grid: [
       '................',
       '................',

@@ -21,6 +21,7 @@ import { PetSpecies, HatType } from '../types';
 import { useTheme } from '../theme';
 import { Pet, getUnlockedHats } from './Pet';
 import { STAGE_NAMES, STAGE_THRESHOLDS, daysToNextStage } from '../utils/evolution';
+import { HAT_UNLOCKS } from '../pets/hats';
 import { MAX_PET_NAME } from '../utils/petName';
 import { radii, fontSizes } from '../theme/tokens';
 import { isReduceMotion } from '../utils/motion';
@@ -49,38 +50,8 @@ interface HatClosetModalProps {
 
 const ALL_SPECIES: PetSpecies[] = ['blob', 'pixel', 'paper', 'robot', 'droplet', 'slime', 'carmech', 'navi', 'fish', 'butterfly', 'star', 'deer', 'tiger', 'lion', 'hawk', 'dragon', 'delilah'];
 const FORM_STAGES = [0, 1, 2, 3] as const;
-const ALL_HATS: HatType[] = ['none', 'cap', 'beanie', 'party', 'tophat', 'wizard', 'crown', 'halo', 'laurel', 'sombrero', 'viking', 'astronaut'];
-
-const HAT_UNLOCK_REQUIREMENTS: Record<HatType, number> = {
-  none: 0,
-  cap: 1,
-  beanie: 3,
-  party: 5,
-  tophat: 7,
-  wizard: 10,
-  crown: 14,
-  halo: 21,
-  laurel: 30,
-  sombrero: 45,
-  viking: 60,
-  astronaut: 100,
-  // Unimplemented hats - not shown
-  visor: 999,
-  beret: 999,
-  fedora: 999,
-  snapback: 999,
-  flatcap: 999,
-  jester: 999,
-  cone: 999,
-  bowler: 999,
-  sorcerer: 999,
-  mage: 999,
-  tiara: 999,
-  safari: 999,
-  straw: 999,
-  circlet: 999,
-  sun: 999,
-};
+const ALL_HATS: HatType[] = HAT_UNLOCKS.map(([hat]) => hat);
+const HAT_UNLOCK_REQUIREMENTS = Object.fromEntries(HAT_UNLOCKS) as Partial<Record<HatType, number>>;
 
 /**
  * A pet in a picker tile. Touches pass straight through to the tile, so
