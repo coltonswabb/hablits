@@ -20,7 +20,7 @@ import {
 import { PetSpecies, HatType } from '../types';
 import { useTheme } from '../theme';
 import { Pet, getUnlockedHats } from './Pet';
-import { STAGE_NAMES, daysToNextStage } from '../utils/evolution';
+import { STAGE_NAMES, STAGE_THRESHOLDS, daysToNextStage } from '../utils/evolution';
 import { MAX_PET_NAME } from '../utils/petName';
 import { radii, fontSizes } from '../theme/tokens';
 import { isReduceMotion } from '../utils/motion';
@@ -31,8 +31,11 @@ interface HatClosetModalProps {
   currentSpecies: PetSpecies;
   currentHat: HatType;
   totalCompletions: number;
-  /** Evolution stage 0-3 and the best streak that earned it */
+  /** The form on show (stage 0-3) and the best streak behind it */
   petStage?: number;
+  /** How far the pet has grown. Any form up to here can be put on show. */
+  earnedStage?: number;
+  onSelectStage?: (stage: number) => void;
   bestStreak?: number;
   petName?: string;
   onRenamePet?: (name: string) => void;
@@ -45,6 +48,7 @@ interface HatClosetModalProps {
 }
 
 const ALL_SPECIES: PetSpecies[] = ['blob', 'pixel', 'paper', 'robot', 'droplet', 'slime', 'carmech', 'navi', 'fish', 'butterfly', 'star', 'deer', 'tiger', 'lion', 'hawk', 'dragon', 'delilah'];
+const FORM_STAGES = [0, 1, 2, 3] as const;
 const ALL_HATS: HatType[] = ['none', 'cap', 'beanie', 'party', 'tophat', 'wizard', 'crown', 'halo', 'laurel', 'sombrero', 'viking', 'astronaut'];
 
 const HAT_UNLOCK_REQUIREMENTS: Record<HatType, number> = {
@@ -107,6 +111,8 @@ export function HatClosetModal({
   currentHat,
   totalCompletions,
   petStage = 0,
+  earnedStage = petStage,
+  onSelectStage,
   bestStreak = 0,
   petName = '',
   onRenamePet,
@@ -119,6 +125,8 @@ export function HatClosetModal({
   const { colors, radius } = useTheme();
   const [nameDraft, setNameDraft] = useState(petName);
   useEffect(() => setNameDraft(petName), [petName, visible]);
+  // The path tiles show a form where paths differ, even while a baby is on show
+  const pathStage = Math.max(petStage, BRANCH_STAGE);
   const unlockedHats = getUnlockedHats(totalCompletions);
   // How many hats were unlocked the last time the closet was open. Unknown
   // until it has been opened once: counting from before the saved data loads
@@ -248,7 +256,7 @@ export function HatClosetModal({
               accessibilityLabel="Pet name"
             />
             <Text style={[styles.previewLabel, { color: colors.text, fontWeight: '700' }]}>
-              {STAGE_NAMES[petStage]}
+              {STAGE_NAMES[earnedStage]}
             </Text>
             <Text style={[styles.previewLabel, { color: colors.muted }]}>
               {(() => {
@@ -262,6 +270,82 @@ export function HatClosetModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Form: every stage of this pet. Earned ones can be worn again. */}
+            {onSelectStage && (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Form</Text>
+                <View style={styles.grid}>
+                  {FORM_STAGES.map((formStage) => {
+                    const isEarned = formStage <= earnedStage;
+                    const isShown = formStage === petStage;
+                    const name = petForm(currentSpecies, formStage, petBranch)?.name ?? STAGE_NAMES[formStage];
+                    const unlockDay = STAGE_THRESHOLDS[formStage - 1];
+                    return (
+                      <Pressable
+                        key={formStage}
+                        style={({ pressed }) => [
+                          styles.gridItem,
+                          { backgroundColor: colors.bg, borderColor: colors.divider },
+                          isShown && { borderColor: colors.accent, borderWidth: 2 },
+                          isEarned && { transform: [{ scale: pressed ? 0.92 : 1 }] },
+                        ]}
+                        onPress={() => isEarned && onSelectStage(formStage)}
+                        disabled={!isEarned}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isShown, disabled: !isEarned }}
+                        accessibilityLabel={isEarned ? name : `Locked form. Unlocks at a ${unlockDay}-day streak`}
+                      >
+                        <TilePet selected={isShown}>
+                          <Pet
+                            species={currentSpecies}
+                            mood="idle"
+                            hat="none"
+                            size={40}
+                            stage={formStage}
+                            silhouette={isEarned ? undefined : colors.divider}
+                          />
+                        </TilePet>
+                        <Text style={[styles.gridItemLabel, { color: isEarned ? colors.text : colors.muted }]}>
+                          {isEarned ? name : `Day ${unlockDay}`}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </>
+            )}
+
+            {/* Path: which way the pet grew. Only once it has grown that far. */}
+            {earnedStage >= BRANCH_STAGE && onSelectBranch && (
+              <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Path</Text>
+                <View style={styles.grid}>
+                  {PET_BRANCHES.map((branch) => (
+                    <Pressable
+                      key={branch}
+                      style={({ pressed }) => [
+                        styles.gridItem,
+                        { backgroundColor: colors.bg, borderColor: colors.divider },
+                        petBranch === branch && { borderColor: colors.accent, borderWidth: 2 },
+                        { transform: [{ scale: pressed ? 0.92 : 1 }] },
+                      ]}
+                      onPress={() => onSelectBranch(branch)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: petBranch === branch }}
+                      accessibilityLabel={`${petForm(currentSpecies, pathStage, branch)?.name}. ${BRANCH_HINT[branch]}`}
+                    >
+                      <TilePet selected={petBranch === branch}>
+                        <Pet species={currentSpecies} mood="idle" hat="none" size={40} stage={pathStage} branch={branch} />
+                      </TilePet>
+                      <Text style={[styles.gridItemLabel, { color: colors.text }]}>
+                        {petForm(currentSpecies, pathStage, branch)?.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            )}
+
             {/* Species Selection */}
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Species</Text>
             <View style={styles.grid}>
@@ -285,37 +369,6 @@ export function HatClosetModal({
                 </Pressable>
               ))}
             </View>
-
-            {/* Path: which way the pet grew. Only once it has grown that far. */}
-            {petStage >= BRANCH_STAGE && onSelectBranch && (
-              <>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Path</Text>
-                <View style={styles.grid}>
-                  {PET_BRANCHES.map((branch) => (
-                    <Pressable
-                      key={branch}
-                      style={({ pressed }) => [
-                        styles.gridItem,
-                        { backgroundColor: colors.bg, borderColor: colors.divider },
-                        petBranch === branch && { borderColor: colors.accent, borderWidth: 2 },
-                        { transform: [{ scale: pressed ? 0.92 : 1 }] },
-                      ]}
-                      onPress={() => onSelectBranch(branch)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: petBranch === branch }}
-                      accessibilityLabel={`${petForm(currentSpecies, petStage, branch)?.name}. ${BRANCH_HINT[branch]}`}
-                    >
-                      <TilePet selected={petBranch === branch}>
-                        <Pet species={currentSpecies} mood="idle" hat="none" size={40} stage={petStage} branch={branch} />
-                      </TilePet>
-                      <Text style={[styles.gridItemLabel, { color: colors.text }]}>
-                        {petForm(currentSpecies, petStage, branch)?.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
-            )}
 
             {/* Hat Selection */}
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Hats</Text>

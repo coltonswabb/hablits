@@ -90,6 +90,15 @@ export function stageForStreak(streak: number): PetStage {
   return stage as PetStage;
 }
 
+/**
+ * The stage a pet is shown at: the one its owner picked, as long as they have
+ * earned it, otherwise the highest they have earned.
+ */
+export function shownStage(earned: PetStage, chosen?: number | null): PetStage {
+  if (chosen == null || chosen < 0 || chosen > earned) return earned;
+  return Math.floor(chosen) as PetStage;
+}
+
 export function getPetStage(habits: Habit[], logs: Record<string, string[]>, referenceDate: Date = new Date()): PetStage {
   return stageForStreak(bestStreakEver(habits, logs, referenceDate));
 }

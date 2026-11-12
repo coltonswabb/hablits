@@ -60,10 +60,12 @@ interface TodayScreenProps {
   petSpecies: PetSpecies;
   petHat: HatType;
   petStage?: number;
+  /** How far the pet has grown, which can be past the form on show */
+  earnedStage?: number;
   onOpenHatCloset: () => void;
 }
 
-export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset }: TodayScreenProps) {
+export function TodayScreen({ petSpecies, petHat, petStage = 0, earnedStage = petStage, onOpenHatCloset }: TodayScreenProps) {
   const { colors, themeName, radius, headingFont } = useTheme();
   const { state, dispatch, isLoaded } = useApp();
   const [quickAdd, setQuickAdd] = useState('');
@@ -174,7 +176,7 @@ export function TodayScreen({ petSpecies, petHat, petStage = 0, onOpenHatCloset 
   };
 
   // Weekly note from the pet (Mon/Tue, about last week)
-  const letter = useMemo(() => currentLetter(state, petStage as PetStage), [state.logs, state.habits, state.lastLetterDismissed, state.petName, petStage]);
+  const letter = useMemo(() => currentLetter(state, earnedStage as PetStage), [state.logs, state.habits, state.lastLetterDismissed, state.petName, earnedStage]);
 
   // Track previous completion count to detect new completions
   // Pieces that suit the theme: pixels for the pixel-art themes, petals for Sakura

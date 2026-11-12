@@ -35,7 +35,7 @@ import { syncWidget, readWidgetTaps, forceNextWidgetSync, WIDGET_DEEP_LINK } fro
 import { planWidgetTaps } from './utils/widgetTaps';
 import { isOnVacation } from './utils/smartHabits';
 import { getDayCompletionPercent } from './utils/habits';
-import { bestStreakEver, stageForStreak } from './utils/evolution';
+import { bestStreakEver, stageForStreak, shownStage } from './utils/evolution';
 import { migrateState } from './state/migrations';
 import { backupToICloud, readICloudBackup, shouldBackup, cloudHasMore } from './utils/cloudBackup';
 import { syncFastActivities } from './utils/fastActivity';
@@ -205,7 +205,10 @@ function AppContent() {
 
   // ---- Pet evolution ----
   const bestStreak = useMemo(() => bestStreakEver(state.habits, state.logs), [state.habits, state.logs, state.vacations, state.streakSaves]);
-  const petStage = stageForStreak(bestStreak);
+  // earnedStage is how far the pet has grown; petStage is the form on show,
+  // which the owner can set back to any earlier one.
+  const earnedStage = stageForStreak(bestStreak);
+  const petStage = shownStage(earnedStage, state.petFormStage);
   // A new species / hat / stage invalidates both widget snapshots
   useEffect(() => {
     setPetImages({});
@@ -214,18 +217,18 @@ function AppContent() {
   // habits kept lately, the first time the pet is seen at that stage. Existing
   // users who are already past it get theirs decided the same way.
   useEffect(() => {
-    if (isLoaded && petStage >= BRANCH_STAGE && !state.petBranch) {
+    if (isLoaded && earnedStage >= BRANCH_STAGE && !state.petBranch) {
       dispatch({ type: 'SET_PET_BRANCH', payload: decideBranch(state) });
     }
-  }, [isLoaded, petStage, state.petBranch]);
+  }, [isLoaded, earnedStage, state.petBranch]);
   const [evolutionVisible, setEvolutionVisible] = useState(false);
   useEffect(() => {
-    if (isLoaded && petStage > state.petStageSeen) {
+    if (isLoaded && earnedStage > state.petStageSeen) {
       // Let the day's confetti settle before the big reveal
       const t = setTimeout(() => setEvolutionVisible(true), 1200);
       return () => clearTimeout(t);
     }
-  }, [isLoaded, petStage, state.petStageSeen]);
+  }, [isLoaded, earnedStage, state.petStageSeen]);
 
   // Ticks made on the widget: apply them BEFORE the first sync, or that sync
   // would overwrite the widget (and its queued taps) with stale state.
@@ -283,6 +286,7 @@ function AppContent() {
         return (
           <TodayScreen
             petStage={petStage}
+            earnedStage={earnedStage}
             petSpecies={state.petSpecies}
             petHat={state.petHat}
             onOpenHatCloset={() => setHatClosetVisible(true)}
@@ -300,6 +304,7 @@ function AppContent() {
         return (
           <TodayScreen
             petStage={petStage}
+            earnedStage={earnedStage}
             petSpecies={state.petSpecies}
             petHat={state.petHat}
             onOpenHatCloset={() => setHatClosetVisible(true)}
@@ -499,13 +504,20 @@ function AppContent() {
           currentHat={state.petHat}
           totalCompletions={totalCompletions}
           petStage={petStage}
+          earnedStage={earnedStage}
+          onSelectStage={(stage) => dispatch({ type: 'CHOOSE_PET_FORM', payload: stage === earnedStage ? null : stage })}
           bestStreak={bestStreak}
           petName={state.petName}
           onRenamePet={(name) => dispatch({ type: 'SET_PET_NAME', payload: name })}
           onSelectSpecies={(species) => dispatch({ type: 'SET_PET_SPECIES', payload: species })}
           onSelectHat={(hat) => dispatch({ type: 'SET_PET_HAT', payload: hat })}
           petBranch={state.petBranch ?? null}
-          onSelectBranch={(branch) => dispatch({ type: 'CHOOSE_PET_BRANCH', payload: branch })}
+          onSelectBranch={(branch) => {
+            dispatch({ type: 'CHOOSE_PET_BRANCH', payload: branch });
+            // Paths only look different from the adult form on, so a pet set
+            // back to a younger form returns to its newest to show the change
+            if (petStage < BRANCH_STAGE) dispatch({ type: 'CHOOSE_PET_FORM', payload: null });
+          }}
           onClose={() => {
             setHatClosetVisible(false);
             // They've seen the closet, so nothing in it is news any more
@@ -523,13 +535,13 @@ function AppContent() {
           visible={evolutionVisible}
           species={state.petSpecies}
           hat={state.petHat}
-          stage={petStage}
+          stage={earnedStage}
           branch={state.petBranch ?? null}
           petName={state.petName}
           onChooseBranch={(branch) => dispatch({ type: 'CHOOSE_PET_BRANCH', payload: branch })}
           onClose={() => {
             setEvolutionVisible(false);
-            dispatch({ type: 'SET_PET_STAGE_SEEN', payload: petStage });
+            dispatch({ type: 'SET_PET_STAGE_SEEN', payload: earnedStage });
           }}
         />
       </SafeAreaView>

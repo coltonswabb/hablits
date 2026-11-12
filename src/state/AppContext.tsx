@@ -92,6 +92,7 @@ type Action =
   | { type: 'SET_PET_SPECIES'; payload: PetSpecies }
   | { type: 'SET_PET_HAT'; payload: HatType }
   | { type: 'SET_PET_STAGE_SEEN'; payload: number }
+  | { type: 'CHOOSE_PET_FORM'; payload: number | null }
   | { type: 'DISMISS_LETTER'; payload: string }
   | { type: 'SET_PET_NAME'; payload: string }
   | { type: 'SET_CLOUD_BACKUP_AT'; payload: string }
@@ -440,8 +441,17 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'DISMISS_LETTER':
       return { ...state, lastLetterDismissed: action.payload };
 
+    // Seeing a new evolution puts the pet in that new form, whatever older
+    // form the owner had it in.
     case 'SET_PET_STAGE_SEEN':
-      return { ...state, petStageSeen: Math.max(state.petStageSeen, action.payload) };
+      return action.payload > state.petStageSeen
+        ? { ...state, petStageSeen: action.payload, petFormStage: undefined }
+        : state;
+
+    // The owner showing an earlier form they have already grown past; null
+    // goes back to the newest.
+    case 'CHOOSE_PET_FORM':
+      return { ...state, petFormStage: action.payload ?? undefined };
 
     case 'SET_PET_HAT':
       return { ...state, petHat: action.payload };

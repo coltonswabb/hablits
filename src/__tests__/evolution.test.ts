@@ -1,4 +1,4 @@
-import { longestStreakEver, bestStreakEver, stageForStreak, daysToNextStage, getPetStage } from '../utils/evolution';
+import { longestStreakEver, bestStreakEver, stageForStreak, daysToNextStage, getPetStage, shownStage } from '../utils/evolution';
 import { migrateState, SCHEMA_VERSION } from '../state/migrations';
 import { dateStr } from '../utils/dates';
 import { Habit, AppState } from '../types';
@@ -60,6 +60,15 @@ describe('stages', () => {
     expect(stageForStreak(6)).toBe(2);
     expect(stageForStreak(7)).toBe(3);
     expect(stageForStreak(400)).toBe(3);
+  });
+
+  it('shows the chosen form only if it has been earned', () => {
+    expect(shownStage(3)).toBe(3);
+    expect(shownStage(3, null)).toBe(3);
+    expect(shownStage(3, 0)).toBe(0);
+    expect(shownStage(3, 2)).toBe(2);
+    expect(shownStage(1, 3)).toBe(1);
+    expect(shownStage(2, -1)).toBe(2);
   });
 
   it('reports days to the next stage', () => {
